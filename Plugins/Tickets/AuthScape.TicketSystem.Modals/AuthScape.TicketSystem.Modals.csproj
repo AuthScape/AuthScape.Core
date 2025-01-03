@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>ZuechB</Authors>
+    <PackageId>AuthScape.TicketSystem.Modals</PackageId>
+    <Title>AuthScape.TicketSystem.Modals</Title>
+    <Version>1.2.198</Version>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.TicketSystem.Modals</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
