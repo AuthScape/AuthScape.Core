@@ -126,7 +126,7 @@ namespace IDP
                 //    });
 
 
-            }, "DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=", "ProductionCertificateThumbprint");
+            }, "DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=", "26c2355cad9851224887aeddb72ed855654c1653");
         }
 
         public void Configure(IApplicationBuilder app)
