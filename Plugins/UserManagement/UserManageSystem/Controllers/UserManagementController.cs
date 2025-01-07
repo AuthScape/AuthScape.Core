@@ -44,6 +44,14 @@ namespace AuthScape.UserManageSystem.Controllers
             });
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllCompanies()
+        {
+            return Ok(await userManagementSystemService.GetAllCompanies());
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> GetCompanies(GetUsersParam param)
         {

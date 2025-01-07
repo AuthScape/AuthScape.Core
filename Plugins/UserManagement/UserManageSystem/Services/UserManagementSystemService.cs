@@ -38,6 +38,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<CustomFieldTab>> GetCustomTabs(CustomFieldPlatformType platformType);
         Task<Guid> CreateTab(string name, CustomFieldPlatformType platformType);
         Task CreateUserAccount(string FirstName, string LastName, string Email);
+        Task<List<CompanyDataGrid>> GetAllCompanies();
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -127,6 +128,24 @@ namespace AuthScape.UserManageSystem.Services
             }
 
             await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<List<CompanyDataGrid>> GetAllCompanies()
+        {
+            var companyQuery = databaseContext.Companies
+                .Include(c => c.Users)
+                .Include(c => c.Locations)
+                .Where(c => !c.IsDeactivated)
+                .Select(c => new CompanyDataGrid()
+                {
+                    Id = c.Id,
+                    Logo = c.Logo,
+                    Title = c.Title,
+                    NumberOfLocations = c.Locations.Count(),
+                    NumberOfUsers = c.Users.Count()
+                });
+
+            return await companyQuery.ToListAsync();
         }
 
         public async Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null)
