@@ -10,6 +10,8 @@ using AuthScape.Models.Exceptions;
 using AuthScape.UserManagementSystem.Models;
 using StrongGrid.Resources;
 using CoreBackpack.Time;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace AuthScape.UserManageSystem.Services
 {
@@ -39,6 +41,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<Guid> CreateTab(string name, CustomFieldPlatformType platformType);
         Task CreateUserAccount(string FirstName, string LastName, string Email);
         Task<List<CompanyDataGrid>> GetAllCompanies();
+        Task<MemoryStream?> GetDownloadTemplate();
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -292,6 +295,36 @@ namespace AuthScape.UserManageSystem.Services
         public async Task<List<Permission>> GetPermissions()
         {
             return await databaseContext.Permissions.ToListAsync();
+        }
+
+        public async Task<MemoryStream?> GetDownloadTemplate()
+        {
+            var arrayCustomFields = await databaseContext.CustomFields.ToListAsync();
+
+            var csv = new StringBuilder();
+            csv.Append("FirstName,LastName,Email,Password,CompanyId,Roles,Permissions");
+
+            if (arrayCustomFields != null && arrayCustomFields.Count() > 0)
+            {
+                var nameArray = arrayCustomFields.Select(p => p.Name).ToList();
+
+                if (nameArray.Count() > 0)
+                {
+                    csv.Append(",");
+                }
+
+                csv.Append(String.Join(",", nameArray));
+
+                byte[] byteArray = Encoding.UTF8.GetBytes(csv.ToString());
+
+                var memoryStream = new MemoryStream(byteArray);
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                return memoryStream;
+            }
+
+            return null;
         }
 
         public async Task<Company> GetCompany(long companyId)
@@ -693,13 +726,22 @@ namespace AuthScape.UserManageSystem.Services
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                return await databaseContext.Companies.Take(20).AsNoTracking().ToListAsync();
+                return await databaseContext.Companies
+                    .Where(s => !s.IsDeactivated)
+                    .Take(20)
+                    .AsNoTracking()
+                    .ToListAsync();
             }
             else
             {
                 name = name.ToLower();
 
-                var result = await databaseContext.Companies.AsNoTracking().Where(c => c.Title.ToLower().Contains(name)).Take(20).ToListAsync();
+                var result = await databaseContext.Companies
+                    .AsNoTracking()
+                    .Where(c => !c.IsDeactivated && c.Title.ToLower().Contains(name))
+                    .Take(20)
+                    .ToListAsync();
+
                 return result;
             }
         }
