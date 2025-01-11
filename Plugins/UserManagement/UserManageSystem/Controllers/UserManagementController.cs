@@ -229,37 +229,17 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDownloadTemplate(string customFields)
+        public async Task<IActionResult> GetDownloadTemplate()
         {
-            var permissions = await userManagementSystemService.GetPermissions();
-
-            var arrayCustomFields = JsonConvert.DeserializeObject<List<CustomField>>(customFields);
-
-
-            var csv = new StringBuilder();
-            csv.Append("FirstName,LastName,Email,Password,CompanyId,Roles,Permissions");
-
-            if (arrayCustomFields != null && arrayCustomFields.Count() > 0)
+            var memoryStream = await userManagementSystemService.GetDownloadTemplate();
+            if (memoryStream != null)
             {
-                var nameArray = arrayCustomFields.Select(p => p.Name).ToList();
-
-                if (nameArray.Count() > 0)
-                {
-                    csv.Append(",");
-                }
-
-                csv.Append(String.Join(",", nameArray));
-
-                byte[] byteArray = Encoding.UTF8.GetBytes(csv.ToString());
-
-                var memoryStream = new MemoryStream(byteArray);
-
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
                 return File(memoryStream, "text/csv");
             }
-
-            return BadRequest();
+            else
+            {
+                return BadRequest();
+            }
         }
 
 
