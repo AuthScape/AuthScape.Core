@@ -34,66 +34,111 @@ namespace AuthScape.Services
             if (identity != null && identity.IsAuthenticated)
             {
                 var sub = identity.Claims.Where(c => c.Type == "sub").FirstOrDefault();
-                if (sub != null)
+                var companyId = identity.Claims.Where(c => c.Type == "companyId").FirstOrDefault();
+                var companyName = identity.Claims.Where(c => c.Type == "companyName").FirstOrDefault();
+                var locationName = identity.Claims.Where(c => c.Type == "locationName").FirstOrDefault();
+                var locationId = identity.Claims.Where(c => c.Type == "locationId").FirstOrDefault();
+                var username = identity.Claims.Where(c => c.Type == "username").FirstOrDefault();
+                var firstName = identity.Claims.Where(c => c.Type == "firstName").FirstOrDefault();
+                var lastName = identity.Claims.Where(c => c.Type == "lastName").FirstOrDefault();
+
+                if (sub != null && username != null)
                 {
-                    var userId = Convert.ToInt64(sub.Value);
+                    var signedInUser = new SignedInUser();
 
-                    var userRoles = databaseContext.UserRoles
-                        .Where(u => u.UserId == userId);
+                    signedInUser.Id = Convert.ToInt64(sub.Value);
+                    signedInUser.Email = username.Value;
 
-                    var roles = new List<QueryRole>();
-                    foreach (var role in userRoles)
+                    if (companyId != null)
                     {
-                        var queryRole = await databaseContext.Roles.AsNoTracking().Where(u => u.Id == role.RoleId).Select(s => new QueryRole() { Id = s.Id, Name = s.Name }).FirstOrDefaultAsync();
-                        if (queryRole != null)
-                        {
-                            roles.Add(queryRole);
-                        }
+                        signedInUser.CompanyId = Convert.ToInt64(companyId.Value);
                     }
 
-                    var permissions = new List<string>();
-
-                    var userClaims = await databaseContext.UserClaims.AsNoTracking().Where(c => c.UserId == userId && c.ClaimType == "permissions").FirstOrDefaultAsync();
-                    if (userClaims != null && !String.IsNullOrWhiteSpace(userClaims.ClaimValue))
+                    if (locationId != null)
                     {
-                        var permissionIds = userClaims.ClaimValue.Split(",");
-                        foreach (var item in permissionIds)
-                        {
-                            var _permissions = await databaseContext.Permissions.Where(p => p.Id == Guid.Parse(item)).AsNoTracking().FirstOrDefaultAsync();
-                            if (_permissions != null)
-                            {
-                                permissions.Add(_permissions.Name);
-                            }
-                        }
+                        signedInUser.LocationId = Convert.ToInt64(locationId.Value);
                     }
 
-                    // need to link here
-                    var usr = await databaseContext.Users
-                        .Include(u => u.Company)
-                        .Include(u => u.Location)
-                        .AsNoTracking()
-                        .Where(u => u.Id == userId)
-                        .Select(u => new SignedInUser()
-                        {
-                            Id = u.Id,
-                            FirstName = u.FirstName,
-                            LastName = u.LastName,
-                            Email = u.Email,
-                            locale = u.locale,
-                            Roles = roles,
-                            CompanyId = u.CompanyId,
-                            LocationId = u.LocationId,
-                            CompanyName = u.Company != null ? u.Company.Title : null,
-                            LocationName = u.Location != null ? u.Location.Title : null,
-                            Permissions = permissions
-                        })
-                        .FirstOrDefaultAsync();
-
-
-                    if (usr != null)
+                    if (companyName != null)
                     {
-                        return usr;
+                        signedInUser.CompanyName = companyName.Value;
                     }
+
+                    if (locationName != null)
+                    {
+                        signedInUser.LocationName = locationName.Value;
+                    }
+
+                    if (firstName != null)
+                    {
+                        signedInUser.FirstName = firstName.Value;
+                    }
+
+                    if (lastName != null)
+                    {
+                        signedInUser.LastName = lastName.Value;
+                    }
+
+                    return signedInUser;
+
+                    
+
+                    //var userRoles = databaseContext.UserRoles
+                    //    .Where(u => u.UserId == userId);
+
+                    //var roles = new List<QueryRole>();
+                    //foreach (var role in userRoles)
+                    //{
+                    //    var queryRole = await databaseContext.Roles.AsNoTracking().Where(u => u.Id == role.RoleId).Select(s => new QueryRole() { Id = s.Id, Name = s.Name }).FirstOrDefaultAsync();
+                    //    if (queryRole != null)
+                    //    {
+                    //        roles.Add(queryRole);
+                    //    }
+                    //}
+
+                    //var permissions = new List<string>();
+
+                    //var userClaims = await databaseContext.UserClaims.AsNoTracking().Where(c => c.UserId == userId && c.ClaimType == "permissions").FirstOrDefaultAsync();
+                    //if (userClaims != null && !String.IsNullOrWhiteSpace(userClaims.ClaimValue))
+                    //{
+                    //    var permissionIds = userClaims.ClaimValue.Split(",");
+                    //    foreach (var item in permissionIds)
+                    //    {
+                    //        var _permissions = await databaseContext.Permissions.Where(p => p.Id == Guid.Parse(item)).AsNoTracking().FirstOrDefaultAsync();
+                    //        if (_permissions != null)
+                    //        {
+                    //            permissions.Add(_permissions.Name);
+                    //        }
+                    //    }
+                    //}
+
+                    //// need to link here
+                    //var usr = await databaseContext.Users
+                    //    .Include(u => u.Company)
+                    //    .Include(u => u.Location)
+                    //    .AsNoTracking()
+                    //    .Where(u => u.Id == userId)
+                    //    .Select(u => new SignedInUser()
+                    //    {
+                    //        Id = u.Id,
+                    //        FirstName = u.FirstName,
+                    //        LastName = u.LastName,
+                    //        Email = u.Email,
+                    //        locale = u.locale,
+                    //        Roles = roles,
+                    //        CompanyId = u.CompanyId,
+                    //        LocationId = u.LocationId,
+                    //        CompanyName = u.Company != null ? u.Company.Title : null,
+                    //        LocationName = u.Location != null ? u.Location.Title : null,
+                    //        Permissions = permissions
+                    //    })
+                    //    .FirstOrDefaultAsync();
+
+
+                    //if (usr != null)
+                    //{
+                    //    return usr;
+                    //}
                 }
             }
 
