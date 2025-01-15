@@ -14,6 +14,8 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using Models;
+using Services.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace IDP.Controllers
 {
@@ -22,15 +24,18 @@ namespace IDP.Controllers
         private readonly IOpenIddictScopeManager _scopeManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
+        private readonly DatabaseContext databaseContext;
 
         public AuthorizationController(
             IOpenIddictScopeManager scopeManager,
             SignInManager<AppUser> signInManager,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            DatabaseContext databaseContext)
         {
             _scopeManager = scopeManager;
             _signInManager = signInManager;
             _userManager = userManager;
+            this.databaseContext = databaseContext;
         }
 
         //[Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]
@@ -68,8 +73,59 @@ namespace IDP.Controllers
             // will be used to create an id_token, a token or a code.
             var principal = await _signInManager.CreateUserPrincipalAsync(user);
 
+
+
+            var subjectClaim = principal.Claims.Where(z => z.Type == "sub").FirstOrDefault();
+            var userId = Convert.ToInt64(subjectClaim.Value);
+
+            var currentUser = await databaseContext.Users
+                .AsNoTracking()
+                .Include(c => c.Company)
+                .Include(l => l.Location)
+                .Where(u => u.Id == userId)
+                .FirstOrDefaultAsync();
+
+            if (currentUser != null)
+            {
+                // Add company name claim
+                if (currentUser.Company != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("companyName", currentUser.Company.Title));
+                }
+
+                if (currentUser.CompanyId != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("companyId", currentUser.CompanyId.ToString()));
+                }
+
+                // Add company name claim
+                if (currentUser.Location != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("locationName", currentUser.Location.Title));
+                }
+
+                if (currentUser.LocationId != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("locationId", currentUser.LocationId.ToString()));
+                }
+
+                if (currentUser.FirstName != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("firstName", currentUser.FirstName));
+                }
+
+                if (currentUser.LastName != null)
+                {
+                    principal.Identities.First().AddClaim(new Claim("lastName", currentUser.LastName));
+                }
+            }
+
+
+
+
             // Set the list of scopes granted to the client application.
             var scopes = request.GetScopes();
+
 
             principal.SetScopes(request.GetScopes());
             principal.SetResources(await _scopeManager.ListResourcesAsync(scopes).ToListAsync());
@@ -115,6 +171,20 @@ namespace IDP.Controllers
 
                 // Subject (sub) is a required field, we use the client id as the subject identifier here.
                 identity.AddClaim(OpenIddictConstants.Claims.Subject, request.ClientId ?? throw new InvalidOperationException());
+
+
+                var user = await databaseContext.Users.Where(u => u.Id == Convert.ToInt64(request.ClientId)).FirstOrDefaultAsync();
+
+
+
+
+                identity.AddClaim(OpenIddictConstants.Claims.GivenName, user.FirstName);
+                identity.AddClaim(OpenIddictConstants.Claims.FamilyName, user.LastName);
+                identity.AddClaim(OpenIddictConstants.Claims.Username, user.UserName);
+
+
+
+
 
                 // Add some claim, don't forget to add destination otherwise it won't be added to the access token.
                 identity.AddClaim("some-claim", "some-value", OpenIddictConstants.Destinations.AccessToken);
