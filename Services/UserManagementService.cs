@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models.Invite;
+using Models.Users;
+using Newtonsoft.Json;
 using Services.Context;
 using System.Security.Claims;
 
@@ -41,6 +43,8 @@ namespace AuthScape.Services
                 var username = identity.Claims.Where(c => c.Type == "username").FirstOrDefault();
                 var firstName = identity.Claims.Where(c => c.Type == "firstName").FirstOrDefault();
                 var lastName = identity.Claims.Where(c => c.Type == "lastName").FirstOrDefault();
+                var permissions = identity.Claims.Where(c => c.Type == "userPermissions").FirstOrDefault();
+                var roles = identity.Claims.Where(c => c.Type == "usersRoles").FirstOrDefault();
 
                 if (sub != null && username != null)
                 {
@@ -79,6 +83,16 @@ namespace AuthScape.Services
                         signedInUser.LastName = lastName.Value;
                     }
 
+                    if (permissions != null)
+                    {
+                        signedInUser.Permissions = JsonConvert.DeserializeObject<List<Permission>>(permissions.Value);
+                    }
+
+                    if (roles != null)
+                    {
+                        signedInUser.Roles = JsonConvert.DeserializeObject<List<QueryRole>>(roles.Value);
+                    }
+                    
                     return signedInUser;
 
                     

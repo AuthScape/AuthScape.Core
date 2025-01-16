@@ -16,6 +16,8 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 using Models;
 using Services.Context;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Models.Users;
 
 namespace IDP.Controllers
 {
@@ -118,8 +120,50 @@ namespace IDP.Controllers
                 {
                     principal.Identities.First().AddClaim(new Claim("lastName", currentUser.LastName));
                 }
-            }
 
+
+                // permissions
+                var permissions = await databaseContext.UserClaims
+                    .AsNoTracking()
+                    .Where(s => s.UserId == currentUser.Id && s.ClaimType == "permissions")
+                    .FirstOrDefaultAsync();
+
+                if (permissions != null && !String.IsNullOrWhiteSpace(permissions.ClaimValue))
+                {
+                    var userPermissions = new List<Permission>();
+                    var permissionList = permissions.ClaimValue.Split(",");
+
+                    foreach (var permissionItem in permissionList)
+                    {
+                        var permission = await databaseContext.Permissions.AsNoTracking().Where(p => p.Id == Guid.Parse(permissionItem)).FirstOrDefaultAsync();
+                        if (permission != null)
+                        {
+                            userPermissions.Add(permission);
+                        }
+                    }
+
+                    principal.Identities.First().AddClaim(new Claim("userPermissions", JsonConvert.SerializeObject(userPermissions)));
+                }
+
+
+                // roles
+                var userRoles = databaseContext.UserRoles
+                    .Where(u => u.UserId == userId);
+
+                var roles = new List<QueryRole>();
+                foreach (var role in userRoles)
+                {
+                    var queryRole = await databaseContext.Roles.AsNoTracking().Where(u => u.Id == role.RoleId).Select(s => new QueryRole() { Id = s.Id, Name = s.Name }).FirstOrDefaultAsync();
+                    if (queryRole != null)
+                    {
+                        roles.Add(queryRole);
+                    }
+                }
+
+                //var names = roles.Select(s => s.Name);
+
+                principal.Identities.First().AddClaim(new Claim("usersRoles", JsonConvert.SerializeObject(roles)));
+            }
 
 
 
