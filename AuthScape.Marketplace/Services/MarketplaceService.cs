@@ -20,7 +20,7 @@ namespace AuthScape.Marketplace.Services
     public interface IMarketplaceService
     {
         Task IndexProducts();
-        Task<SearchResult2> SearchProducts(int pageNumber = 1, int pageSize = 20);
+        Task<SearchResult2> SearchProducts(string? color, int pageNumber = 1, int pageSize = 20);
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -36,7 +36,7 @@ namespace AuthScape.Marketplace.Services
             luceneVersion = LuceneVersion.LUCENE_48;
         }
 
-        public async Task<SearchResult2> SearchProducts(int pageNumber = 1, int pageSize = 20)
+        public async Task<SearchResult2> SearchProducts(string? color, int pageNumber = 1, int pageSize = 20)
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
             using var reader = DirectoryReader.Open(azureDirectory);
@@ -44,6 +44,19 @@ namespace AuthScape.Marketplace.Services
 
             var booleanQuery = new BooleanQuery();
             var hasFilters = false;
+
+
+
+
+            if (color != null)
+            {
+                var colorQuery = new BooleanQuery();
+                colorQuery.Add(new TermQuery(new Term("Animals", color)), Occur.SHOULD);
+                booleanQuery.Add(colorQuery, Occur.MUST);
+                hasFilters = true;
+            }
+
+
 
             //if (colors != null && colors.Any())
             //{
@@ -106,18 +119,24 @@ namespace AuthScape.Marketplace.Services
                 })
                 .ToListAsync();
 
-
+            int totalPages = (int)Math.Ceiling((double)results.Count() / pageSize);
 
             return new SearchResult2
             {
                 Products = results,
                 Filters = filters,
-                Categories = categories
+                Categories = categories,
+                PageNumber = pageNumber,
+                PageSize = totalPages,
+                Total = results.Count()
             };
         }
 
         public class SearchResult2
         {
+            public int Total { get; set; }
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
             public List<CategoryResponse> Categories { get; set; }
             public List<Product> Products { get; set; }
             public AvailableFilters Filters { get; set; }
@@ -161,13 +180,6 @@ namespace AuthScape.Marketplace.Services
                 Sizes = sizeSet.ToList()
             };
         }
-
-
-
-
-
-
-
 
 
         public async Task IndexProducts()
