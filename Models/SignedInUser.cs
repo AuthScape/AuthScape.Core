@@ -1,4 +1,6 @@
-﻿namespace AuthScape.Models.Users
+﻿using Models.Users;
+
+namespace AuthScape.Models.Users
 {
     public class SignedInUser
     {
@@ -13,6 +15,6 @@
         public string? LocationName { get; set; }
         public string locale { get; set; }
         public List<QueryRole> Roles { get; set; }
-        public List<string> Permissions { get; set; }
+        public List<Permission> Permissions { get; set; }
     }
 }
