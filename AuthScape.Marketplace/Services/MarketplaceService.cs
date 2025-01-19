@@ -20,7 +20,7 @@ namespace AuthScape.Marketplace.Services
     public interface IMarketplaceService
     {
         Task IndexProducts();
-        Task<SearchResult2> SearchProducts(string? color, int pageNumber = 1, int pageSize = 20);
+        Task<SearchResult2> SearchProducts(SearchParams searchParams);
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -36,7 +36,7 @@ namespace AuthScape.Marketplace.Services
             luceneVersion = LuceneVersion.LUCENE_48;
         }
 
-        public async Task<SearchResult2> SearchProducts(string? color, int pageNumber = 1, int pageSize = 20)
+        public async Task<SearchResult2> SearchProducts(SearchParams searchParams)
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
             using var reader = DirectoryReader.Open(azureDirectory);
@@ -46,62 +46,31 @@ namespace AuthScape.Marketplace.Services
             var hasFilters = false;
 
 
-
-
-            if (color != null)
+            // filters
+            if (searchParams.SearchParamFilters != null)
             {
-                var colorQuery = new BooleanQuery();
-                colorQuery.Add(new TermQuery(new Term("Animals", color)), Occur.SHOULD);
-                booleanQuery.Add(colorQuery, Occur.MUST);
-                hasFilters = true;
+                foreach (var filter in searchParams.SearchParamFilters)
+                {
+                    var colorQuery = new BooleanQuery();
+                    colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                    booleanQuery.Add(colorQuery, Occur.MUST);
+                    hasFilters = true;
+                }
             }
+            
 
-
-
-            //if (colors != null && colors.Any())
-            //{
-            //    var colorQuery = new BooleanQuery();
-            //    foreach (var color in colors)
-            //    {
-            //        colorQuery.Add(new TermQuery(new Term("Color", color)), Occur.SHOULD);
-            //    }
-            //    booleanQuery.Add(colorQuery, Occur.MUST);
-            //    hasFilters = true;
-            //}
-
-            //if (categories != null && categories.Any())
-            //{
-            //    var categoryQuery = new BooleanQuery();
-            //    foreach (var category in categories)
-            //    {
-            //        categoryQuery.Add(new TermQuery(new Term("Category", category)), Occur.SHOULD);
-            //    }
-            //    booleanQuery.Add(categoryQuery, Occur.MUST);
-            //    hasFilters = true;
-            //}
-
-            //if (sizes != null && sizes.Any())
-            //{
-            //    var sizeQuery = new BooleanQuery();
-            //    foreach (var size in sizes)
-            //    {
-            //        sizeQuery.Add(new TermQuery(new Term("Size", size)), Occur.SHOULD);
-            //    }
-            //    booleanQuery.Add(sizeQuery, Occur.MUST);
-            //    hasFilters = true;
-            //}
 
             var query = hasFilters ? (Query)booleanQuery : new MatchAllDocsQuery();
 
-            var start = (pageNumber - 1) * pageSize;
-            var hits = searcher.Search(query, start + pageSize).ScoreDocs.Skip(start).Take(pageSize).ToArray();
+            var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
+            var hits = searcher.Search(query, start + searchParams.PageSize).ScoreDocs.Skip(start).Take(searchParams.PageSize).ToArray();
             var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc => new Product
             {
                 Id = Guid.Parse(doc.Get("Id")),
                 Name = doc.Get("Name"),
             }).ToList();
 
-            var filters = GetAvailableFilters(searcher, hits, booleanQuery);
+            var filters = GetAvailableFilters(searchParams, searcher, hits, booleanQuery);
 
 
             var categories = await databaseContext
@@ -119,14 +88,14 @@ namespace AuthScape.Marketplace.Services
                 })
                 .ToListAsync();
 
-            int totalPages = (int)Math.Ceiling((double)results.Count() / pageSize);
+            int totalPages = (int)Math.Ceiling((double)results.Count() / searchParams.PageSize);
 
             return new SearchResult2
             {
                 Products = results,
-                Filters = filters,
+                //Filters = filters,
                 Categories = categories,
-                PageNumber = pageNumber,
+                PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
                 Total = results.Count()
             };
@@ -149,36 +118,46 @@ namespace AuthScape.Marketplace.Services
             public List<string> Sizes { get; set; }
         }
 
-        public AvailableFilters GetAvailableFilters(IndexSearcher searcher, ScoreDoc[] hits, BooleanQuery booleanQuery)
+        public HashSet<SearchParamFilter> GetAvailableFilters(SearchParams searchParams, IndexSearcher searcher, ScoreDoc[] hits, BooleanQuery booleanQuery)
         {
-            var colorSet = new HashSet<string>();
-            var categorySet = new HashSet<string>();
-            var sizeSet = new HashSet<string>();
+            var categoryOptions = new HashSet<SearchParamFilter>();
+            //var categorySet = new HashSet<string>();
+            //var sizeSet = new HashSet<string>();
 
             foreach (var hit in hits)
             {
                 var doc = searcher.Doc(hit.Doc);
 
-                foreach (var item in doc)
+                //foreach (var item in doc)
+                //{
+                //    var name = item.Name;
+                //}
+
+
+                if (searchParams.SearchParamFilters != null)
                 {
-                    var name = item.Name;
+                    foreach (var item in searchParams.SearchParamFilters)
+                    {
+                        var catOption = doc.Get(item.Category);
+                        if (catOption != null) categoryOptions.Add(new SearchParamFilter()
+                        {
+                            Category = item.Category,
+                            Option = catOption
+                        });
+                    }
                 }
 
-                var color = doc.Get("Color");
-                var category = doc.Get("Category");
-                var size = doc.Get("Size");
 
-                if (color != null) colorSet.Add(color);
-                if (category != null) categorySet.Add(category);
-                if (size != null) sizeSet.Add(size);
+                
+                //var category = doc.Get("Category");
+                //var size = doc.Get("Size");
+
+                //if (color != null) colorSet.Add(color);
+                //if (category != null) categorySet.Add(category);
+                //if (size != null) sizeSet.Add(size);
             }
 
-            return new AvailableFilters
-            {
-                Colors = colorSet.ToList(),
-                Categories = categorySet.ToList(),
-                Sizes = sizeSet.ToList()
-            };
+            return categoryOptions;
         }
 
 
