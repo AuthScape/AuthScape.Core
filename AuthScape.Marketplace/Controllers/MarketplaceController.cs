@@ -15,10 +15,10 @@ namespace AuthScape.Marketplace.Controllers
             this.marketplaceService = marketplaceService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Search([FromQuery] string? color, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+        [HttpPost]
+        public async Task<IActionResult> Search(SearchParams searchParams)
         {
-            var results = await marketplaceService.SearchProducts(color, pageNumber, pageSize);
+            var results = await marketplaceService.SearchProducts(searchParams);
             return Ok(results);
         }
 
