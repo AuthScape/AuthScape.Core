@@ -51,14 +51,15 @@ namespace AuthScape.Marketplace.Services
             {
                 foreach (var filter in searchParams.SearchParamFilters)
                 {
-                    var colorQuery = new BooleanQuery();
-                    colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
-                    booleanQuery.Add(colorQuery, Occur.MUST);
-                    hasFilters = true;
+                    foreach (var option in filter.Options)
+                    {
+                        var colorQuery = new BooleanQuery();
+                        colorQuery.Add(new TermQuery(new Term(filter.Category, option)), Occur.SHOULD);
+                        booleanQuery.Add(colorQuery, Occur.MUST);
+                        hasFilters = true;
+                    }
                 }
             }
-            
-
 
             var query = hasFilters ? (Query)booleanQuery : new MatchAllDocsQuery();
 
@@ -73,28 +74,44 @@ namespace AuthScape.Marketplace.Services
             var filters = GetAvailableFilters(searchParams, searcher, hits, booleanQuery);
 
 
-            var categories = await databaseContext
-                .ProductCategories
-                .Include(s => s.ProductFields)
-                .Select(s => new CategoryResponse()
-                {
-                    name = s.Name,
-                    expanded = true,
-                    filters = s.ProductFields.Select(p => new CategoryResponseFilter()
-                    {
-                        name = p.Name,
-                        available = 100
-                    })
-                })
-                .ToListAsync();
+            //var categories = await databaseContext
+            //    .ProductCategories
+            //    .Include(s => s.ProductFields)
+            //    .Select(s => new CategoryResponse()
+            //    {
+            //        name = s.Name,
+            //        expanded = true,
+            //        filters = s.ProductFields.Select(p => new CategoryResponseFilter()
+            //        {
+            //            name = p.Name,
+            //            available = 100
+            //        })
+            //    })
+            //    .ToListAsync();
+
+
+            //var categories = filters.Select(s => new CategoryResponse()
+            //{
+            //    name = s.Category,
+            //    expanded = true,
+            //    filters = s.ProductFields.Select(p => new CategoryResponseFilter()
+            //    {
+            //        name = p.Name,
+            //        available = 100
+            //    })
+            //});
+
+
+
+
 
             int totalPages = (int)Math.Ceiling((double)results.Count() / searchParams.PageSize);
 
             return new SearchResult2
             {
                 Products = results,
-                //Filters = filters,
-                Categories = categories,
+                Filters = filters,
+                //Categories = categories,
                 PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
                 Total = results.Count()
@@ -108,57 +125,154 @@ namespace AuthScape.Marketplace.Services
             public int PageSize { get; set; }
             public List<CategoryResponse> Categories { get; set; }
             public List<Product> Products { get; set; }
-            public AvailableFilters Filters { get; set; }
+            public HashSet<SearchParamFilter> Filters { get; set; }
         }
 
-        public class AvailableFilters
-        {
-            public List<string> Colors { get; set; }
-            public List<string> Categories { get; set; }
-            public List<string> Sizes { get; set; }
-        }
+        //public class AvailableFilters
+        //{
+        //    public List<string> Colors { get; set; }
+        //    public List<string> Categories { get; set; }
+        //    public List<string> Sizes { get; set; }
+        //}
 
         public HashSet<SearchParamFilter> GetAvailableFilters(SearchParams searchParams, IndexSearcher searcher, ScoreDoc[] hits, BooleanQuery booleanQuery)
         {
             var categoryOptions = new HashSet<SearchParamFilter>();
-            //var categorySet = new HashSet<string>();
-            //var sizeSet = new HashSet<string>();
 
+            //foreach (var hit in hits)
+            //{
+            //    var doc = searcher.Doc(hit.Doc);
+            //    if (searchParams.SearchParamFilters != null)
+            //    {
+            //        foreach (var item in searchParams.SearchParamFilters)
+            //        {
+            //            var catOption = doc.Get(item.Category);
+            //            if (!string.IsNullOrEmpty(catOption))
+            //            {
+            //                categoryOptions.Add(new SearchParamFilter()
+            //                {
+            //                    Category = item.Category,
+            //                    Option = catOption
+            //                });
+            //            }
+            //        }
+            //    }
+            //}
+
+
+
+
+
+            // Collect available filters
+            var availableFilters = new Dictionary<string, HashSet<string>>();
             foreach (var hit in hits)
             {
                 var doc = searcher.Doc(hit.Doc);
-
-                //foreach (var item in doc)
-                //{
-                //    var name = item.Name;
-                //}
-
-
-                if (searchParams.SearchParamFilters != null)
+                foreach (var field in doc.Fields)
                 {
-                    foreach (var item in searchParams.SearchParamFilters)
+                    if (!availableFilters.ContainsKey(field.Name))
                     {
-                        var catOption = doc.Get(item.Category);
-                        if (catOption != null) categoryOptions.Add(new SearchParamFilter()
-                        {
-                            Category = item.Category,
-                            Option = catOption
-                        });
+                        availableFilters[field.Name] = new HashSet<string>();
+                    }
+                    availableFilters[field.Name].Add(field.GetStringValue());
+                }
+            }
+
+            // Convert the dictionary to a more usable format
+            var filtersList = availableFilters.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.ToList()
+            );
+
+            foreach (var filter in filtersList)
+            {
+                bool isNew = false;
+                if (filter.Key == "Id" || filter.Key == "Name")
+                {
+                    continue;
+                }
+
+                var category = categoryOptions
+                    .Where(s => s.Category == filter.Key)
+                    .FirstOrDefault();
+
+
+                if (category != null)
+                {
+                    if (category.Options == null)
+                    {
+                        category.Category = filter.Key;
+                        category.Options = new List<string>();
+                    }
+                }
+                else
+                {
+                    isNew = true;
+
+                    category = new SearchParamFilter();
+                    category.Category = filter.Key;
+                    category.Options = new List<string>();
+                }
+
+
+                foreach (var option in filter.Value)
+                {
+                    var optionItem = category.Options.Where(a => a == option).FirstOrDefault();
+                    if (optionItem == null)
+                    {
+                        category.Options.Add(option);
                     }
                 }
 
 
-                
-                //var category = doc.Get("Category");
-                //var size = doc.Get("Size");
 
-                //if (color != null) colorSet.Add(color);
-                //if (category != null) categorySet.Add(category);
-                //if (size != null) sizeSet.Add(size);
+
+
+                ////Console.WriteLine($"Category: {filter.Key}");
+                //foreach (var option in filter.Value)
+                //{
+                    
+                //    if (searchParamFilter.Category != null)
+                //    {
+
+                //        if (searchParamFilter.Options == null)
+                //        {
+                //            searchParamFilter.Options = new List<string>();
+                //        }
+                //        else
+                //        {
+                //            searchParamFilter.Options.Add(option);
+                //        }
+                //    }
+                //    else
+                //    {
+
+                //    }
+
+                //    categoryOptions.Add(new SearchParamFilter()
+                //    {
+                //        Category = filter.Key,
+                //        Options = new List<string>()
+                //    });
+
+                //    //Console.WriteLine($"Option: {option}");
+                //}
+
+
+
+
+                if (isNew)
+                {
+                    categoryOptions.Add(category);
+                }
+
+
+
             }
 
             return categoryOptions;
         }
+
 
 
         public async Task IndexProducts()
