@@ -1,5 +1,6 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.InteropServices;
 
@@ -16,9 +17,9 @@ namespace AuthScape.Marketplace.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Search(SearchParams searchParams)
+        public IActionResult Search(SearchParams searchParams)
         {
-            var results = await marketplaceService.SearchProducts(searchParams);
+            var results = marketplaceService.SearchProducts(searchParams);
             return Ok(results);
         }
 
@@ -26,6 +27,13 @@ namespace AuthScape.Marketplace.Controllers
         public async Task<IActionResult> Index()
         {
             await marketplaceService.IndexProducts();
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadFile(IFormFile file)
+        {
+            await marketplaceService.UploadInventory(file.OpenReadStream());
             return Ok();
         }
     }

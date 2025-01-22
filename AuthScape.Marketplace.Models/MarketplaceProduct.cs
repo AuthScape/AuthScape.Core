@@ -4,6 +4,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public string? Photo { get; set; }
 
         public ICollection<ProductCategoryField> ProductCategoryFields { get; set; }
     }
