@@ -23,8 +23,8 @@ namespace AuthScape.Marketplace.Services
 {
     public interface IMarketplaceService
     {
-        Task IndexProducts();
-        SearchResult2 SearchProducts(SearchParams searchParams);
+        Task IndexProducts<T>() where T : new();
+        SearchResult2<T> SearchProducts<T>(SearchParams searchParams) where T : new();
         Task UploadInventory(Stream stream);
     }
 
@@ -41,7 +41,7 @@ namespace AuthScape.Marketplace.Services
             luceneVersion = LuceneVersion.LUCENE_48;
         }
 
-        public SearchResult2 SearchProducts(SearchParams searchParams)
+        public SearchResult2<T> SearchProducts<T>(SearchParams searchParams) where T : new()
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
             using var reader = DirectoryReader.Open(azureDirectory);
@@ -93,12 +93,57 @@ namespace AuthScape.Marketplace.Services
             var hits = hitsAll.Take(start + searchParams.PageSize).Skip(start).ToList();
 
             //var hits = searcher.Search(query, start + searchParams.PageSize).ScoreDocs.Skip(start).Take(searchParams.PageSize);
-            var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc => new Product
+
+
+
+
+            //var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc => new Product
+            //{
+            //    Id = Guid.Parse(doc.Get("Id")),
+            //    Name = doc.Get("Name"),
+            //    Photo = doc.Get("Photo")
+            //}).ToList();
+
+
+            hitsAll.Skip(start).Take(searchParams.PageSize).ToList();
+
+            var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc =>
             {
-                Id = Guid.Parse(doc.Get("Id")),
-                Name = doc.Get("Name"),
-                Photo = doc.Get("Photo")
+                var obj = new T();
+                foreach (var property in typeof(T).GetProperties())
+                {
+                    var value = doc.Get(property.Name);
+                    if (value != null)
+                    {
+                        if (property.PropertyType == typeof(Guid))
+                        {
+                            property.SetValue(obj, Guid.Parse(value));
+                        }
+                        else if (property.PropertyType == typeof(string))
+                        {
+                            property.SetValue(obj, value);
+                        }
+                        else if (property.PropertyType == typeof(int))
+                        {
+                            property.SetValue(obj, int.Parse(value));
+                        }
+                        else if (property.PropertyType == typeof(decimal))
+                        {
+                            property.SetValue(obj, decimal.Parse(value));
+                        }
+                        else if (property.PropertyType == typeof(bool))
+                        {
+                            property.SetValue(obj, bool.Parse(value));
+                        }
+                        else if (property.PropertyType == typeof(DateTime))
+                        {
+                            property.SetValue(obj, DateTime.Parse(value));
+                        }
+                    }
+                }
+                return obj;
             }).ToList();
+
 
 
 
@@ -108,24 +153,24 @@ namespace AuthScape.Marketplace.Services
 
             int totalPages = (int)Math.Ceiling((double)hitsAll.Length / searchParams.PageSize);
 
-            return new SearchResult2
+            return new SearchResult2<T>
             {
                 Products = results,
                 Filters = filters,
                 //Categories = categories,
                 PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
-                Total = hitsAllFilters.Length
+                Total = hitsAll.Length
             };
         }
 
-        public class SearchResult2
+        public class SearchResult2<T>
         {
             public int Total { get; set; }
             public int PageNumber { get; set; }
             public int PageSize { get; set; }
             public List<CategoryResponse> Categories { get; set; }
-            public List<Product> Products { get; set; }
+            public List<T> Products { get; set; }
             public HashSet<CategoryFilters> Filters { get; set; }
         }
 
@@ -207,7 +252,7 @@ namespace AuthScape.Marketplace.Services
 
 
 
-        public async Task IndexProducts()
+        public async Task IndexProducts<T>() where T : new()
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
 
@@ -352,13 +397,6 @@ namespace AuthScape.Marketplace.Services
                             await databaseContext.SaveChangesAsync();
                         }
                     }
-
-
-
-
-
-
-
 
 
 

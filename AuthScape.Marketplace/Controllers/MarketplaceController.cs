@@ -19,14 +19,14 @@ namespace AuthScape.Marketplace.Controllers
         [HttpPost]
         public IActionResult Search(SearchParams searchParams)
         {
-            var results = marketplaceService.SearchProducts(searchParams);
+            var results = marketplaceService.SearchProducts<Product>(searchParams);
             return Ok(results);
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            await marketplaceService.IndexProducts();
+            await marketplaceService.IndexProducts<Product>();
             return Ok();
         }
 
