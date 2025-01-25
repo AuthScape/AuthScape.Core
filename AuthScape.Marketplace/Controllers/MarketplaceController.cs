@@ -1,4 +1,5 @@
 ﻿using AuthScape.Marketplace.Models;
+using AuthScape.Marketplace.Models.CSVReader;
 using AuthScape.Marketplace.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,14 +27,17 @@ namespace AuthScape.Marketplace.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            await marketplaceService.IndexProducts<Product>();
+            var products = new List<MarketplaceProduct>();
+
+            marketplaceService.Generate(products);
+
             return Ok();
         }
 
         [HttpPost]
         public async Task<IActionResult> UploadFile(IFormFile file)
         {
-            await marketplaceService.UploadInventory(file.OpenReadStream());
+            await marketplaceService.UploadInventory<ProductTest>(file.OpenReadStream());
             return Ok();
         }
     }
