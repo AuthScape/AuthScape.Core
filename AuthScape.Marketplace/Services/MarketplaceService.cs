@@ -356,7 +356,7 @@ namespace AuthScape.Marketplace.Services
                             }
                             else
                             {
-
+                                // this is a dynamics field that we need to add
                             }
                         }
                     }
