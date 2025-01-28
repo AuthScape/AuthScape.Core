@@ -359,9 +359,10 @@ namespace AuthScape.Marketplace.Services
                                 // this is a dynamics field that we need to add
                             }
                         }
-                    }
 
-                    await databaseContext.Products.AddAsync(newProduct);
+                        await databaseContext.Products.AddAsync(newProduct);
+                    }
+                    
                     await databaseContext.SaveChangesAsync();
                 }
                 else
