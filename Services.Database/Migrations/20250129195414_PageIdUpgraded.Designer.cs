@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250129195414_PageIdUpgraded")]
+    partial class PageIdUpgraded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -323,45 +326,6 @@ namespace Services.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("QueuedActivityLogs");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long?>("CompanyId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CssData")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("HtmlData")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("LastUpdated")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("MetaDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PageType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Slug")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Pages");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>

@@ -1,8 +1,10 @@
-﻿namespace AuthScape.Models.Pages
+﻿using AuthScape.ContentManagement.Models;
+
+namespace AuthScape.ContentManagement.Models
 {
     public class PageSummary
     {
-        public long Id { get; set; }
+        public Guid Id { get; set; }
         public string Title { get; set; }
         public PageType PageType { get; set; }
         public string Slug { get; set; }
