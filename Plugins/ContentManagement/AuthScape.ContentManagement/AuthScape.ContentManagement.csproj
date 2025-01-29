@@ -8,13 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\Readme.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\Models\Models.csproj" />
     <ProjectReference Include="..\..\..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\..\..\Services\Services.csproj" />

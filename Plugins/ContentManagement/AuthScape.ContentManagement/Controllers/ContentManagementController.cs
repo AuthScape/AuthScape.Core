@@ -1,7 +1,5 @@
 ﻿using AuthScape.ContentManagement.Models;
 using AuthScape.ContentManagement.Services;
-using AuthScape.Models.Pages;
-using CoreBackpack.URL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +25,7 @@ namespace AuthScape.DocumentReader.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(long id)
+        public async Task<IActionResult> Get(Guid id)
         {
             var page = await contentManagementService.GetPage(id);
             return Ok(page);
@@ -42,7 +40,7 @@ namespace AuthScape.DocumentReader.Controllers
 
         [HttpDelete]
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> Delete(long Id)
+        public async Task<IActionResult> Delete(Guid Id)
         {
             await contentManagementService.DeletePage(Id);
             return Ok();

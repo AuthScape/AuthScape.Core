@@ -170,6 +170,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jira", "Jira", "{2E571D1E-F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jira.Controller", "Plugins\JiraRelease\Jira.Controller.csproj", "{1A88B5DF-3FD0-49A7-8C06-73ECF740D062}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.ContentManagement.Models", "Plugins\AuthScape.ContentManagement.Models\AuthScape.ContentManagement.Models.csproj", "{EDA4D1EF-857A-4363-9524-54E3679F6494}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -388,6 +390,10 @@ Global
 		{1A88B5DF-3FD0-49A7-8C06-73ECF740D062}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A88B5DF-3FD0-49A7-8C06-73ECF740D062}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A88B5DF-3FD0-49A7-8C06-73ECF740D062}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDA4D1EF-857A-4363-9524-54E3679F6494}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDA4D1EF-857A-4363-9524-54E3679F6494}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDA4D1EF-857A-4363-9524-54E3679F6494}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDA4D1EF-857A-4363-9524-54E3679F6494}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -460,6 +466,7 @@ Global
 		{69B9FE3A-B4E9-4E9B-8327-63FA7BCC6336} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{2E571D1E-F386-4716-898E-6BB6A1E0A5D6} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
 		{1A88B5DF-3FD0-49A7-8C06-73ECF740D062} = {2E571D1E-F386-4716-898E-6BB6A1E0A5D6}
+		{EDA4D1EF-857A-4363-9524-54E3679F6494} = {653992BB-C5FB-41AB-8F53-EA87AD28239F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11328C71-22BA-46C6-9F11-1C391681FE61}

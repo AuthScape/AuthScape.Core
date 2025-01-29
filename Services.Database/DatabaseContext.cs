@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using AuthScape.Models.Pages;
 using AuthScape.Models.Stylesheets;
 using AuthScape.Models.Users;
 using AuthScape.Models.PaymentGateway;
@@ -24,6 +23,7 @@ using AuthScape.PrivateLabel.Models;
 using AuthScape.UserManagementSystem.Models;
 using AuthScape.UserManageSystem.Models;
 using AuthScape.Marketplace.Models;
+using AuthScape.ContentManagement.Models;
 
 namespace Services.Context
 {

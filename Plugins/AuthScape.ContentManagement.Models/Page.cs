@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace AuthScape.Models.Pages
+namespace AuthScape.ContentManagement.Models
 {
     public class Page
     {
-        public long Id { get; set; }
+        public Guid Id { get; set; }
         public string Title { get; set; }
         public PageType PageType { get; set; }
         public string? Slug { get; set; }
@@ -14,6 +14,11 @@ namespace AuthScape.Models.Pages
         public DateTimeOffset? Created { get; set; }
         public DateTimeOffset? LastUpdated { get; set; }
         public long? CompanyId { get; set; }
+    }
+
+    public class PageTemplate
+    {
+
     }
 
     public enum PageType

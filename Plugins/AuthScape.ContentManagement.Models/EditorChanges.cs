@@ -2,7 +2,7 @@
 {
     public class EditorChanges
     {
-        public long PageId { get; set; }
+        public Guid PageId { get; set; }
         public string HtmlData { get; set; }
         public string CssData { get; set; }
     }
