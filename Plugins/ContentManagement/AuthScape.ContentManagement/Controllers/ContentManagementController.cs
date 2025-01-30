@@ -1,85 +1,134 @@
 ﻿using AuthScape.ContentManagement.Models;
 using AuthScape.ContentManagement.Services;
+using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthScape.DocumentReader.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public  class ContentManagementController : ControllerBase
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    public class ContentManagementController : ControllerBase
     {
-        readonly IContentManagementService contentManagementService;
+        readonly IContentManagementService _contentManagementService;
         public ContentManagementController(IContentManagementService contentManagementService)
         {
-            this.contentManagementService = contentManagementService;
+            _contentManagementService = contentManagementService;
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> CreatePage(Page page)
+        public async Task<IActionResult> GetPages([FromBody] DataGridParam dataGridParam)
         {
-            return Ok(await contentManagementService.CreatePage(page));
+            var data = await _contentManagementService.GetPages(dataGridParam.Search, dataGridParam.Sort, dataGridParam.ChipFilters, dataGridParam.Offset, dataGridParam.Length);
+            return Ok(new ReactDataTable()
+            {
+                recordsTotal = data.total,
+                recordsFiltered = data.total,
+                data = data
+            });
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(Guid id)
+        [HttpPost]
+        public async Task<IActionResult> GetPageTemplates([FromBody] DataGridParam dataGridParam)
         {
-            var page = await contentManagementService.GetPage(id);
+            var data = await _contentManagementService.GetPageTemplates(dataGridParam.Search, dataGridParam.Sort, dataGridParam.ChipFilters, dataGridParam.Offset, dataGridParam.Length);
+            return Ok(new ReactDataTable()
+            {
+                recordsTotal = data.total,
+                recordsFiltered = data.total,
+                data = data
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPageTemplateSelector()
+        {
+            var templates = await _contentManagementService.GetPageTemplateSelector();
+            return Ok(templates);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPageTypes()
+        {
+            var pageTypes = await _contentManagementService.GetPageTypes();
+            return Ok(pageTypes);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPage(Guid pageId)
+        {
+            var page = await _contentManagementService.GetPage(pageId);
             return Ok(page);
         }
 
         [HttpGet]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> GetPages()
+        public async Task<IActionResult> GetPageTemplate(long templateId)
         {
-            return Ok(await contentManagementService.GetAllPages());
+            var template = await _contentManagementService.GetPageTemplate(templateId);
+            return Ok(template);
         }
 
-        [HttpDelete]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> Delete(Guid Id)
+        [HttpPost]
+        public async Task<IActionResult> CreateNewPage(string title, long templateId, string description)
         {
-            await contentManagementService.DeletePage(Id);
+            await _contentManagementService.CreateNewPage(title, templateId, description);
             return Ok();
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> SavePageContent(EditorChanges editorChanges)
+        public async Task<IActionResult> CreateNewTemplate(string title, long pageTypeId, string description)
         {
-            await contentManagementService.SaveChanges(editorChanges);
+            await _contentManagementService.CreateNewTemplate(title, pageTypeId, description);
+            return Ok();
+        }
+
+
+        [HttpPut]
+        public async Task<IActionResult> UpdatePage(Guid pageId, string data)
+        {
+            await _contentManagementService.UpdatePage(pageId, data);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdatePageTemplate(long templateId, string config, string data)
+        {
+            await _contentManagementService.UpdatePageTemplate(templateId, config, data);
             return Ok();
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> UploadAsset(IFormFile file)
+        public async Task<IActionResult> RemovePage(Guid pageId)
         {
-            var uploadedFile = new UploadedAsset();
-
-            if (file == null || file.Length == 0)
-                return BadRequest("Upload a valid file.");
-
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", file.FileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            uploadedFile = new UploadedAsset
-            {
-                url = $"http://localhost:54218/images/{file.FileName}", // URL relative to the web root,
-                name = file.FileName,
-                type = file.ContentType,
-                height = 300,  // You might need to get actual dimensions
-                width = 300    // You might need to get actual dimensions
-            };
-
-            return Ok(uploadedFile);
+            await _contentManagementService.RemovePage(pageId);
+            return Ok();
         }
+
+        [HttpPut]
+        public async Task<IActionResult> ArchivePageTemplate(long templateId)
+        {
+            await _contentManagementService.ArchivePageTemplate(templateId);
+            return Ok();
+        }
+
+
+        [HttpPut]
+        public async Task<IActionResult> RestorePageTemplate(long templateId)
+        {
+            await _contentManagementService.ArchivePageTemplate(templateId);
+            return Ok();
+        }
+    }
+    public class DataGridParam
+    {
+        public int Offset { get; set; }
+        public int Length { get; set; }
+        public string? Search { get; set; }
+        public int Sort { get; set; }
+        public long[]? ChipFilters { get; set; }
     }
 }
