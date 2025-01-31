@@ -10,12 +10,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
     <ProjectReference Include="..\AuthScape.Models\AuthScape.Models.csproj" />
     <ProjectReference Include="..\LongRunningServices\AuthScape.BackgroundServiceCore.Models\AuthScape.BackgroundServiceCore.Models.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Analytics.Models\AuthScape.Analytics.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Invoice.Models\AuthScape.Invoice.Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.UserManagementSystem.Models\AuthScape.UserManageSystem.Models.csproj" />
     <ProjectReference Include="..\Plugins\Document\AuthScape.Document.Models\AuthScape.Document.Models.csproj" />
     <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />

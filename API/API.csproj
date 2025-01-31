@@ -28,7 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Controllers\AuthScape.Controllers.csproj" />
     <ProjectReference Include="..\AuthScape.Logging\AuthScape.Logging.csproj" />
-    <ProjectReference Include="..\AuthScape.Marketplace\AuthScape.Marketplace.csproj" />
     <ProjectReference Include="..\AuthScape.ReadMail\AuthScape.ReadMail.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Analytics\AuthScape.Analytics\AuthScape.Analytics.csproj" />
@@ -39,6 +38,7 @@
     <ProjectReference Include="..\Plugins\Authscape.IdentityServer\Authscape.IdentityServer.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Invoice\AuthScape.Invoice.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Kanban\AuthScape.Kanban\AuthScape.Kanban.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Marketplace\AuthScape.Marketplace.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.NodeService\AuthScape.Flows.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Privatelabel\AuthScape.PrivateLabel.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.StripePayment.Controller\AuthScape.StripePayment.Controller.csproj" />
