@@ -1,9 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.Marketplace.Models</PackageId>
+    <Title>AuthScape.Marketplace.Models</Title>
+    <Version>1.2.208</Version>
+    <Company>ZuechB</Company>
+    <Authors>ZuechB</Authors>
   </PropertyGroup>
 
   <ItemGroup>

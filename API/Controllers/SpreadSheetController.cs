@@ -40,7 +40,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> GetRecords([FromBody] PagniationModel? pagniationModel)
         {
-           var sampleData = new List<Product>();
+           var sampleData = new List<ProductCard>();
 
             //var totalData = databaseContext.Products.ToList().Count;
 
@@ -52,7 +52,7 @@ namespace API.Controllers
                 sampleData = GenerateSampleData();
             }
 
-            var speadsheetData = spreadsheetService.GenerateSpreadsheet(sampleData, typeof(Product), (header) =>
+            var speadsheetData = spreadsheetService.GenerateSpreadsheet(sampleData, typeof(ProductCard), (header) =>
             {
                 if (header.columnId == "Category")
                 {
@@ -199,7 +199,7 @@ namespace API.Controllers
             return Ok(speadsheetData);
         }
 
-        private PagedList<Product> GenerateSampleDataWithPagination(int offset, int length, string search, bool isArchived)
+        private PagedList<ProductCard> GenerateSampleDataWithPagination(int offset, int length, string search, bool isArchived)
         {
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -223,10 +223,10 @@ namespace API.Controllers
 
             //return products;
 
-            return new PagedList<Product>();
+            return new PagedList<ProductCard>();
         }
 
-        private List<Product> GenerateSampleData()
+        private List<ProductCard> GenerateSampleData()
         {
             //var datas = databaseContext.Products.AsNoTracking().ToList();
 
@@ -239,7 +239,7 @@ namespace API.Controllers
 
             //return datas;
 
-            return new List<Product>();
+            return new List<ProductCard>();
         }
     }
 

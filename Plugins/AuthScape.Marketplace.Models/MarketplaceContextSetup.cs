@@ -7,19 +7,19 @@ namespace AuthScape.Marketplace.Models
     {
         public static void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<Product>(entity =>
+            builder.Entity<ProductCard>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
 
-            builder.Entity<ProductCategory>(entity =>
+            builder.Entity<ProductCardCategory>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
 
-            builder.Entity<ProductField>(entity =>
+            builder.Entity<ProductCardField>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
@@ -30,18 +30,18 @@ namespace AuthScape.Marketplace.Models
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
-            builder.Entity<ProductCategoryField>(entity =>
+            builder.Entity<ProductCardAndCardFieldMapping>(entity =>
             {
                 entity.HasKey(e => new { e.Id, e.ProductId, e.ProductFieldId });
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
                 entity.HasOne(e => e.Product)
-                    .WithMany(m => m.ProductCategoryFields)
+                    .WithMany(m => m.ProductCardAndCardFieldMapping)
                     .HasForeignKey(rf => rf.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
 
                 entity.HasOne(e => e.ProductField)
-                    .WithMany(m => m.ProductCategoryFields)
+                    .WithMany(m => m.ProductCardAndCardFieldMapping)
                     .HasForeignKey(rf => rf.ProductFieldId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
