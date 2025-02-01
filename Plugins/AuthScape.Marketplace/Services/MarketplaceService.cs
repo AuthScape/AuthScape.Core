@@ -1,5 +1,7 @@
 ﻿using AuthScape.Marketplace.Models;
+using AuthScape.Marketplace.Models.Attributes;
 using AuthScape.Marketplace.Models.CSVReader;
+using AuthScape.PrivateLabel.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Lucene.Net.Analysis.Standard;
@@ -11,6 +13,7 @@ using Lucene.Net.Store.Azure;
 using Lucene.Net.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Services;
 using Services.Context;
@@ -20,14 +23,15 @@ using System.Formats.Asn1;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using static AuthScape.Marketplace.Services.MarketplaceService;
 
 namespace AuthScape.Marketplace.Services
 {
     public interface IMarketplaceService
     {
-        void Generate(List<MarketplaceProduct> marketplaceProducts);
-        SearchResult2<T> SearchProducts<T>(SearchParams searchParams) where T : new();
+        Task Generate();
+        SearchResult2 SearchProducts(SearchParams searchParams);
         Task UploadInventory<T>(Stream stream, int platformType = 1) where T : new();
     }
 
@@ -44,7 +48,7 @@ namespace AuthScape.Marketplace.Services
             luceneVersion = LuceneVersion.LUCENE_48;
         }
 
-        public SearchResult2<T> SearchProducts<T>(SearchParams searchParams) where T : new()
+        public SearchResult2 SearchProducts(SearchParams searchParams)
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
             using var reader = DirectoryReader.Open(azureDirectory);
@@ -86,7 +90,7 @@ namespace AuthScape.Marketplace.Services
             }
 
 
-            var test = searchParams.LastFilterSelected;
+            //var test = searchParams.LastFilterSelected;
 
 
             //var query = hasFilters ? (Query)booleanQuery : new MatchAllDocsQuery();
@@ -110,42 +114,20 @@ namespace AuthScape.Marketplace.Services
 
             hitsAll.Skip(start).Take(searchParams.PageSize).ToList();
 
-            var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc =>
+
+            var records = new List<List<ProductResult>>();
+
+            foreach (var doc in hits.Select(hit => searcher.Doc(hit.Doc)))
             {
-                var obj = new T();
-                foreach (var property in typeof(T).GetProperties())
+                var record = new List<ProductResult>();
+                foreach (var column in doc)
                 {
-                    var value = doc.Get(property.Name);
-                    if (value != null)
-                    {
-                        if (property.PropertyType == typeof(Guid))
-                        {
-                            property.SetValue(obj, Guid.Parse(value));
-                        }
-                        else if (property.PropertyType == typeof(string))
-                        {
-                            property.SetValue(obj, value);
-                        }
-                        else if (property.PropertyType == typeof(int))
-                        {
-                            property.SetValue(obj, int.Parse(value));
-                        }
-                        else if (property.PropertyType == typeof(decimal))
-                        {
-                            property.SetValue(obj, decimal.Parse(value));
-                        }
-                        else if (property.PropertyType == typeof(bool))
-                        {
-                            property.SetValue(obj, bool.Parse(value));
-                        }
-                        else if (property.PropertyType == typeof(DateTime))
-                        {
-                            property.SetValue(obj, DateTime.Parse(value));
-                        }
-                    }
+                    var value = doc.Get(column.Name);
+                    record.Add(new ProductResult() { Name = column.Name, Value = value });
                 }
-                return obj;
-            }).ToList();
+
+                records.Add(record);
+            }
 
 
 
@@ -156,9 +138,9 @@ namespace AuthScape.Marketplace.Services
 
             int totalPages = (int)Math.Ceiling((double)hitsAll.Length / searchParams.PageSize);
 
-            return new SearchResult2<T>
+            return new SearchResult2
             {
-                Products = results,
+                Products = records,
                 Filters = filters,
                 //Categories = categories,
                 PageNumber = searchParams.PageNumber,
@@ -167,13 +149,13 @@ namespace AuthScape.Marketplace.Services
             };
         }
 
-        public class SearchResult2<T>
+        public class SearchResult2
         {
             public int Total { get; set; }
             public int PageNumber { get; set; }
             public int PageSize { get; set; }
             public List<CategoryResponse> Categories { get; set; }
-            public List<T> Products { get; set; }
+            public List<List<ProductResult>> Products { get; set; }
             public HashSet<CategoryFilters> Filters { get; set; }
         }
 
@@ -239,7 +221,7 @@ namespace AuthScape.Marketplace.Services
                     //var optionItem = category.Options.Where(a => a == option).FirstOrDefault();
                     //if (optionItem == null)
                     //{
-                        category.Options.Add(option);
+                    category.Options.Add(option);
                     //}
                 }
 
@@ -255,7 +237,7 @@ namespace AuthScape.Marketplace.Services
 
 
 
-        public void Generate(List<MarketplaceProduct> marketplaceProducts)
+        public async Task Generate()
         {
             AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, appSettings.LuceneSearch.Container);
 
@@ -264,48 +246,36 @@ namespace AuthScape.Marketplace.Services
             var config = new IndexWriterConfig(luceneVersion, analyzer);
             using var writer = new IndexWriter(azureDirectory, config);
 
-            foreach (var marketplaceProduct in marketplaceProducts)
+
+            var products = await databaseContext.ProductCards
+                .Include(p => p.ProductCardAndCardFieldMapping)
+                .ThenInclude(z => z.ProductField)
+                .ThenInclude(z => z.ProductCategory)
+                .ToListAsync();
+
+            foreach (var product in products)
             {
-                var doc = new Lucene.Net.Documents.Document();
-                foreach (var column in marketplaceProduct.Columns)
+                var doc = new Lucene.Net.Documents.Document
                 {
-                    doc.Add(new StringField(column.Name, column.Value, column.FieldStore == MarketplaceIndexFieldStore.Yes ? Field.Store.YES : Field.Store.NO));
+                    new StringField("Id", product.Id.ToString(), Field.Store.YES),
+                    new StringField("Name", product.Name, Field.Store.YES),
+                };
+
+                //if (product.Photo != null)
+                //{
+                //    doc.Add(new StringField("Photo", product.Photo, Field.Store.YES));
+                //}
+
+                foreach (var field in product.ProductCardAndCardFieldMapping)
+                {
+                    var fieldName = field.ProductField.Name;
+                    var categoryName = field.ProductField.ProductCategory.Name;
+
+                    doc.Fields.Add(new StringField(categoryName, fieldName, Field.Store.YES));
                 }
+
                 writer.AddDocument(doc);
             }
-
-
-
-
-
-            //var products = await databaseContext.Products
-            //    .Include(s => s.ProductCategoryFields)
-            //    .ThenInclude(z => z.ProductField)
-            //    .ThenInclude(q => q.ProductCategory)
-            //    .ToListAsync();
-
-            //foreach (var product in products)
-            //{
-            //    var doc = new Lucene.Net.Documents.Document
-            //    {
-            //        new StringField("Id", product.Id.ToString(), Field.Store.YES),
-            //        new StringField("Name", product.Name, Field.Store.YES),
-            //        //new StringField("Price", product.Price.ToString(), Field.Store.YES),
-            //        //new TextField("Description", product.Description, Field.Store.YES)
-            //    };
-
-            //    if (product.Photo != null)
-            //    {
-            //        doc.Add(new StringField("Photo", product.Photo, Field.Store.YES));
-            //    }
-
-            //    foreach (var field in product.ProductCategoryFields)
-            //    {
-            //        doc.Fields.Add(new StringField(field.ProductField.ProductCategory.Name, field.ProductField.Name, Field.Store.YES));
-            //    }
-
-            //    writer.AddDocument(doc);
-            //}
 
             writer.Commit();
         }
@@ -313,18 +283,14 @@ namespace AuthScape.Marketplace.Services
 
         public async Task UploadInventory<T>(Stream stream, int platformType = 1) where T : new()
         {
-            databaseContext.ProductFields.RemoveRange(await databaseContext.ProductFields.ToListAsync());
-            databaseContext.ProductCategoryFields.RemoveRange(await databaseContext.ProductCategoryFields.ToListAsync());
-            databaseContext.ProductCategories.RemoveRange(await databaseContext.ProductCategories.ToListAsync());
-            databaseContext.Products.RemoveRange(await databaseContext.Products.ToListAsync());
+            databaseContext.ProductCardFields.RemoveRange(await databaseContext.ProductCardFields.ToListAsync());
+            databaseContext.ProductCardAndCardFieldMapping.RemoveRange(await databaseContext.ProductCardAndCardFieldMapping.ToListAsync());
+            databaseContext.ProductCardCategories.RemoveRange(await databaseContext.ProductCardCategories.ToListAsync());
+            databaseContext.ProductCards.RemoveRange(await databaseContext.ProductCards.ToListAsync());
             await databaseContext.SaveChangesAsync();
 
 
-
-
-
-
-
+            var newProducts = new List<T>();
 
             using (var reader = new StreamReader(stream))
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
@@ -343,188 +309,170 @@ namespace AuthScape.Marketplace.Services
                         records.Add(record);
                     }
 
-
                     foreach (var record in records)
                     {
-                        var newProduct = new Product();
+                        bool hasValidName = false;
+
+                        T newProduct = new T();
 
                         foreach (var column in record)
                         {
-                            if (column.Key.ToLower() == "Name")
+                            if (column.Key.ToLower() == "name")
                             {
-                                newProduct.Name = column.Value;
+                                if (!String.IsNullOrWhiteSpace(column.Value))
+                                {
+                                    hasValidName = true;
+                                }
+
+                                AssignToProperty<T>(newProduct, "Name", column.Value);
                             }
                             else
                             {
                                 // this is a dynamics field that we need to add
+                                AssignToProperty<T>(newProduct, column.Key, column.Value);
                             }
                         }
 
-                        await databaseContext.Products.AddAsync(newProduct);
+                        if (hasValidName)
+                        {
+                            newProducts.Add(newProduct);
+                        }
                     }
-                    
-                    await databaseContext.SaveChangesAsync();
                 }
                 else
                 {
                     Console.WriteLine("Error: Unable to read the header record.");
                 }
+            }
 
 
 
+            // start creating the order for the products
+            foreach (var newProduct in newProducts)
+            {
+                var properties = newProduct.GetType().GetProperties();
 
 
+                // create the product so we have a productId to work with
+                var newProductCard = new ProductCard();
+                foreach (var property in properties)
+                {
+                    var value = property.GetValue(newProduct);
+                    if (property.Name == "Name")
+                    {
+                        newProductCard.Name = value.ToString();
+                        break;
+                    }
+                }
+                await databaseContext.ProductCards.AddAsync(newProductCard);
+                await databaseContext.SaveChangesAsync();
 
 
+                foreach (var property in properties)
+                {
+                    var value = property.GetValue(newProduct);
+                    var indexCategory = property.CustomAttributes.Where(a => a.AttributeType == typeof(IndexCategory)).FirstOrDefault();
+                    var textSearchable = property.CustomAttributes.Where(a => a.AttributeType == typeof(TextSearchable)).FirstOrDefault();
+                    var exactSearch = property.CustomAttributes.Where(a => a.AttributeType == typeof(ExactSearch)).FirstOrDefault();
+
+                    // this is a category index
+                    if (indexCategory != null)
+                    {
+                        var category = (IndexCategory)System.Attribute.GetCustomAttribute(property, typeof(IndexCategory));
+                        var valueAsString = value.ToString();
+
+                        // categories
+                        if (!String.IsNullOrWhiteSpace(category.CategoryName))
+                        {
+                            var parentProduct = await databaseContext.ProductCardCategories
+                                .AsNoTracking()
+                                .Where(p => p.Name.ToLower() == category.CategoryName.ToLower())
+                                .FirstOrDefaultAsync();
+
+                            if (parentProduct == null)
+                            {
+                                parentProduct = new ProductCardCategory()
+                                {
+                                    Name = category.CategoryName,
+                                };
+
+                                await databaseContext.ProductCardCategories.AddAsync(parentProduct);
+                                await databaseContext.SaveChangesAsync();
+                            }
+
+                            // this is a option in the category
+                            if (!String.IsNullOrWhiteSpace(valueAsString) && valueAsString != "NULL")
+                            {
+                                var productField1 = await databaseContext.ProductCardFields
+                                    .AsNoTracking()
+                                    .Where(p => p.Name.ToLower() == valueAsString.ToLower())
+                                    .FirstOrDefaultAsync();
+
+                                if (productField1 == null)
+                                {
+                                    productField1 = new ProductCardField()
+                                    {
+                                        ProductCategoryId = parentProduct.Id,
+                                        Name = valueAsString
+                                    };
+
+                                    await databaseContext.ProductCardFields.AddAsync(productField1);
+                                    await databaseContext.SaveChangesAsync();
+                                }
 
 
+                                // now that we have all the fields defined, let's connect the products to the fields
+                                await databaseContext.ProductCardAndCardFieldMapping.AddAsync(new ProductCardAndCardFieldMapping()
+                                {
+                                    ProductFieldId = productField1.Id,
+                                    ProductId = newProductCard.Id
+                                });
+                                await databaseContext.SaveChangesAsync();
+
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
 
 
-
-                    //var records = csv.GetRecords<T>().ToList();
-                    //foreach (var record in records)
-                    //{
-                    //    ProductCategory? parentProduct = null;
-
-                    //    ProductField? productField1 = null;
-                    //    ProductField? productField2 = null;
-                    //    ProductField? productField3 = null;
-
-
-                    //    // categories
-                    //    if (!String.IsNullOrWhiteSpace(record.ParentCategory) && record.ParentCategory != "NULL")
-                    //    {
-                    //        parentProduct = await databaseContext.ProductCategories
-                    //            .AsNoTracking()
-                    //            .Where(p => p.Name.ToLower() == record.ParentCategory.ToLower())
-                    //            .FirstOrDefaultAsync();
-
-                    //        if (parentProduct == null)
-                    //        {
-                    //            parentProduct = new ProductCategory()
-                    //            {
-                    //                Name = record.ParentCategory
-                    //            };
-
-                    //            await databaseContext.ProductCategories.AddAsync(parentProduct);
-                    //            await databaseContext.SaveChangesAsync();
-                    //        }
-                    //    }
-
-
-
-                    //    // options AKA fields
-                    //    if (!String.IsNullOrWhiteSpace(record.category1) && record.category1 != "NULL")
-                    //    {
-                    //        productField1 = await databaseContext.ProductFields
-                    //            .AsNoTracking()
-                    //            .Where(p => p.Name.ToLower() == record.category1.ToLower())
-                    //            .FirstOrDefaultAsync();
-
-                    //        if (productField1 == null)
-                    //        {
-                    //            productField1 = new ProductField()
-                    //            {
-                    //                ProductCategoryId = parentProduct.Id,
-                    //                Name = record.category1
-                    //            };
-
-                    //            await databaseContext.ProductFields.AddAsync(productField1);
-                    //            await databaseContext.SaveChangesAsync();
-                    //        }
-                    //    }
-
-                    //    if (!String.IsNullOrWhiteSpace(record.category2) && record.category2 != "NULL")
-                    //    {
-                    //        productField2 = await databaseContext.ProductFields
-                    //            .AsNoTracking()
-                    //            .Where(p => p.Name.ToLower() == record.category2.ToLower())
-                    //            .FirstOrDefaultAsync();
-
-                    //        if (productField2 == null)
-                    //        {
-                    //            productField2 = new ProductField()
-                    //            {
-                    //                ProductCategoryId = parentProduct.Id,
-                    //                Name = record.category2
-                    //            };
-
-                    //            await databaseContext.ProductFields.AddAsync(productField2);
-                    //            await databaseContext.SaveChangesAsync();
-                    //        }
-                    //    }
-
-                    //    if (!String.IsNullOrWhiteSpace(record.category3) && record.category3 != "NULL")
-                    //    {
-                    //        productField3 = await databaseContext.ProductFields
-                    //            .AsNoTracking()
-                    //            .Where(p => p.Name.ToLower() == record.category3.ToLower())
-                    //            .FirstOrDefaultAsync();
-
-                    //        if (productField3 == null)
-                    //        {
-                    //            productField3 = new ProductField()
-                    //            {
-                    //                ProductCategoryId = parentProduct.Id,
-                    //                Name = record.category3
-                    //            };
-
-                    //            await databaseContext.ProductFields.AddAsync(productField3);
-                    //            await databaseContext.SaveChangesAsync();
-                    //        }
-                    //    }
-
-
-
-
-
-                    //    var newProduct = new Product();
-                    //    newProduct.Name = record.Name;
-                    //    newProduct.Photo = record.MainPhoto;
-
-                    //    await databaseContext.Products.AddAsync(newProduct);
-                    //    await databaseContext.SaveChangesAsync();
-
-
-
-                    //    if (productField1 != null)
-                    //    {
-                    //        await databaseContext.ProductCategoryFields.AddAsync(new ProductCategoryField()
-                    //        {
-                    //            ProductId = newProduct.Id,
-                    //            ProductFieldId = productField1.Id
-                    //        });
-                    //    }
-
-                    //    if (productField2 != null)
-                    //    {
-                    //        await databaseContext.ProductCategoryFields.AddAsync(new ProductCategoryField()
-                    //        {
-                    //            ProductId = newProduct.Id,
-                    //            ProductFieldId = productField2.Id
-                    //        });
-                    //    }
-
-                    //    if (productField3 != null)
-                    //    {
-                    //        await databaseContext.ProductCategoryFields.AddAsync(new ProductCategoryField()
-                    //        {
-                    //            ProductId = newProduct.Id,
-                    //            ProductFieldId = productField3.Id
-                    //        });
-                    //    }
-
-
-
-
-
-
-
-
-
-
-                    //}
+        private void AssignToProperty<T>(object item, string propertyName, object propertyValue) where T : new()
+        {
+            // Use reflection to set the property value
+            PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName);
+            if (propertyInfo != null && propertyInfo.CanWrite)
+            {
+                if (propertyInfo.PropertyType == typeof(string))
+                {
+                    propertyInfo.SetValue(item, propertyValue);
+                }
+                else if (propertyInfo.PropertyType == typeof(int))
+                {
+                    propertyInfo.SetValue(item, int.Parse(propertyValue.ToString()));
+                }
+                else if (propertyInfo.PropertyType == typeof(long))
+                {
+                    propertyInfo.SetValue(item, long.Parse(propertyValue.ToString()));
+                }
+                else if (propertyInfo.PropertyType == typeof(decimal))
+                {
+                    propertyInfo.SetValue(item, decimal.Parse(propertyValue.ToString()));
+                }
+                else if (propertyInfo.PropertyType == typeof(bool))
+                {
+                    propertyInfo.SetValue(item, bool.Parse(propertyValue.ToString()));
+                }
+                else if (propertyInfo.PropertyType == typeof(DateTime))
+                {
+                    propertyInfo.SetValue(item, DateTime.Parse(propertyValue.ToString()));
+                }
+                else
+                {
+                    // not supported!
                 }
             }
+        }
     }
 }
