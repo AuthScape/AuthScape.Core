@@ -1,29 +1,18 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
-using AuthScape.Marketplace.Models.CSVReader;
-using AuthScape.PrivateLabel.Models;
 using CsvHelper;
-using CsvHelper.Configuration;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
-using Lucene.Net.Store;
 using Lucene.Net.Store.Azure;
 using Lucene.Net.Util;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Services;
 using Services.Context;
 using Services.Database;
-using StrongGrid;
-using System.Formats.Asn1;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Reflection.Metadata;
 using static AuthScape.Marketplace.Services.MarketplaceService;
 
 namespace AuthScape.Marketplace.Services
@@ -371,6 +360,8 @@ namespace AuthScape.Marketplace.Services
                 foreach (var property in properties)
                 {
                     var value = property.GetValue(newProduct);
+                    var valueAsString = value.ToString();
+
                     var indexCategory = property.CustomAttributes.Where(a => a.AttributeType == typeof(IndexCategory)).FirstOrDefault();
                     var textSearchable = property.CustomAttributes.Where(a => a.AttributeType == typeof(TextSearchable)).FirstOrDefault();
                     var exactSearch = property.CustomAttributes.Where(a => a.AttributeType == typeof(ExactSearch)).FirstOrDefault();
@@ -379,8 +370,7 @@ namespace AuthScape.Marketplace.Services
                     if (indexCategory != null)
                     {
                         var category = (IndexCategory)System.Attribute.GetCustomAttribute(property, typeof(IndexCategory));
-                        var valueAsString = value.ToString();
-
+                        
                         // categories
                         if (!String.IsNullOrWhiteSpace(category.CategoryName))
                         {
@@ -431,6 +421,13 @@ namespace AuthScape.Marketplace.Services
 
                             }
                         }
+                    }
+                    else
+                    {
+                        var propertyName = property.Name;
+                        var propertyValue = valueAsString;
+
+
                     }
                 }
 
