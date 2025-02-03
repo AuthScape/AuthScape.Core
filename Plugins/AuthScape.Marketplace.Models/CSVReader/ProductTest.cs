@@ -4,20 +4,23 @@ namespace AuthScape.Marketplace.Models.CSVReader
 {
     public class ProductTest : BaseProductCSVReader
     {
-        [TextSearchable]
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? Description { get; set; }
-        [IndexCategory("Brand Name")]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "Brand Name")]
         public string? BrandName { get; set; }
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? MainPhoto { get; set; }
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? WebsiteUrl { get; set; }
-        [IndexCategory("Category")]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
         public string? category1 { get; set; }
-        [IndexCategory("Category")]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
         public string? category2 { get; set; }
-        [IndexCategory("Category")]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
         public string? category3 { get; set; }
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? ParentCategory { get; set; }
-        [ExactSearch]
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? PartNumber { get; set; }
     }
 }

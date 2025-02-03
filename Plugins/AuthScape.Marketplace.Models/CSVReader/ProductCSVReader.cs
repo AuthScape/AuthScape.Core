@@ -5,7 +5,7 @@ namespace AuthScape.Marketplace.Models.CSVReader
     public class BaseProductCSVReader
     {
         public long Id { get; set; }
-        [TextSearchable]
+        [MarketplaceIndex(ProductCardCategoryType.StringField)]
         public string Name { get; set; }
     }
 }
