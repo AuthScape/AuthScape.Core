@@ -43,50 +43,49 @@ namespace AuthScape.DocumentReader.Controllers
                 data = data
             });
         }
-
+       
         [HttpGet]
         public async Task<IActionResult> GetPageTemplateSelector()
         {
             var templates = await _contentManagementService.GetPageTemplateSelector();
             return Ok(templates);
         }
-
+       
         [HttpGet]
         public async Task<IActionResult> GetPageTypes()
         {
             var pageTypes = await _contentManagementService.GetPageTypes();
             return Ok(pageTypes);
         }
-
+       
         [HttpGet]
         public async Task<IActionResult> GetPage(Guid pageId)
         {
             var page = await _contentManagementService.GetPage(pageId);
             return Ok(page);
         }
-
+       
         [HttpGet]
         public async Task<IActionResult> GetPageTemplate(long templateId)
         {
             var template = await _contentManagementService.GetPageTemplate(templateId);
             return Ok(template);
         }
-
+      
         [HttpPost]
         public async Task<IActionResult> CreateNewPage(string title, long templateId, string description)
         {
             await _contentManagementService.CreateNewPage(title, templateId, description);
             return Ok();
         }
-
+       
         [HttpPost]
         public async Task<IActionResult> CreateNewTemplate(string title, long pageTypeId, string description)
         {
             await _contentManagementService.CreateNewTemplate(title, pageTypeId, description);
             return Ok();
         }
-
-
+               
         [HttpPut]
         public async Task<IActionResult> UpdatePage(Guid pageId, string data)
         {
@@ -100,22 +99,18 @@ namespace AuthScape.DocumentReader.Controllers
             await _contentManagementService.UpdatePageTemplate(templateId, config, data);
             return Ok();
         }
-
-        [HttpPost]
+                [HttpPost]
         public async Task<IActionResult> RemovePage(Guid pageId)
         {
             await _contentManagementService.RemovePage(pageId);
             return Ok();
         }
-
         [HttpPut]
         public async Task<IActionResult> ArchivePageTemplate(long templateId)
         {
             await _contentManagementService.ArchivePageTemplate(templateId);
             return Ok();
         }
-
-
         [HttpPut]
         public async Task<IActionResult> RestorePageTemplate(long templateId)
         {

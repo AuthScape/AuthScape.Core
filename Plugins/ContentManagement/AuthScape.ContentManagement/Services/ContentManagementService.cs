@@ -155,7 +155,7 @@ namespace AuthScape.ContentManagement.Services
         }
         public async Task<List<PageTemplate>> GetPageTemplateSelector()
         {
-            var pageTemplates = await databaseContext.PageTemplates.AsNoTracking().ToListAsync();
+            var pageTemplates = await databaseContext.PageTemplates.AsNoTracking().Where(pt => pt.Archived == null).ToListAsync();
             return pageTemplates;
         }
         public async Task<List<PageType>> GetPageTypes()
