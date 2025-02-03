@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250203013720_Fixed")]
+    partial class Fixed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -793,9 +796,6 @@ namespace Services.Database.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProductCardCategoryType")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("ProductCardCategories");
@@ -811,6 +811,9 @@ namespace Services.Database.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductCardIndexType")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("ProductCategoryId")
                         .HasColumnType("uniqueidentifier");

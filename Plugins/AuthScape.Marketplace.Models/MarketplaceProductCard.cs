@@ -13,6 +13,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public ProductCardCategoryType ProductCardCategoryType { get; set; }
 
         public ICollection<ProductCardField> ProductFields { get; set; }
     }
@@ -22,10 +23,6 @@
         public Guid Id { get; set; }
         public Guid ProductCategoryId { get; set; }
         public string Name { get; set; }
-
-
-        public ProductCardIndexType ProductCardIndexType { get; set; }
-
 
         public ProductCardCategory ProductCategory { get; set; }
         public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
@@ -42,8 +39,10 @@
     }
 
 
-    public enum ProductCardIndexType
+    public enum ProductCardCategoryType
     {
+        None,
+
         StringField, // Indexes the field as a single token, not tokenized. Useful for exact matches.
 
         TextField, // Tokenizes the field for full-text search. Suitable for general text content.
