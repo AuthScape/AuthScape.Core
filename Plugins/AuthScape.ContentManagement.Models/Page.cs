@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.ContentManagement.Models
 {
@@ -13,7 +15,11 @@ namespace AuthScape.ContentManagement.Models
         public string Description { get; set; }
         public DateTimeOffset? Created { get; set; }
         public DateTimeOffset? LastUpdated { get; set; }
-        public PageTemplate PageTemplate { get; set; }  
+        public PageTemplate PageTemplate { get; set; }
+        [NotMapped]
+        public string TemplateTitle { get; set; }
+        [NotMapped]
+        public string TypeTitle { get; set; }
     }
 
     public class PageTemplate
@@ -29,6 +35,8 @@ namespace AuthScape.ContentManagement.Models
         public DateTimeOffset? Archived { get; set; }
         public PageType PageType { get; set; }
         public ICollection<Page> Pages { get; set; }
+        [NotMapped]
+        public string TypeTitle { get; set; }
     }
 
     public class PageType

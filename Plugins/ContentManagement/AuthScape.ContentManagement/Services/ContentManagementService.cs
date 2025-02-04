@@ -49,7 +49,16 @@ namespace AuthScape.ContentManagement.Services
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
             var slug = slugService.GenerateSlug(title);
-            var page = new Page { Title = title, PageTemplateId = templateId, CompanyId = signedInUser.CompanyId, Description = description , Slug = slug};
+            var template = await databaseContext.PageTemplates.AsNoTracking().Where(t => t.Id == templateId).FirstOrDefaultAsync();
+            var page = new Page            { Title = title,
+                PageTemplateId = templateId,
+                CompanyId = signedInUser.CompanyId, 
+                Description = description ,
+                Slug = slug, 
+                Created = DateTimeOffset.Now, 
+                LastUpdated = DateTimeOffset.Now,
+                Content = template.Content,
+            };
 
             databaseContext.Pages.Add(page);
             await databaseContext.SaveChangesAsync();
@@ -62,13 +71,47 @@ namespace AuthScape.ContentManagement.Services
         }
         public async Task<Page> GetPage(Guid pageId)
         {
-            var page = await databaseContext.Pages.AsNoTracking().Where(pq => pq.Id == pageId).FirstOrDefaultAsync();
-            if (page == null) { throw new Exception("Page does not exist"); }
+            var page = await databaseContext.Pages
+                .AsNoTracking()
+                .Include(p => p.PageTemplate) // Ensure PageTemplate is loaded
+                .Where(pq => pq.Id == pageId)
+                .Select(p => new Page
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug,
+                    Content = p.Content,
+                    CompanyId = p.CompanyId,
+                    PageTemplateId = p.PageTemplateId,
+                    Description = p.Description,
+                    Created = p.Created,
+                    LastUpdated = p.LastUpdated,
+
+                    PageTemplate = new PageTemplate
+                    {
+                        Id = p.PageTemplate.Id,
+                        Title = p.PageTemplate.Title,
+                        PageTypeId = p.PageTemplate.PageTypeId,
+                        Config = p.PageTemplate.Config,
+                        Content = p.PageTemplate.Content,
+                        Description = p.PageTemplate.Description,
+                        Created = p.PageTemplate.Created,
+                        LastUpdated = p.PageTemplate.LastUpdated
+                    }
+                })
+                .FirstOrDefaultAsync();
+
+            if (page == null)
+            {
+                throw new Exception("Page does not exist");
+            }
+
             return page;
         }
         public async Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12)
         {
             var signedInUser = await userService.GetSignedInUser();
+
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -76,16 +119,19 @@ namespace AuthScape.ContentManagement.Services
                 search = search.Trim().ToLower();
             }
 
-            var pageQuery = databaseContext.Pages.AsNoTracking()
+            var pageQuery = databaseContext.Pages
+                .AsNoTracking()
+                .Include(p => p.PageTemplate) 
+                .ThenInclude(pt => pt.PageType) 
                 .Where(pq =>
                     pq.CompanyId == signedInUser.CompanyId &&
-                    (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search))
-                );
+                    (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
 
             if (chipFilters != null && chipFilters.Length > 0)
             {
-                pageQuery = pageQuery.Where(pq => chipFilters.Contains(pq.PageTemplateId));
+                pageQuery = pageQuery.Where(pq => chipFilters.Contains(pq.PageTemplate.PageTypeId));
             }
+
 
             switch (sort)
             {
@@ -103,7 +149,22 @@ namespace AuthScape.ContentManagement.Services
                     break;
             }
 
-            var pages = await pageQuery.ToPagedResultAsync(offset - 1, length);
+            var pages = await pageQuery
+                .Select(p => new Page
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug,
+                    Content = p.Content,
+                    CompanyId = p.CompanyId,
+                    PageTemplateId = p.PageTemplateId,
+                    Description = p.Description,
+                    Created = p.Created,
+                    LastUpdated = p.LastUpdated,
+                    TemplateTitle = p.PageTemplate.Title,
+                    TypeTitle = p.PageTemplate.PageType.Title 
+                })
+                .ToPagedResultAsync(offset - 1, length);
 
             return pages;
         }
@@ -155,7 +216,13 @@ namespace AuthScape.ContentManagement.Services
         }
         public async Task<List<PageTemplate>> GetPageTemplateSelector()
         {
-            var pageTemplates = await databaseContext.PageTemplates.AsNoTracking().Where(pt => pt.Archived == null).ToListAsync();
+            var pageTemplates = await databaseContext.PageTemplates.Include(p => p.PageType).AsNoTracking().Where(pt => pt.Archived == null).Select(pt => new PageTemplate
+            {
+                Id = pt.Id,
+                Title = pt.Title,
+                PageTypeId = pt.PageTypeId,
+                TypeTitle = pt.PageType.Title,
+            }).ToListAsync();
             return pageTemplates;
         }
         public async Task<List<PageType>> GetPageTypes()

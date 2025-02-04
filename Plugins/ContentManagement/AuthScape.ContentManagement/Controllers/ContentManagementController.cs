@@ -73,16 +73,16 @@ namespace AuthScape.DocumentReader.Controllers
         }
       
         [HttpPost]
-        public async Task<IActionResult> CreateNewPage(string title, long templateId, string description)
+        public async Task<IActionResult> CreateNewPage([FromBody] CreationParam param)
         {
-            await _contentManagementService.CreateNewPage(title, templateId, description);
+            await _contentManagementService.CreateNewPage(param.Title, param.Id, param.Description);
             return Ok();
         }
        
         [HttpPost]
-        public async Task<IActionResult> CreateNewTemplate(string title, long pageTypeId, string description)
+        public async Task<IActionResult> CreateNewTemplate([FromBody] CreationParam param)
         {
-            await _contentManagementService.CreateNewTemplate(title, pageTypeId, description);
+            await _contentManagementService.CreateNewTemplate(param.Title, param.Id, param.Description);
             return Ok();
         }
                
@@ -125,5 +125,12 @@ namespace AuthScape.DocumentReader.Controllers
         public string? Search { get; set; }
         public int Sort { get; set; }
         public long[]? ChipFilters { get; set; }
+    }
+
+    public class CreationParam
+    {
+        public string Title { get; set; }
+        public long Id { get; set; }
+        public string Description { get; set; }
     }
 }
