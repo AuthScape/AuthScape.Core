@@ -51,10 +51,28 @@ namespace AuthScape.Marketplace.Services
             if (searchParams.SearchParamFilters != null)
             {
                 var colorQuery = new BooleanQuery();
+                int index = 0;
                 foreach (var filter in searchParams.SearchParamFilters)
                 {
                     hasFilters = true;
-                    colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+
+                    if (searchParams.SearchParamFilters.Count() - 1 == index)
+                    {
+                        if (searchParams.LastFilterSelected != null ? filter.Category == searchParams.LastFilterSelected.Category : true)
+                        {
+                            colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.MUST);
+                        }
+                        else
+                        {
+                            colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                        }
+                    }
+                    else
+                    {
+                        colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.MUST);
+                    }
+
+                    index++;
                 }
 
                 if (hasFilters)
@@ -63,19 +81,19 @@ namespace AuthScape.Marketplace.Services
                 }
             }
 
-            ScoreDoc[] hitsAllFilters = null;
+            ScoreDoc[] showAllPossibleHits = null;
 
             Lucene.Net.Search.MatchAllDocsQuery objMatchAll = new Lucene.Net.Search.MatchAllDocsQuery();
-            hitsAllFilters = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
+            showAllPossibleHits = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
 
-            ScoreDoc[] hitsAll = null;
+            ScoreDoc[] filteredOutHits = null;
             if (searchParams.SearchParamFilters == null || searchParams.SearchParamFilters.Count() == 0)
             {
-                hitsAll = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
+                filteredOutHits = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
             }
             else
             {
-                hitsAll = searcher.Search(booleanQuery, int.MaxValue).ScoreDocs;
+                filteredOutHits = searcher.Search(booleanQuery, int.MaxValue).ScoreDocs;
             }
 
 
@@ -86,7 +104,7 @@ namespace AuthScape.Marketplace.Services
 
             var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
 
-            var hits = hitsAll.Take(start + searchParams.PageSize).Skip(start).ToList();
+            var hits = filteredOutHits.Take(start + searchParams.PageSize).Skip(start).ToList();
 
             //var hits = searcher.Search(query, start + searchParams.PageSize).ScoreDocs.Skip(start).Take(searchParams.PageSize);
 
@@ -101,7 +119,7 @@ namespace AuthScape.Marketplace.Services
             //}).ToList();
 
 
-            hitsAll.Skip(start).Take(searchParams.PageSize).ToList();
+            filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
 
 
             var records = new List<List<ProductResult>>();
@@ -122,10 +140,10 @@ namespace AuthScape.Marketplace.Services
 
 
             //var hitsAll = searcher.Search(query, 10000;
-            var filters = await GetAvailableFilters(searchParams, searcher, hitsAllFilters, booleanQuery);
+            var filters = await GetAvailableFilters(searchParams, searcher, filteredOutHits, showAllPossibleHits, booleanQuery);
 
 
-            int totalPages = (int)Math.Ceiling((double)hitsAll.Length / searchParams.PageSize);
+            int totalPages = (int)Math.Ceiling((double)filteredOutHits.Length / searchParams.PageSize);
 
             return new SearchResult2
             {
@@ -134,7 +152,7 @@ namespace AuthScape.Marketplace.Services
                 //Categories = categories,
                 PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
-                Total = hitsAll.Length
+                Total = filteredOutHits.Length
             };
         }
 
@@ -148,14 +166,14 @@ namespace AuthScape.Marketplace.Services
             public HashSet<CategoryFilters> Filters { get; set; }
         }
 
-        public async Task<HashSet<CategoryFilters>> GetAvailableFilters(SearchParams searchParams, IndexSearcher searcher, ScoreDoc[] hits, BooleanQuery booleanQuery)
+        public async Task<HashSet<CategoryFilters>> GetAvailableFilters(SearchParams searchParams, IndexSearcher searcher, ScoreDoc[] filteredOutHits, ScoreDoc[] showAllPossibleHits, BooleanQuery booleanQuery)
         {
             var categoryOptions = new HashSet<CategoryFilters>();
 
 
             // Collect available filters
             var availableFilters = new Dictionary<string, HashSet<string>>();
-            foreach (var hit in hits)
+            foreach (var hit in showAllPossibleHits)
             {
                 var doc = searcher.Doc(hit.Doc);
                 foreach (var field in doc.Fields)
@@ -200,7 +218,7 @@ namespace AuthScape.Marketplace.Services
                         if (category.Options == null)
                         {
                             category.Category = filter.Key;
-                            category.Options = new List<string>();
+                            category.Options = new List<CategoryFilterOption>();
                         }
                     }
                     else
@@ -209,16 +227,21 @@ namespace AuthScape.Marketplace.Services
 
                         category = new CategoryFilters();
                         category.Category = filter.Key;
-                        category.Options = new List<string>();
+                        category.Options = new List<CategoryFilterOption>();
                     }
 
                     foreach (var option in filter.Value)
                     {
-                        //var optionItem = category.Options.Where(a => a == option).FirstOrDefault();
-                        //if (optionItem == null)
-                        //{
-                        category.Options.Add(option);
-                        //}
+                        var optionItem = category.Options.Where(a => a.Name.ToLower() == option.ToLower()).FirstOrDefault();
+                        if (optionItem == null)
+                        {
+                            category.Options.Add(new CategoryFilterOption()
+                            {
+                                Name = option,
+                                IsChecked = false,
+                                Count = 0 
+                            });
+                        }
                     }
 
                     if (isNew)

@@ -8,6 +8,14 @@
         public SearchParamFilter? LastFilterSelected { get; set; }
     }
 
+    public class SearchChainOfCommands
+    {
+        public string Category { get; set; }
+        public string Option { get; set; }
+        public bool IsShould { get; set; }
+    }
+
+
     public class SearchParamFilter
     {
         public string Category { get; set; }
@@ -18,6 +26,13 @@
     public class CategoryFilters
     {
         public string Category { get; set; }
-        public List<string> Options { get; set; }
+        public List<CategoryFilterOption> Options { get; set; }
+    }
+
+    public class CategoryFilterOption
+    {
+        public string Name { get; set; }
+        public bool IsChecked { get; set; }
+        public int Count { get; set; }
     }
 }
