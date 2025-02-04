@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250131174104_ProductCardsAdded")]
+    partial class ProductCardsAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -334,21 +337,23 @@ namespace Services.Database.Migrations
                     b.Property<long?>("CompanyId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTimeOffset?>("Created")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
+                    b.Property<string>("CssData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HtmlData")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("LastUpdated")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<long>("PageTemplateId")
-                        .HasColumnType("bigint");
+                    b.Property<string>("MetaDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PageType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Slug")
                         .HasColumnType("nvarchar(max)");
@@ -359,69 +364,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PageTemplateId");
-
                     b.ToTable("Pages");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset?>("Archived")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Config")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("LastUpdated")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<long>("PageTypeId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PageTypeId");
-
-                    b.ToTable("PageTemplates");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PageTypes");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>
@@ -852,9 +795,6 @@ namespace Services.Database.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductCardCategoryType")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -2686,26 +2626,6 @@ namespace Services.Database.Migrations
                     b.Navigation("Session");
                 });
 
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
-                {
-                    b.HasOne("AuthScape.ContentManagement.Models.PageTemplate", "PageTemplate")
-                        .WithMany("Pages")
-                        .HasForeignKey("PageTemplateId")
-                        .IsRequired();
-
-                    b.Navigation("PageTemplate");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
-                {
-                    b.HasOne("AuthScape.ContentManagement.Models.PageType", "PageType")
-                        .WithMany("PageTemplates")
-                        .HasForeignKey("PageTypeId")
-                        .IsRequired();
-
-                    b.Navigation("PageType");
-                });
-
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>
                 {
                     b.HasOne("AuthScape.Document.Mapping.Models.DocumentComponent", "DocumentComponent")
@@ -3174,16 +3094,6 @@ namespace Services.Database.Migrations
                     b.Navigation("Events");
 
                     b.Navigation("PageViews");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
-                {
-                    b.Navigation("Pages");
-                });
-
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
-                {
-                    b.Navigation("PageTemplates");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>

@@ -3,7 +3,6 @@ using AuthScape.Marketplace.Models.CSVReader;
 using AuthScape.Marketplace.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Runtime.InteropServices;
 
 namespace AuthScape.Marketplace.Controllers
 {
@@ -18,18 +17,16 @@ namespace AuthScape.Marketplace.Controllers
         }
 
         [HttpPost]
-        public IActionResult Search(SearchParams searchParams)
+        public async Task<IActionResult> Search(SearchParams searchParams)
         {
-            var results = marketplaceService.SearchProducts<Product>(searchParams);
+            var results = await marketplaceService.SearchProducts(searchParams);
             return Ok(results);
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var products = new List<MarketplaceProduct>();
-
-            marketplaceService.Generate(products);
+            await marketplaceService.Generate();
 
             return Ok();
         }

@@ -51,10 +51,10 @@ namespace Services.Context
 
         #region Marketplace
 
-        public DbSet<Product> Products { get; set; }
-        public DbSet<ProductCategory> ProductCategories { get; set; }
-        public DbSet<ProductField> ProductFields { get; set; }
-        public DbSet<ProductCategoryField> ProductCategoryFields { get; set; }
+        public DbSet<ProductCard> ProductCards { get; set; }
+        public DbSet<ProductCardCategory> ProductCardCategories { get; set; }
+        public DbSet<ProductCardField> ProductCardFields { get; set; }
+        public DbSet<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
 
         #endregion
 
@@ -659,13 +659,13 @@ namespace Services.Context
                 entity.HasKey(e => e.Id);
             });
 
-            builder.Entity<Product>(entity =>
+            builder.Entity<ProductCard>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
 
-            builder.Entity<ProductCategory>(entity =>
+            builder.Entity<ProductCardCategory>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
