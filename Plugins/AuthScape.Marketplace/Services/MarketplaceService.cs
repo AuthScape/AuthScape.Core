@@ -118,7 +118,7 @@ namespace AuthScape.Marketplace.Services
             public HashSet<CategoryFilters> Filters { get; set; }
         }
 
-        public async Task<HashSet<CategoryFilters>> GetAvailableFilters(
+        async Task<HashSet<CategoryFilters>> GetAvailableFilters(
             SearchParams searchParams,
             IndexSearcher searcher,
             ScoreDoc[] filteredOutHits,
@@ -126,103 +126,97 @@ namespace AuthScape.Marketplace.Services
             BooleanQuery booleanQuery)
         {
             var categoryOptions = new HashSet<CategoryFilters>();
-            var availableFilters = new Dictionary<string, HashSet<string>>();
+            var activeFilters = searchParams.SearchParamFilters?.ToList() ?? new List<SearchParamFilter>();
 
-            // Get the last selected category (if any)
-            string lastSelectedCategory = searchParams.LastFilterSelected?.Category;
-
-            // Step 1: Collect all possible options from the full dataset (showAllPossibleHits)
+            // Collect all unique category names from the index
+            var allCategories = new HashSet<string>();
             foreach (var hit in showAllPossibleHits)
             {
                 var doc = searcher.Doc(hit.Doc);
                 foreach (var field in doc.Fields)
                 {
                     if (field.Name == "Id" || field.Name == "Name") continue;
-
-                    if (!availableFilters.ContainsKey(field.Name))
-                        availableFilters[field.Name] = new HashSet<string>();
-
-                    availableFilters[field.Name].Add(field.GetStringValue());
+                    allCategories.Add(field.Name);
                 }
             }
 
-            // Step 2: Override non-last-selected categories with filtered options
-            if (!string.IsNullOrEmpty(lastSelectedCategory))
+            foreach (var category in allCategories)
             {
-                var filteredOptionsByCategory = new Dictionary<string, HashSet<string>>();
-
-                // Collect options from filtered results for non-last-selected categories
-                foreach (var hit in filteredOutHits)
-                {
-                    var doc = searcher.Doc(hit.Doc);
-                    foreach (var field in doc.Fields)
-                    {
-                        if (field.Name == "Id" || field.Name == "Name") continue;
-                        if (field.Name == lastSelectedCategory) continue;
-
-                        if (!filteredOptionsByCategory.ContainsKey(field.Name))
-                            filteredOptionsByCategory[field.Name] = new HashSet<string>();
-
-                        filteredOptionsByCategory[field.Name].Add(field.GetStringValue());
-                    }
-                }
-
-                // Merge filtered options into available filters
-                foreach (var category in filteredOptionsByCategory)
-                {
-                    availableFilters[category.Key] = category.Value;
-                }
-            }
-
-            // Convert to filters list and build response
-            var filtersList = availableFilters.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.ToList()
-            );
-
-            foreach (var filter in filtersList)
-            {
-                if (filter.Key == "Id" || filter.Key == "Name") continue;
-
+                // Database check for category visibility
                 var productCardCategory = await databaseContext.ProductCardCategories
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Name.ToLower() == filter.Key.ToLower());
+                    .FirstOrDefaultAsync(s => s.Name.ToLower() == category.ToLower());
 
+                // Skip categories marked as None
                 if (productCardCategory?.ProductCardCategoryType == ProductCardCategoryType.None)
                     continue;
 
-                var category = categoryOptions.FirstOrDefault(s => s.Category == filter.Key);
-                bool isNew = false;
+                // Build query with other active filters (excluding current category)
+                var otherFilters = activeFilters.Where(f =>
+                    !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                if (category == null)
-                {
-                    category = new CategoryFilters
-                    {
-                        Category = filter.Key,
-                        Options = new List<CategoryFilterOption>()
-                    };
-                    isNew = true;
-                }
+                Query otherFiltersQuery = BuildOtherFiltersQuery(otherFilters);
 
-                foreach (var option in filter.Value)
+                // Get hits matching other filters
+                var otherHits = searcher.Search(otherFiltersQuery, int.MaxValue).ScoreDocs;
+
+                // Collect options from these hits
+                var options = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var hit in otherHits)
                 {
-                    if (!category.Options.Any(o => o.Name.Equals(option, StringComparison.OrdinalIgnoreCase)))
+                    var doc = searcher.Doc(hit.Doc);
+                    var value = doc.Get(category);
+                    if (value != null)
                     {
-                        category.Options.Add(new CategoryFilterOption
-                        {
-                            Name = option,
-                            IsChecked = searchParams.SearchParamFilters?.Any(f =>
-                                f.Category == filter.Key &&
-                                f.Option.Equals(option, StringComparison.OrdinalIgnoreCase)) ?? false,
-                            Count = 0 // Add count logic if needed
-                        });
+                        options[value] = options.TryGetValue(value, out var count) ? count + 1 : 1;
                     }
                 }
 
-                if (isNew) categoryOptions.Add(category);
+                // Only add category if it has options
+                if (options.Count > 0)
+                {
+                    var categoryFilter = new CategoryFilters
+                    {
+                        Category = category,
+                        Options = options.Select(opt => new CategoryFilterOption
+                        {
+                            Name = opt.Key,
+                            IsChecked = activeFilters.Any(f =>
+                                f.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+                                f.Option.Equals(opt.Key, StringComparison.OrdinalIgnoreCase)),
+                            Count = opt.Value
+                        }).ToList()
+                    };
+
+                    categoryOptions.Add(categoryFilter);
+                }
             }
 
             return categoryOptions;
+        }
+
+        Query BuildOtherFiltersQuery(List<SearchParamFilter> otherFilters)
+        {
+            if (!otherFilters.Any())
+                return new MatchAllDocsQuery();
+
+            var booleanQuery = new BooleanQuery();
+            var grouped = otherFilters.GroupBy(f => f.Category);
+
+            foreach (var group in grouped)
+            {
+                var categoryQuery = new BooleanQuery();
+                foreach (var filter in group)
+                {
+                    categoryQuery.Add(
+                        new TermQuery(new Term(filter.Category, filter.Option)),
+                        Occur.SHOULD
+                    );
+                }
+                booleanQuery.Add(categoryQuery, Occur.MUST);
+            }
+
+            return booleanQuery;
         }
 
 

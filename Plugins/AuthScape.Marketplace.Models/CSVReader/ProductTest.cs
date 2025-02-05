@@ -14,9 +14,9 @@ namespace AuthScape.Marketplace.Models.CSVReader
         public string? WebsiteUrl { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
         public string? category1 { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? category2 { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
+        [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? category3 { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? ParentCategory { get; set; }
