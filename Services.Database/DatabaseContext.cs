@@ -43,7 +43,6 @@ namespace Services.Context
         public DbSet<UserLocations> UserLocations { get; set; }
 
         public DbSet<Page> Pages { get; set; }
-        public DbSet<PageTemplate> PageTemplates { get; set; }
         public DbSet<PageType> PageTypes { get; set; }
         public DbSet<Stylesheet> Stylesheets { get; set; }
         public DbSet<Company> Companies { get; set; }
@@ -529,18 +528,8 @@ namespace Services.Context
             {
                 entity.HasKey(e => e.Id);
 
-                entity.HasOne(e => e.PageTemplate)
-                    .WithMany(m => m.Pages)
-                    .HasForeignKey(rf => rf.PageTemplateId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
-            });
-
-            builder.Entity<PageTemplate>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
                 entity.HasOne(e => e.PageType)
-                    .WithMany(m => m.PageTemplates)
+                    .WithMany(m => m.Pages)
                     .HasForeignKey(rf => rf.PageTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
