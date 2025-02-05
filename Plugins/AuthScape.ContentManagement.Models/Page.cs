@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.ContentManagement.Models
 {
@@ -6,24 +8,23 @@ namespace AuthScape.ContentManagement.Models
     {
         public Guid Id { get; set; }
         public string Title { get; set; }
-        public PageType PageType { get; set; }
         public string? Slug { get; set; }
-        public string? MetaDescription { get; set; }
-        public string? HtmlData { get; set; }
-        public string? CssData { get; set; }
+        public string? Content { get; set; }
+        public long? CompanyId { get; set; }
+        public string Description { get; set; }
+        public long PageTypeId { get; set; }
         public DateTimeOffset? Created { get; set; }
         public DateTimeOffset? LastUpdated { get; set; }
-        public long? CompanyId { get; set; }
+        public int? Recursion {  get; set; }
+        public PageType PageType { get; set; }
+        [NotMapped]
+        public string TypeTitle { get; set; }
     }
-
-    public class PageTemplate
+    public class PageType
     {
-
-    }
-
-    public enum PageType
-    {
-        WebPage = 1,
-        Email = 2
+        public long Id { get; set; }
+        public string Title { get; set; }
+        public bool IsRecursive { get; set; }
+        public ICollection<Page> Pages { get; set; }
     }
 }

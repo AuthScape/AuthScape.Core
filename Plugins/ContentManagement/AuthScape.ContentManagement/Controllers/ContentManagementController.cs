@@ -1,85 +1,102 @@
 ﻿using AuthScape.ContentManagement.Models;
 using AuthScape.ContentManagement.Services;
+using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthScape.DocumentReader.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public  class ContentManagementController : ControllerBase
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    public class ContentManagementController : ControllerBase
     {
-        readonly IContentManagementService contentManagementService;
+        readonly IContentManagementService _contentManagementService;
         public ContentManagementController(IContentManagementService contentManagementService)
         {
-            this.contentManagementService = contentManagementService;
+            _contentManagementService = contentManagementService;
         }
-
+        
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> CreatePage(Page page)
+        public async Task<IActionResult> GetPages([FromBody] DataGridParam dataGridParam)
         {
-            return Ok(await contentManagementService.CreatePage(page));
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(Guid id)
-        {
-            var page = await contentManagementService.GetPage(id);
-            return Ok(page);
+            var data = await _contentManagementService.GetPages(dataGridParam.Search, dataGridParam.Sort, dataGridParam.ChipFilters, dataGridParam.Offset, dataGridParam.Length);
+            return Ok(new ReactDataTable()
+            {
+                recordsTotal = data.total,
+                recordsFiltered = data.total,
+                data = data
+            });
         }
 
         [HttpGet]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> GetPages()
+        public async Task<IActionResult> GetPageTypes()
         {
-            return Ok(await contentManagementService.GetAllPages());
+            var pageTypes = await _contentManagementService.GetPageTypes();
+            return Ok(pageTypes);
         }
-
-        [HttpDelete]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> Delete(Guid Id)
+        
+        [HttpGet]
+        public async Task<IActionResult> GetPage(Guid pageId)
         {
-            await contentManagementService.DeletePage(Id);
+            var page = await _contentManagementService.GetPage(pageId);
+            return Ok(page);
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> CreateNewPage([FromBody] PageParam param)
+        {
+            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.Description, param.Recursion);
             return Ok();
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> SavePageContent(EditorChanges editorChanges)
+        public async Task<IActionResult> UpdatePage([FromBody] PageParam param)
         {
-            await contentManagementService.SaveChanges(editorChanges);
+            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.Description, param.Recursion);
             return Ok();
         }
 
         [HttpPost]
-        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> UploadAsset(IFormFile file)
+        public async Task<IActionResult> UpdatePageContent([FromBody] ContentParam contentParam)
         {
-            var uploadedFile = new UploadedAsset();
-
-            if (file == null || file.Length == 0)
-                return BadRequest("Upload a valid file.");
-
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", file.FileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            uploadedFile = new UploadedAsset
-            {
-                url = $"http://localhost:54218/images/{file.FileName}", // URL relative to the web root,
-                name = file.FileName,
-                type = file.ContentType,
-                height = 300,  // You might need to get actual dimensions
-                width = 300    // You might need to get actual dimensions
-            };
-
-            return Ok(uploadedFile);
+            await _contentManagementService.UpdatePageContent(contentParam.PageId, contentParam.Content);
+            return Ok();
+        }
+        
+        [HttpPost]
+        public async Task<IActionResult> RemovePage(Guid pageId)
+        {
+            await _contentManagementService.RemovePage(pageId);
+            return Ok();
         }
     }
+
+    public class DataGridParam
+    {
+        public int Offset { get; set; }
+        public int Length { get; set; }
+        public string? Search { get; set; }
+        public int Sort { get; set; }
+        public long[]? ChipFilters { get; set; }
+    }
+
+    public class PageParam
+    {
+        public Guid? PageId { get; set; }
+        public string Title { get; set; }
+        public long PageTypeId { get; set; }
+        public string Description { get; set; }
+        public int? Recursion { get; set; }
+    }
+
+    public class ContentParam
+    {
+        public Guid PageId { get; set; }
+        public string Content { get; set; }
+    }
+ 
 }

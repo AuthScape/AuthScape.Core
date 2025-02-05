@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250130173013_AddDescriptionForPagesTable")]
+    partial class AddDescriptionForPagesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -347,11 +350,8 @@ namespace Services.Database.Migrations
                     b.Property<DateTimeOffset?>("LastUpdated")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<long>("PageTypeId")
+                    b.Property<long>("PageTemplateId")
                         .HasColumnType("bigint");
-
-                    b.Property<int?>("Recursion")
-                        .HasColumnType("int");
 
                     b.Property<string>("Slug")
                         .HasColumnType("nvarchar(max)");
@@ -362,9 +362,52 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PageTypeId");
+                    b.HasIndex("PageTemplateId");
 
                     b.ToTable("Pages");
+                });
+
+            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset?>("Archived")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Config")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("PageTypeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PageTypeId");
+
+                    b.ToTable("PageTemplates");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
@@ -374,9 +417,6 @@ namespace Services.Database.Migrations
                         .HasColumnType("bigint");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<bool>("IsRecursive")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -764,7 +804,7 @@ namespace Services.Database.Migrations
                     b.ToTable("SharedDocuments");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCard", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -780,10 +820,26 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProductCards");
+                    b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardAndCardFieldMapping", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCategoryField", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -802,29 +858,10 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductCardAndCardFieldMapping");
+                    b.ToTable("ProductCategoryFields");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardCategory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("newsequentialid()");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductCardCategoryType")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ProductCardCategories");
-                });
-
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardField", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductField", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -842,7 +879,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("ProductCategoryId");
 
-                    b.ToTable("ProductCardFields");
+                    b.ToTable("ProductFields");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Authentication.ThirdPartyAuthentication", b =>
@@ -2651,8 +2688,18 @@ namespace Services.Database.Migrations
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
                 {
-                    b.HasOne("AuthScape.ContentManagement.Models.PageType", "PageType")
+                    b.HasOne("AuthScape.ContentManagement.Models.PageTemplate", "PageTemplate")
                         .WithMany("Pages")
+                        .HasForeignKey("PageTemplateId")
+                        .IsRequired();
+
+                    b.Navigation("PageTemplate");
+                });
+
+            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
+                {
+                    b.HasOne("AuthScape.ContentManagement.Models.PageType", "PageType")
+                        .WithMany("PageTemplates")
                         .HasForeignKey("PageTypeId")
                         .IsRequired();
 
@@ -2729,15 +2776,15 @@ namespace Services.Database.Migrations
                     b.Navigation("DocumentFolder");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardAndCardFieldMapping", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCategoryField", b =>
                 {
-                    b.HasOne("AuthScape.Marketplace.Models.ProductCardField", "ProductField")
-                        .WithMany("ProductCardAndCardFieldMapping")
+                    b.HasOne("AuthScape.Marketplace.Models.ProductField", "ProductField")
+                        .WithMany("ProductCategoryFields")
                         .HasForeignKey("ProductFieldId")
                         .IsRequired();
 
-                    b.HasOne("AuthScape.Marketplace.Models.ProductCard", "Product")
-                        .WithMany("ProductCardAndCardFieldMapping")
+                    b.HasOne("AuthScape.Marketplace.Models.Product", "Product")
+                        .WithMany("ProductCategoryFields")
                         .HasForeignKey("ProductId")
                         .IsRequired();
 
@@ -2746,9 +2793,9 @@ namespace Services.Database.Migrations
                     b.Navigation("ProductField");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardField", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductField", b =>
                 {
-                    b.HasOne("AuthScape.Marketplace.Models.ProductCardCategory", "ProductCategory")
+                    b.HasOne("AuthScape.Marketplace.Models.ProductCategory", "ProductCategory")
                         .WithMany("ProductFields")
                         .HasForeignKey("ProductCategoryId")
                         .IsRequired();
@@ -3129,9 +3176,14 @@ namespace Services.Database.Migrations
                     b.Navigation("PageViews");
                 });
 
-            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
+            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageTemplate", b =>
                 {
                     b.Navigation("Pages");
+                });
+
+            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
+                {
+                    b.Navigation("PageTemplates");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>
@@ -3166,19 +3218,19 @@ namespace Services.Database.Migrations
                     b.Navigation("Folders");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCard", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.Product", b =>
                 {
-                    b.Navigation("ProductCardAndCardFieldMapping");
+                    b.Navigation("ProductCategoryFields");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardCategory", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCategory", b =>
                 {
                     b.Navigation("ProductFields");
                 });
 
-            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardField", b =>
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductField", b =>
                 {
-                    b.Navigation("ProductCardAndCardFieldMapping");
+                    b.Navigation("ProductCategoryFields");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Wallet", b =>

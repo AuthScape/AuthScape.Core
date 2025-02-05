@@ -43,6 +43,7 @@ namespace Services.Context
         public DbSet<UserLocations> UserLocations { get; set; }
 
         public DbSet<Page> Pages { get; set; }
+        public DbSet<PageType> PageTypes { get; set; }
         public DbSet<Stylesheet> Stylesheets { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Location> Locations { get; set; }
@@ -523,8 +524,23 @@ namespace Services.Context
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
+            builder.Entity<Page>(entity =>
+            {
+                entity.HasKey(e => e.Id);
 
-            
+                entity.HasOne(e => e.PageType)
+                    .WithMany(m => m.Pages)
+                    .HasForeignKey(rf => rf.PageTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            builder.Entity<PageType>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+
+
 
             builder.Entity<SomeSheet>(entity =>
             {
