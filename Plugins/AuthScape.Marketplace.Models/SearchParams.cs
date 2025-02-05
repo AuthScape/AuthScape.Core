@@ -6,6 +6,8 @@
         public int PageSize { get; set; } = 20;
         public List<SearchParamFilter>? SearchParamFilters { get; set; }
         public SearchParamFilter? LastFilterSelected { get; set; }
+
+        public List<CategoryFilters>? CategoryFilters { get; set; }
     }
 
     public class SearchChainOfCommands
