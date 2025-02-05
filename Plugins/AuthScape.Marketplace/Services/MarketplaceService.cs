@@ -46,102 +46,55 @@ namespace AuthScape.Marketplace.Services
             var booleanQuery = new BooleanQuery();
             var hasFilters = false;
 
-
-            // filters
-            if (searchParams.SearchParamFilters != null)
+            // Filters
+            if (searchParams.SearchParamFilters != null && searchParams.SearchParamFilters.Any())
             {
-                var colorQuery = new BooleanQuery();
-                int index = 0;
-                foreach (var filter in searchParams.SearchParamFilters)
+                // Group filters by their category
+                var groupedFilters = searchParams.SearchParamFilters.GroupBy(f => f.Category);
+
+                foreach (var group in groupedFilters)
                 {
+                    // Create a subquery for each category with OR between options
+                    var categoryQuery = new BooleanQuery();
+                    foreach (var filter in group)
+                    {
+                        categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                    }
+
+                    // Add the category subquery as a MUST clause to the main query (AND between categories)
+                    booleanQuery.Add(categoryQuery, Occur.MUST);
                     hasFilters = true;
-
-                    if (searchParams.SearchParamFilters.Count() - 1 == index)
-                    {
-                        if (searchParams.LastFilterSelected != null ? filter.Category == searchParams.LastFilterSelected.Category : true)
-                        {
-                            colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.MUST);
-                        }
-                        else
-                        {
-                            colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
-                        }
-                    }
-                    else
-                    {
-                        colorQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.MUST);
-                    }
-
-                    index++;
-                }
-
-                if (hasFilters)
-                {
-                    booleanQuery.Add(colorQuery, Occur.MUST);
                 }
             }
 
-            ScoreDoc[] showAllPossibleHits = null;
+            ScoreDoc[] showAllPossibleHits = searcher.Search(new MatchAllDocsQuery(), int.MaxValue).ScoreDocs;
 
-            Lucene.Net.Search.MatchAllDocsQuery objMatchAll = new Lucene.Net.Search.MatchAllDocsQuery();
-            showAllPossibleHits = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
-
-            ScoreDoc[] filteredOutHits = null;
-            if (searchParams.SearchParamFilters == null || searchParams.SearchParamFilters.Count() == 0)
+            ScoreDoc[] filteredOutHits;
+            if (!hasFilters)
             {
-                filteredOutHits = searcher.Search(objMatchAll, int.MaxValue).ScoreDocs;
+                filteredOutHits = showAllPossibleHits;
             }
             else
             {
                 filteredOutHits = searcher.Search(booleanQuery, int.MaxValue).ScoreDocs;
             }
 
-
-            //var test = searchParams.LastFilterSelected;
-
-
-            //var query = hasFilters ? (Query)booleanQuery : new MatchAllDocsQuery();
-
             var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
-
-            var hits = filteredOutHits.Take(start + searchParams.PageSize).Skip(start).ToList();
-
-            //var hits = searcher.Search(query, start + searchParams.PageSize).ScoreDocs.Skip(start).Take(searchParams.PageSize);
-
-
-
-
-            //var results = hits.Select(hit => searcher.Doc(hit.Doc)).Select(doc => new Product
-            //{
-            //    Id = Guid.Parse(doc.Get("Id")),
-            //    Name = doc.Get("Name"),
-            //    Photo = doc.Get("Photo")
-            //}).ToList();
-
-
-            filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
-
+            var hits = filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
 
             var records = new List<List<ProductResult>>();
-
-            foreach (var doc in hits.Select(hit => searcher.Doc(hit.Doc)))
+            foreach (var hit in hits)
             {
+                var doc = searcher.Doc(hit.Doc);
                 var record = new List<ProductResult>();
-                foreach (var column in doc)
+                foreach (var field in doc.Fields)
                 {
-                    var value = doc.Get(column.Name);
-                    record.Add(new ProductResult() { Name = column.Name, Value = value });
+                    record.Add(new ProductResult { Name = field.Name, Value = doc.Get(field.Name) });
                 }
-
                 records.Add(record);
             }
 
-
-
-
-            //var hitsAll = searcher.Search(query, 10000;
             var filters = await GetAvailableFilters(searchParams, searcher, filteredOutHits, showAllPossibleHits, booleanQuery);
-
 
             int totalPages = (int)Math.Ceiling((double)filteredOutHits.Length / searchParams.PageSize);
 
@@ -149,7 +102,6 @@ namespace AuthScape.Marketplace.Services
             {
                 Products = records,
                 Filters = filters,
-                //Categories = categories,
                 PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
                 Total = filteredOutHits.Length
@@ -166,27 +118,63 @@ namespace AuthScape.Marketplace.Services
             public HashSet<CategoryFilters> Filters { get; set; }
         }
 
-        public async Task<HashSet<CategoryFilters>> GetAvailableFilters(SearchParams searchParams, IndexSearcher searcher, ScoreDoc[] filteredOutHits, ScoreDoc[] showAllPossibleHits, BooleanQuery booleanQuery)
+        public async Task<HashSet<CategoryFilters>> GetAvailableFilters(
+            SearchParams searchParams,
+            IndexSearcher searcher,
+            ScoreDoc[] filteredOutHits,
+            ScoreDoc[] showAllPossibleHits,
+            BooleanQuery booleanQuery)
         {
             var categoryOptions = new HashSet<CategoryFilters>();
-
-
-            // Collect available filters
             var availableFilters = new Dictionary<string, HashSet<string>>();
+
+            // Get the last selected category (if any)
+            string lastSelectedCategory = searchParams.LastFilterSelected?.Category;
+
+            // Step 1: Collect all possible options from the full dataset (showAllPossibleHits)
             foreach (var hit in showAllPossibleHits)
             {
                 var doc = searcher.Doc(hit.Doc);
                 foreach (var field in doc.Fields)
                 {
+                    if (field.Name == "Id" || field.Name == "Name") continue;
+
                     if (!availableFilters.ContainsKey(field.Name))
-                    {
                         availableFilters[field.Name] = new HashSet<string>();
-                    }
+
                     availableFilters[field.Name].Add(field.GetStringValue());
                 }
             }
 
-            // Convert the dictionary to a more usable format
+            // Step 2: Override non-last-selected categories with filtered options
+            if (!string.IsNullOrEmpty(lastSelectedCategory))
+            {
+                var filteredOptionsByCategory = new Dictionary<string, HashSet<string>>();
+
+                // Collect options from filtered results for non-last-selected categories
+                foreach (var hit in filteredOutHits)
+                {
+                    var doc = searcher.Doc(hit.Doc);
+                    foreach (var field in doc.Fields)
+                    {
+                        if (field.Name == "Id" || field.Name == "Name") continue;
+                        if (field.Name == lastSelectedCategory) continue;
+
+                        if (!filteredOptionsByCategory.ContainsKey(field.Name))
+                            filteredOptionsByCategory[field.Name] = new HashSet<string>();
+
+                        filteredOptionsByCategory[field.Name].Add(field.GetStringValue());
+                    }
+                }
+
+                // Merge filtered options into available filters
+                foreach (var category in filteredOptionsByCategory)
+                {
+                    availableFilters[category.Key] = category.Value;
+                }
+            }
+
+            // Convert to filters list and build response
             var filtersList = availableFilters.ToDictionary(
                 kvp => kvp.Key,
                 kvp => kvp.Value.ToList()
@@ -194,61 +182,44 @@ namespace AuthScape.Marketplace.Services
 
             foreach (var filter in filtersList)
             {
-                bool isNew = false;
-                if (filter.Key == "Id" || filter.Key == "Name")
-                {
-                    continue;
-                }
-
+                if (filter.Key == "Id" || filter.Key == "Name") continue;
 
                 var productCardCategory = await databaseContext.ProductCardCategories
                     .AsNoTracking()
-                    .Where(s => s.Name.ToLower() == filter.Key)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync(s => s.Name.ToLower() == filter.Key.ToLower());
 
-                if (productCardCategory != null && productCardCategory.ProductCardCategoryType != ProductCardCategoryType.None)
+                if (productCardCategory?.ProductCardCategoryType == ProductCardCategoryType.None)
+                    continue;
+
+                var category = categoryOptions.FirstOrDefault(s => s.Category == filter.Key);
+                bool isNew = false;
+
+                if (category == null)
                 {
-
-                    var category = categoryOptions
-                        .Where(s => s.Category == filter.Key)
-                        .FirstOrDefault();
-
-                    if (category != null)
+                    category = new CategoryFilters
                     {
-                        if (category.Options == null)
+                        Category = filter.Key,
+                        Options = new List<CategoryFilterOption>()
+                    };
+                    isNew = true;
+                }
+
+                foreach (var option in filter.Value)
+                {
+                    if (!category.Options.Any(o => o.Name.Equals(option, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        category.Options.Add(new CategoryFilterOption
                         {
-                            category.Category = filter.Key;
-                            category.Options = new List<CategoryFilterOption>();
-                        }
-                    }
-                    else
-                    {
-                        isNew = true;
-
-                        category = new CategoryFilters();
-                        category.Category = filter.Key;
-                        category.Options = new List<CategoryFilterOption>();
-                    }
-
-                    foreach (var option in filter.Value)
-                    {
-                        var optionItem = category.Options.Where(a => a.Name.ToLower() == option.ToLower()).FirstOrDefault();
-                        if (optionItem == null)
-                        {
-                            category.Options.Add(new CategoryFilterOption()
-                            {
-                                Name = option,
-                                IsChecked = false,
-                                Count = 0 
-                            });
-                        }
-                    }
-
-                    if (isNew)
-                    {
-                        categoryOptions.Add(category);
+                            Name = option,
+                            IsChecked = searchParams.SearchParamFilters?.Any(f =>
+                                f.Category == filter.Key &&
+                                f.Option.Equals(option, StringComparison.OrdinalIgnoreCase)) ?? false,
+                            Count = 0 // Add count logic if needed
+                        });
                     }
                 }
+
+                if (isNew) categoryOptions.Add(category);
             }
 
             return categoryOptions;
