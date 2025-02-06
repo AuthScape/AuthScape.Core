@@ -54,6 +54,7 @@ namespace Services.Context
         public DbSet<ProductCardCategory> ProductCardCategories { get; set; }
         public DbSet<ProductCardField> ProductCardFields { get; set; }
         public DbSet<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
+        public DbSet<AnalyticsMarketplaceImpressionsClicks> AnalyticsMarketplaceImpressionsClicks { get; set; }
 
         #endregion
 
@@ -66,7 +67,6 @@ namespace Services.Context
         public DbSet<Permission> Permissions { get; set; }
 
         #endregion
-
 
         #region PaymentGateway
 
@@ -130,7 +130,6 @@ namespace Services.Context
         public DbSet<SharedDocument> SharedDocuments { get; set; }
 
         #endregion
-
 
         public DbSet<SomeSheet> SomeSheet { get; set; }
 

@@ -46,6 +46,12 @@ namespace AuthScape.Marketplace.Models
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
+            builder.Entity<AnalyticsMarketplaceImpressionsClicks>(entity =>
+            {
+                entity.HasKey(e => new { e.Id });
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            });
+
         }
     }
 }

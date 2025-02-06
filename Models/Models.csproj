@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet\AuthScape.Spreadsheet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Marketplace\" />
+  </ItemGroup>
+
 </Project>

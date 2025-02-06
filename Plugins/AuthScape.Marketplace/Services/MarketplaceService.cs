@@ -9,6 +9,7 @@ using Lucene.Net.Store.Azure;
 using Lucene.Net.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Services.Context;
 using Services.Database;
 using System.Globalization;
@@ -82,6 +83,8 @@ namespace AuthScape.Marketplace.Services
             var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
             var hits = filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
 
+            var listOfReferenceIds = new List<string>();
+
             var records = new List<List<ProductResult>>();
             foreach (var hit in hits)
             {
@@ -90,6 +93,11 @@ namespace AuthScape.Marketplace.Services
                 foreach (var field in doc.Fields)
                 {
                     record.Add(new ProductResult { Name = field.Name, Value = doc.Get(field.Name) });
+
+                    if (field.Name == "ReferenceId")
+                    {
+                        listOfReferenceIds.Add(doc.Get(field.Name));
+                    }
                 }
                 records.Add(record);
             }
@@ -98,13 +106,43 @@ namespace AuthScape.Marketplace.Services
 
             int totalPages = (int)Math.Ceiling((double)filteredOutHits.Length / searchParams.PageSize);
 
+
+            var cateoryFilter = new List<FilterTracking>();
+            foreach (var filter in filters)
+            {
+                foreach (var option in filter.Options.Where(c => c.IsChecked))
+                {
+                    cateoryFilter.Add(new FilterTracking()
+                    {
+                        Category = filter.Category,
+                        Option = option.Name
+                    });
+                }
+            }
+
+
+            // track the impressions
+            var impressionTracking = new AnalyticsMarketplaceImpressionsClicks()
+            {
+                Platform = searchParams.PlatformId,
+
+                JSONProductList = JsonConvert.SerializeObject(listOfReferenceIds),
+                ProductOrServiceId = null,
+                JSONFilterSelected = JsonConvert.SerializeObject(cateoryFilter),
+                UserId = searchParams.UserId
+            };
+            await databaseContext.AnalyticsMarketplaceImpressionsClicks.AddRangeAsync(impressionTracking);
+            await databaseContext.SaveChangesAsync();
+
+
             return new SearchResult2
             {
                 Products = records,
                 Filters = filters,
                 PageNumber = searchParams.PageNumber,
                 PageSize = totalPages,
-                Total = filteredOutHits.Length
+                Total = filteredOutHits.Length,
+                TrackingId = impressionTracking.Id
             };
         }
 
@@ -116,6 +154,7 @@ namespace AuthScape.Marketplace.Services
             public List<CategoryResponse> Categories { get; set; }
             public List<List<ProductResult>> Products { get; set; }
             public HashSet<CategoryFilters> Filters { get; set; }
+            public Guid TrackingId { get; set; }
         }
 
         async Task<HashSet<CategoryFilters>> GetAvailableFilters(
@@ -243,6 +282,7 @@ namespace AuthScape.Marketplace.Services
                 {
                     new StringField("Id", product.Id.ToString(), Field.Store.YES),
                     new StringField("Name", product.Name, Field.Store.YES),
+                    new StringField("ReferenceId", product.ReferenceId, Field.Store.YES)
                 };
 
                 //if (product.Photo != null)
@@ -317,6 +357,10 @@ namespace AuthScape.Marketplace.Services
                                 }
 
                                 AssignToProperty<T>(newProduct, "Name", column.Value);
+                            }
+                            else if (column.Key.ToLower() == "ReferenceId")
+                            {
+                                AssignToProperty<T>(newProduct, "ReferenceId", column.Value);
                             }
                             else
                             {
@@ -469,5 +513,6 @@ namespace AuthScape.Marketplace.Services
                 }
             }
         }
+
     }
 }
