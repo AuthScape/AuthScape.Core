@@ -2,6 +2,8 @@
 {
     public class SearchParams
     {
+        public long? UserId { get; set; }
+        public int PlatformId { get; set; } = 1;
         public int PageNumber { get; set; } = 0;
         public int PageSize { get; set; } = 20;
         public List<SearchParamFilter>? SearchParamFilters { get; set; }

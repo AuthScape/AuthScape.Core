@@ -4,8 +4,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public string? Photo { get; set; }
-
+        public string? ReferenceId { get; set; } // used to reference your products table for analytics
         public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
     }
 
