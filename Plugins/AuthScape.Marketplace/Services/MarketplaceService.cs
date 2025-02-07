@@ -22,7 +22,8 @@ namespace AuthScape.Marketplace.Services
     {
         Task Generate();
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
-        Task UploadInventory<T>(Stream stream, int platformType = 1) where T : new();
+        Task UploadCardsFile<T>(Stream stream, int platformType = 1) where T : new();
+        Task UploadCards<T>(int platformType = 1);
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -313,7 +314,7 @@ namespace AuthScape.Marketplace.Services
         }
 
 
-        public async Task UploadInventory<T>(Stream stream, int platformType = 1) where T : new()
+        public async Task UploadCardsFile<T>(Stream stream, int platformType = 1) where T : new()
         {
             databaseContext.ProductCardFields.RemoveRange(await databaseContext.ProductCardFields.ToListAsync());
             databaseContext.ProductCardAndCardFieldMapping.RemoveRange(await databaseContext.ProductCardAndCardFieldMapping.ToListAsync());
@@ -476,6 +477,11 @@ namespace AuthScape.Marketplace.Services
             }
         }
 
+
+        public async Task UploadCards<T>(int platformType = 1)
+        {
+            throw new NotImplementedException();
+        }
 
         private void AssignToProperty<T>(object item, string propertyName, object propertyValue) where T : new()
         {

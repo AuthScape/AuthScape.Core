@@ -1,7 +1,5 @@
 ﻿using AuthScape.Marketplace.Models;
-using AuthScape.Marketplace.Models.CSVReader;
 using AuthScape.Marketplace.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthScape.Marketplace.Controllers
@@ -28,13 +26,6 @@ namespace AuthScape.Marketplace.Controllers
         {
             await marketplaceService.Generate();
 
-            return Ok();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UploadFile(IFormFile file)
-        {
-            await marketplaceService.UploadInventory<ProductTest>(file.OpenReadStream());
             return Ok();
         }
     }
