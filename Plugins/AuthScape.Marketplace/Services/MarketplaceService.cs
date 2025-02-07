@@ -174,7 +174,7 @@ namespace AuthScape.Marketplace.Services
                 var doc = searcher.Doc(hit.Doc);
                 foreach (var field in doc.Fields)
                 {
-                    if (field.Name == "Id" || field.Name == "Name") continue;
+                    if (field.Name == "Id" || field.Name == "Name" || field.Name == "ReferenceId") continue;
                     allCategories.Add(field.Name);
                 }
             }
@@ -282,7 +282,7 @@ namespace AuthScape.Marketplace.Services
                 {
                     new StringField("Id", product.Id.ToString(), Field.Store.YES),
                     new StringField("Name", product.Name, Field.Store.YES),
-                    new StringField("ReferenceId", product.ReferenceId, Field.Store.YES)
+                    new StringField("ReferenceId", product.ReferenceId != null ? product.ReferenceId : product.Id.ToString(), Field.Store.YES)
                 };
 
                 //if (product.Photo != null)
