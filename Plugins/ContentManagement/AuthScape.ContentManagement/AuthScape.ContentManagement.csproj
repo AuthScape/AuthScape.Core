@@ -4,7 +4,14 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageReadmeFile></PackageReadmeFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.ContentManagement</PackageId>
+    <Title>AuthScape.ContentManagement</Title>
+    <Version>1.2.216</Version>
+    <Authors>ZuechB</Authors>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.ContentManagement</Product>
   </PropertyGroup>
 
   <ItemGroup>
