@@ -21,10 +21,18 @@ namespace AuthScape.Marketplace.Controllers
             return Ok(results);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        [HttpPost]
+        public async Task<IActionResult> Clicked(string productOrServiceId, int platformId = 1, long? companyId = null)
         {
-            await marketplaceService.Generate();
+            await marketplaceService.Clicked(platformId, productOrServiceId, companyId);
+            return Ok();
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Index(long platformId = 1, long? companyId = null)
+        {
+            await marketplaceService.Generate(platformId, companyId);
 
             return Ok();
         }

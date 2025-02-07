@@ -5,12 +5,16 @@
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string? ReferenceId { get; set; } // used to reference your products table for analytics
+        public long? CompanyId { get; set; }
+        public int PlatformId { get; set; }
         public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
     }
 
     public class ProductCardCategory
     {
         public Guid Id { get; set; }
+        public long? CompanyId { get; set; }
+        public int PlatformId { get; set; }
         public string Name { get; set; }
         public ProductCardCategoryType ProductCardCategoryType { get; set; }
 
@@ -21,6 +25,8 @@
     {
         public Guid Id { get; set; }
         public Guid ProductCategoryId { get; set; }
+        public long? CompanyId { get; set; }
+        public int PlatformId { get; set; }
         public string Name { get; set; }
 
         public ProductCardCategory ProductCategory { get; set; }
@@ -32,6 +38,8 @@
         public Guid Id { get; set; }
         public Guid ProductFieldId { get; set; }
         public Guid ProductId { get; set; }
+        public long? CompanyId { get; set; }
+        public int PlatformId { get; set; }
 
         public ProductCard Product { get; set; }
         public ProductCardField ProductField { get; set; }

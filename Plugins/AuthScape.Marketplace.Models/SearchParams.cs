@@ -3,6 +3,7 @@
     public class SearchParams
     {
         public long? UserId { get; set; }
+        public long? OemCompanyId { get; set; } // use this for a specific company
         public int PlatformId { get; set; } = 1;
         public int PageNumber { get; set; } = 0;
         public int PageSize { get; set; } = 20;
