@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250207211431_AnalyticsAddedOemCompanyId")]
+    partial class AnalyticsAddedOemCompanyId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -771,9 +774,6 @@ namespace Services.Database.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("newsequentialid()");
 
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("JSONFilterSelected")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -788,7 +788,7 @@ namespace Services.Database.Migrations
                     b.Property<int>("Platform")
                         .HasColumnType("int");
 
-                    b.Property<string>("ProductOrServiceClicked")
+                    b.Property<string>("ProductOrServiceId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<long?>("UserId")
