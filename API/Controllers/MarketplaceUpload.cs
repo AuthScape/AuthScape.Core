@@ -1,7 +1,7 @@
-﻿using AuthScape.Marketplace.Models.CSVReader;
-using AuthScape.Marketplace.Services;
+﻿using AuthScape.Marketplace.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Models.Marketplace;
 using System.Threading.Tasks;
 
 namespace API.Controllers

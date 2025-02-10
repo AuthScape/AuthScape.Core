@@ -218,6 +218,8 @@ namespace Services.Context
 
             MarketplaceContextSetup.OnModelCreating(builder);
 
+            ContentManagementSetup.OnModelCreating(builder);
+
 
 
             builder.Entity<ThirdPartyAuthentication>(entity =>
@@ -522,22 +524,6 @@ namespace Services.Context
                     .HasForeignKey(rf => rf.WalletId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
-
-            builder.Entity<Page>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.HasOne(e => e.PageType)
-                    .WithMany(m => m.Pages)
-                    .HasForeignKey(rf => rf.PageTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
-            });
-
-            builder.Entity<PageType>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-            });
-
 
 
 

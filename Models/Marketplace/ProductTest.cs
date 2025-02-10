@@ -1,6 +1,8 @@
-﻿using AuthScape.Marketplace.Models.Attributes;
+﻿using AuthScape.Marketplace.Models;
+using AuthScape.Marketplace.Models.Attributes;
+using AuthScape.Marketplace.Models.CSVReader;
 
-namespace AuthScape.Marketplace.Models.CSVReader
+namespace Models.Marketplace
 {
     public class ProductTest : BaseProductCSVReader
     {
