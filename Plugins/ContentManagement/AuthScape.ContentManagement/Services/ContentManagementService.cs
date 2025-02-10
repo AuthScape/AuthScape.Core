@@ -68,6 +68,7 @@ namespace AuthScape.ContentManagement.Services
                 Created = DateTimeOffset.Now, 
                 LastUpdated = DateTimeOffset.Now,
                 PageTypeId = pageTypeId,
+                Recursion = recursion
             };
 
             databaseContext.Pages.Add(page);
