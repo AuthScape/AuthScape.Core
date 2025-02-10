@@ -9,15 +9,12 @@
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Models\AuthScape.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.ContentManagement.Models\AuthScape.ContentManagement.Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.PrivateLabel.Models\AuthScape.PrivateLabel.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.UserManagementSystem.Models\AuthScape.UserManageSystem.Models.csproj" />
     <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
     <ProjectReference Include="..\Plugins\NodeService\AuthScape.NodeService.Models\AuthScape.Flows.Models.csproj" />
     <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet\AuthScape.Spreadsheet.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Marketplace\" />
   </ItemGroup>
 
 </Project>

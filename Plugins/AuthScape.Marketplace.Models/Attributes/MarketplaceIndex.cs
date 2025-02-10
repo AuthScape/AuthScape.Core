@@ -4,6 +4,7 @@
     public class MarketplaceIndex : Attribute
     {
         public ProductCardCategoryType ProductCardCategoryType { get; }
+        public string SubCategory { get; }
         public string? CategoryName { get; }
         public MarketplaceIndex(ProductCardCategoryType ProductCardCategoryType, string? categoryName = null)
         {
