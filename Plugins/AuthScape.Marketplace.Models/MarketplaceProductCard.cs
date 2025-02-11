@@ -16,8 +16,10 @@
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
         public string Name { get; set; }
-        public ProductCardCategoryType ProductCardCategoryType { get; set; }
 
+        public string? ParentName { get; set; }
+
+        public ProductCardCategoryType ProductCardCategoryType { get; set; }
         public ICollection<ProductCardField> ProductFields { get; set; }
     }
 

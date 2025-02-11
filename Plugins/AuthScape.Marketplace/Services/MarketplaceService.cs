@@ -197,8 +197,20 @@ namespace AuthScape.Marketplace.Services
                     .FirstOrDefaultAsync(s => s.Name.ToLower() == category.ToLower());
 
                 // Skip categories marked as None
-                if (productCardCategory?.ProductCardCategoryType == ProductCardCategoryType.None)
+                if (productCardCategory != null && productCardCategory.ProductCardCategoryType == ProductCardCategoryType.None)
                     continue;
+
+                string? parentName = productCardCategory.ParentName;
+                //if (!String.IsNullOrWhiteSpace(productCardCategory.ParentName))
+                //{
+                //    var productCardParentCategory = await databaseContext.ProductCardCategories
+                //        .Where(p => p.CompanyId == companyId && p.PlatformId == platformId)
+                //        .AsNoTracking()
+                //        .FirstOrDefaultAsync(s => s.Name.ToLower() == productCardCategory.ParentName.ToLower());
+
+                //    parentName = productCardParentCategory.Name;
+                //}
+
 
                 // Build query with other active filters (excluding current category)
                 var otherFilters = activeFilters.Where(f =>
@@ -215,9 +227,22 @@ namespace AuthScape.Marketplace.Services
                 {
                     var doc = searcher.Doc(hit.Doc);
                     var value = doc.Get(category);
-                    if (value != null)
+
+                    // this is a case where you have a parent child relationship
+                    if (!String.IsNullOrWhiteSpace(parentName))
                     {
-                        options[value] = options.TryGetValue(value, out var count) ? count + 1 : 1;
+                        var value2 = doc.Get(parentName);
+                        if (value2 != null)
+                        {
+                            options[value2] = options.TryGetValue(value2, out var count2) ? count2 + 1 : 1;
+                        }
+                    }
+                    else // this is when the category is on the root level
+                    {
+                        if (value != null)
+                        {
+                            options[value] = options.TryGetValue(value, out var count) ? count + 1 : 1;
+                        }
                     }
                 }
 
@@ -440,6 +465,8 @@ namespace AuthScape.Marketplace.Services
                     {
                         var category = (MarketplaceIndex)System.Attribute.GetCustomAttribute(property, typeof(MarketplaceIndex));
 
+                        
+
                         var categoryName = property.Name;
                         if (!String.IsNullOrWhiteSpace(category.CategoryName))
                         {
@@ -460,6 +487,7 @@ namespace AuthScape.Marketplace.Services
                                 ProductCardCategoryType = category.ProductCardCategoryType,
                                 PlatformId = platformId,
                                 CompanyId = companyId,
+                                ParentName = category.ParentCategory
                             };
 
                             await databaseContext.ProductCardCategories.AddAsync(parentProduct);
