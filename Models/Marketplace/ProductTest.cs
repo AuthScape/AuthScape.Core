@@ -14,13 +14,13 @@ namespace Models.Marketplace
         public string? MainPhoto { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? WebsiteUrl { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category")]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "Category", "ParentCategory")]
         public string? category1 { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? category2 { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? category3 { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, "ParentCategory")]
         public string? ParentCategory { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? PartNumber { get; set; }
