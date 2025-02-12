@@ -15,10 +15,11 @@ namespace AuthScape.ContentManagement.Services
         Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12);
         Task<List<PageType>> GetPageTypes();
         Task<Page> GetPage(Guid pageId);
-        Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion);
+        Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug);
         Task UpdatePageContent(Guid pageId, string data);
-        Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion);
+        Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug);
         Task RemovePage(Guid pageId);
+        Task<Page> GetPageWithSlug(string slug);
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -31,18 +32,22 @@ namespace AuthScape.ContentManagement.Services
             this.userService = userService;
             this.slugService = slugService;
         }
-        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion)
+        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
 
             if (pageId == null) { throw new Exception("Id must be provided"); }
 
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug).FirstOrDefaultAsync();
+            if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
+
+
             var page = await databaseContext.Pages.Where(p => p.Id == pageId).FirstOrDefaultAsync();
             if (page == null) { throw new Exception("Page does not exist"); }
 
-            var slug = slugService.GenerateSlug(title);
-            
+
+      
             page.Title = title;
             page.PageTypeId = pageTypeId;
             page.Description = description;
@@ -50,16 +55,18 @@ namespace AuthScape.ContentManagement.Services
             page.Slug = slug;
             page.PageTypeId = pageTypeId;
             page.Recursion = recursion;
+            page.Slug = slug;
 
             await databaseContext.SaveChangesAsync();
         }
-        public async Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion)
+        public async Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
-            if (signedInUser == null) { throw new Exception("User is not logged in"); }
-            
-            var slug = slugService.GenerateSlug(title);
-            
+            if (signedInUser == null) { }
+
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug).FirstOrDefaultAsync();
+            if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
+
             var page = new Page          
             {   Title = title,
                 CompanyId = signedInUser.CompanyId, 
@@ -68,7 +75,7 @@ namespace AuthScape.ContentManagement.Services
                 Created = DateTimeOffset.Now, 
                 LastUpdated = DateTimeOffset.Now,
                 PageTypeId = pageTypeId,
-                Recursion = recursion
+                Recursion = recursion,
             };
 
             databaseContext.Pages.Add(page);
@@ -156,7 +163,6 @@ namespace AuthScape.ContentManagement.Services
                     PageTypeId = p.PageTypeId,
                     Recursion = p.Recursion,
                     TypeTitle = p.PageType.Title,
-
                 })
                 .ToPagedResultAsync(offset - 1, length);
 
@@ -181,6 +187,35 @@ namespace AuthScape.ContentManagement.Services
             page.Content = data;
             page.LastUpdated = DateTime.Now;
             await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<Page> GetPageWithSlug(string slug)
+        {
+            var page = await databaseContext.Pages
+                .AsNoTracking()
+                .Include(p => p.PageType)
+                .Where(pq => pq.Slug == slug)
+                .Select(p => new Page
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug,
+                    Content = p.Content,
+                    CompanyId = p.CompanyId,
+                    Description = p.Description,
+                    Created = p.Created,
+                    LastUpdated = p.LastUpdated,
+                    PageTypeId = p.PageTypeId,
+                    Recursion = p.Recursion,
+                    TypeTitle = p.PageType.Title,
+                }).FirstOrDefaultAsync();
+
+            if (page == null)
+            {
+                throw new Exception("Page does not exist");
+            }
+
+            return page;
         }
     }
 }

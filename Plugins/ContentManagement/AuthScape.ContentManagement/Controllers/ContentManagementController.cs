@@ -45,18 +45,25 @@ namespace AuthScape.DocumentReader.Controllers
             var page = await _contentManagementService.GetPage(pageId);
             return Ok(page);
         }
-        
+
+        [HttpGet]
+        public async Task<IActionResult> GetPageWithSlug(string slug)
+        {
+            var page = await _contentManagementService.GetPageWithSlug(slug);
+            return Ok(page);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateNewPage([FromBody] PageParam param)
         {
-            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.Description, param.Recursion);
+            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.Description, param.Recursion, param.Slug);
             return Ok();
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdatePage([FromBody] PageParam param)
         {
-            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.Description, param.Recursion);
+            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.Description, param.Recursion, param.Slug);
             return Ok();
         }
 
@@ -91,6 +98,7 @@ namespace AuthScape.DocumentReader.Controllers
         public long PageTypeId { get; set; }
         public string Description { get; set; }
         public int? Recursion { get; set; }
+        public string Slug { get; set; }
     }
 
     public class ContentParam
