@@ -31,7 +31,7 @@
     public class CategoryFilters
     {
         public string Category { get; set; }
-        public List<CategoryFilterOption> Options { get; set; }
+        public IEnumerable<CategoryFilterOption> Options { get; set; }
     }
 
     public class CategoryFilterOption
@@ -39,5 +39,7 @@
         public string Name { get; set; }
         public bool IsChecked { get; set; }
         public int Count { get; set; }
+
+        public IEnumerable<CategoryFilterOption>? Subcategories { get; set; }
     }
 }

@@ -31,6 +31,9 @@
         public int PlatformId { get; set; }
         public string Name { get; set; }
 
+        public string? ProductCardFieldParentName { get; set; }
+        public Guid? ProductCardFieldParentId { get; set; }
+
         public ProductCardCategory ProductCategory { get; set; }
         public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
     }

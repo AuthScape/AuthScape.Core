@@ -200,17 +200,6 @@ namespace AuthScape.Marketplace.Services
                 if (productCardCategory != null && productCardCategory.ProductCardCategoryType == ProductCardCategoryType.None)
                     continue;
 
-                string? parentName = productCardCategory.ParentName;
-                //if (!String.IsNullOrWhiteSpace(productCardCategory.ParentName))
-                //{
-                //    var productCardParentCategory = await databaseContext.ProductCardCategories
-                //        .Where(p => p.CompanyId == companyId && p.PlatformId == platformId)
-                //        .AsNoTracking()
-                //        .FirstOrDefaultAsync(s => s.Name.ToLower() == productCardCategory.ParentName.ToLower());
-
-                //    parentName = productCardParentCategory.Name;
-                //}
-
 
                 // Build query with other active filters (excluding current category)
                 var otherFilters = activeFilters.Where(f =>
@@ -221,45 +210,102 @@ namespace AuthScape.Marketplace.Services
                 // Get hits matching other filters
                 var otherHits = searcher.Search(otherFiltersQuery, int.MaxValue).ScoreDocs;
 
+
+
+                //[old code]
                 // Collect options from these hits
-                var options = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                //var options = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+
+
+
+                // Collect options from these hits
+                var filterOptions = new List<FilterOption>();
+
+
+
+                var parentCategory = await databaseContext.ProductCardCategories // this may be just a check now?
+                    .AsNoTracking()
+                    .Where(p => p.ParentName == category)
+                    .FirstOrDefaultAsync();
+
+
                 foreach (var hit in otherHits)
                 {
                     var doc = searcher.Doc(hit.Doc);
                     var value = doc.Get(category);
+                    if (value != null)
+                    {
+                        var subcategories = new List<FilterOption>();
 
-                    // this is a case where you have a parent child relationship
-                    if (!String.IsNullOrWhiteSpace(parentName))
-                    {
-                        var value2 = doc.Get(parentName);
-                        if (value2 != null)
+                        // we have a parent category if not unll, if null then no parent category
+                        if (parentCategory != null)
                         {
-                            options[value2] = options.TryGetValue(value2, out var count2) ? count2 + 1 : 1;
+                            var dbParentCategory = await databaseContext.ProductCardCategories
+                                .AsNoTracking()
+                                .Where(z => z.Name == category)
+                                .FirstOrDefaultAsync();
+
+                            var productCardFieldIdForParent = await databaseContext.ProductCardFields
+                                .AsNoTracking()
+                                .Where(z => z.ProductCategoryId == dbParentCategory.Id && z.Name == value)
+                                .FirstOrDefaultAsync();
+
+
+                            var listOfSubCategories = await databaseContext.ProductCardFields
+                                .AsNoTracking()
+                                .Where(z => z.ProductCardFieldParentId == productCardFieldIdForParent.Id)
+                                .ToListAsync();
+
+
+                            foreach (var item in listOfSubCategories)
+                            {
+                                subcategories.Add(new FilterOption()
+                                {
+                                    Key = item.Name,
+                                    Value = 1
+                                });
+                            }
                         }
-                    }
-                    else // this is when the category is on the root level
-                    {
-                        if (value != null)
+
+
+                        // new category is added
+                        var filterOption = filterOptions.Where(f => f.Key == value).FirstOrDefault();
+                        if (filterOption == null)
                         {
-                            options[value] = options.TryGetValue(value, out var count) ? count + 1 : 1;
+                            filterOptions.Add(new FilterOption()
+                            {
+                                Key = value,
+                                Value = 1,
+                                Subcategories = subcategories
+                            });
                         }
+
+
+
                     }
                 }
 
                 // Only add category if it has options
-                if (options.Count > 0)
+                if (filterOptions.Count > 0)
                 {
                     var categoryFilter = new CategoryFilters
                     {
                         Category = category,
-                        Options = options.Select(opt => new CategoryFilterOption
+                        Options = filterOptions.Select(opt => new CategoryFilterOption
                         {
                             Name = opt.Key,
                             IsChecked = activeFilters.Any(f =>
                                 f.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
                                 f.Option.Equals(opt.Key, StringComparison.OrdinalIgnoreCase)),
-                            Count = opt.Value
-                        }).ToList()
+                            Count = opt.Value,
+                            Subcategories = opt.Subcategories != null ? opt.Subcategories.Select(z => new CategoryFilterOption()
+                            {
+                                Name = z.Key,
+                                Count = z.Value,
+                                IsChecked = false
+                            }) : null
+                        })
                     };
 
                     categoryOptions.Add(categoryFilter);
@@ -465,7 +511,23 @@ namespace AuthScape.Marketplace.Services
                     {
                         var category = (MarketplaceIndex)System.Attribute.GetCustomAttribute(property, typeof(MarketplaceIndex));
 
-                        
+
+
+
+
+
+                        string? parentValue = null;
+
+                        var foundParentProperty = properties
+                            .Where(p => p.Name == category.ParentCategory)
+                            .FirstOrDefault();
+
+                        if (foundParentProperty != null)
+                        {
+                            parentValue = foundParentProperty.GetValue(newProduct).ToString();
+                        }
+
+
 
                         var categoryName = property.Name;
                         if (!String.IsNullOrWhiteSpace(category.CategoryName))
@@ -510,6 +572,8 @@ namespace AuthScape.Marketplace.Services
                                     Name = valueAsString,
                                     PlatformId = platformId,
                                     CompanyId = companyId,
+                                    ProductCardFieldParentId = null,
+                                    ProductCardFieldParentName = parentValue
                                 };
 
                                 await databaseContext.ProductCardFields.AddAsync(productField1);
@@ -526,11 +590,67 @@ namespace AuthScape.Marketplace.Services
                                 PlatformId = platformId
                             });
                             await databaseContext.SaveChangesAsync();
-
                         }
                     }
                 }
             }
+
+            // now that all the fields have been added, we are going to go back through and remap the parents
+
+
+            var parentsFound = await databaseContext.ProductCardCategories
+                .AsNoTracking()
+                .Where(p => !String.IsNullOrWhiteSpace(p.ParentName))
+                .ToListAsync();
+
+            foreach (var parentFound in parentsFound)
+            {
+                var parent = await databaseContext.ProductCardCategories
+                    .AsNoTracking()
+                    .Where(z => z.Name == parentFound.ParentName)
+                    .FirstOrDefaultAsync();
+
+                if (parent == null)
+                {
+                    continue;
+                }
+
+                // the parent and child Id are found
+                var childId = parentFound.Id;
+                var parentId = parent.Id;
+
+                var listOfParents = await databaseContext.ProductCardFields
+                        .AsNoTracking()
+                        .Where(z => z.ProductCategoryId == parentId)
+                        .ToListAsync();
+
+                var listOfAllSubCategories = await databaseContext.ProductCardFields
+                    .Where(p => p.ProductCategoryId == childId)
+                    .ToListAsync();
+
+                foreach (var subcategory in listOfAllSubCategories)
+                {
+                    var foundParent = listOfParents.Where(z => z.Name == subcategory.ProductCardFieldParentName).FirstOrDefault();
+                    if (foundParent != null)
+                    {
+                        subcategory.ProductCardFieldParentId = foundParent.Id;
+                    }
+                }
+
+                await databaseContext.SaveChangesAsync();
+            }
+
+
+            //databaseContext.ProductCardFields.Where(p => p.ProductCardFieldParentName == )
+
+
+
+
+
+
+            //var productField1 = await databaseContext.ProductCardFields
+            //    .Where(p => p.Name.ToLower() == valueAsString.ToLower() && p.CompanyId == companyId && p.PlatformId == platformId)
+            //    .FirstOrDefaultAsync();
         }
 
 
