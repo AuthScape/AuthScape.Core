@@ -1,5 +1,6 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
+using AuthScape.PrivateLabel.Models;
 using CoreBackpack.Time;
 using CsvHelper;
 using Lucene.Net.Analysis.Standard;
@@ -147,6 +148,7 @@ namespace AuthScape.Marketplace.Services
                     cateoryFilter.Add(new FilterTracking()
                     {
                         Category = filter.Category,
+                        Subcategory = "", // need to fix this...
                         Option = option.Name
                     });
                 }
@@ -217,89 +219,95 @@ namespace AuthScape.Marketplace.Services
                 if (productCardCategory != null && productCardCategory.ProductCardCategoryType == ProductCardCategoryType.None)
                     continue;
 
+                // Build query with other active filters (excluding the current category)
+                var otherFilters = activeFilters
+                    .Where(f => !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
-                // Build query with other active filters (excluding current category)
-                var otherFilters = activeFilters.Where(f =>
-                    !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                Query otherFiltersQuery = BuildOtherFiltersQuery(otherFilters);
+                Query otherFiltersQuery = await BuildOtherFiltersQuery(otherFilters, databaseContext);
 
                 // Get hits matching other filters
                 var otherHits = searcher.Search(otherFiltersQuery, int.MaxValue).ScoreDocs;
 
-
-
-                //[old code]
-                // Collect options from these hits
-                //var options = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-
-
-
                 // Collect options from these hits
                 var filterOptions = new List<FilterOption>();
 
-
-
-                var parentCategory = await databaseContext.ProductCardCategories // this may be just a check now?
+                // Check if the category is a parent category by looking for a related record in the database
+                var parentCategory = await databaseContext.ProductCardCategories
                     .AsNoTracking()
                     .Where(p => p.ParentName == category)
                     .FirstOrDefaultAsync();
-
 
                 foreach (var hit in otherHits)
                 {
                     var doc = searcher.Doc(hit.Doc);
                     var value = doc.Get(category);
+
                     if (value != null)
                     {
                         var subcategories = new List<FilterOption>();
 
-                        // we have a parent category if not unll, if null then no parent category
+                        // If the category has subcategories (parent exists)
                         if (parentCategory != null)
                         {
-                            var dbParentCategory = await databaseContext.ProductCardCategories
-                                .AsNoTracking()
-                                .Where(z => z.Name == category)
-                                .FirstOrDefaultAsync();
-
-                            var productCardFieldIdForParent = await databaseContext.ProductCardFields
-                                .AsNoTracking()
-                                .Where(z => z.ProductCategoryId == dbParentCategory.Id && z.Name == value)
-                                .FirstOrDefaultAsync();
-
-
-                            var listOfSubCategories = await databaseContext.ProductCardFields
-                                .AsNoTracking()
-                                .Where(z => z.ProductCardFieldParentId == productCardFieldIdForParent.Id)
-                                .ToListAsync();
-
-
-                            foreach (var item in listOfSubCategories)
+                            // Use showAllPossibleHits (the full set) to calculate subcategory counts
+                            foreach (var docHit in showAllPossibleHits)
                             {
-                                subcategories.Add(new FilterOption()
+                                var doc2 = searcher.Doc(docHit.Doc);
+                                var subCat = doc2.Get("Category");
+                                var parentCat = doc2.Get("ParentCategory");
+                                if (subCat != null && parentCat != null && parentCat == value)
                                 {
-                                    Key = item.Name,
-                                    Value = 1
+                                    var subCater = subcategories.FirstOrDefault(z => z.Key == subCat);
+                                    if (subCater == null)
+                                    {
+                                        if (subCat == "Hutches")
+                                        {
+
+                                        }
+
+                                        subcategories.Add(new FilterOption()
+                                        {
+                                            Key = subCat,
+                                            Value = 1
+                                        });
+                                    }
+                                    else
+                                    {
+                                        subCater.Value++;
+                                    }
+                                }
+                            }
+
+                            // Only add this parent option if there are subcategories available
+                            if (subcategories.Any())
+                            {
+                                var filterOption = filterOptions.FirstOrDefault(f => f.Key == value);
+                                if (filterOption == null)
+                                {
+                                    filterOptions.Add(new FilterOption()
+                                    {
+                                        Key = value,
+                                        Value = 1,
+                                        Subcategories = subcategories
+                                    });
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // If no subcategories are present, add the category directly
+                            var filterOption = filterOptions.FirstOrDefault(f => f.Key == value);
+                            if (filterOption == null)
+                            {
+                                filterOptions.Add(new FilterOption()
+                                {
+                                    Key = value,
+                                    Value = 1,
+                                    Subcategories = subcategories
                                 });
                             }
                         }
-
-
-                        // new category is added
-                        var filterOption = filterOptions.Where(f => f.Key == value).FirstOrDefault();
-                        if (filterOption == null)
-                        {
-                            filterOptions.Add(new FilterOption()
-                            {
-                                Key = value,
-                                Value = 1,
-                                Subcategories = subcategories
-                            });
-                        }
-
-
-
                     }
                 }
 
@@ -332,24 +340,52 @@ namespace AuthScape.Marketplace.Services
             return categoryOptions;
         }
 
-        Query BuildOtherFiltersQuery(List<SearchParamFilter> otherFilters)
+
+
+
+
+
+        public async Task<Query> BuildOtherFiltersQuery(
+    List<SearchParamFilter> otherFilters,
+    DatabaseContext databaseContext) // Add database context
         {
             if (!otherFilters.Any())
                 return new MatchAllDocsQuery();
 
             var booleanQuery = new BooleanQuery();
-            var grouped = otherFilters.GroupBy(f => f.Category);
 
-            foreach (var group in grouped)
+            // Group filters by their original category
+            var groupedFilters = otherFilters.GroupBy(f => f.Category);
+
+            foreach (var group in groupedFilters)
             {
+                string originalCategory = group.Key;
+                string resolvedCategory = originalCategory;
+
+                // Check if any filter in this group has a subcategory
+                bool hasSubcategory = group.Any(f => !string.IsNullOrWhiteSpace(f.Subcategory));
+
+                // If subcategory exists, resolve the child category from the database
+                if (hasSubcategory)
+                {
+                    var childCategory = await databaseContext.ProductCardCategories
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(z => z.ParentName == originalCategory);
+
+                    if (childCategory != null)
+                        resolvedCategory = childCategory.Name;
+                }
+
+                // Build the category query with the resolved category name
                 var categoryQuery = new BooleanQuery();
                 foreach (var filter in group)
                 {
                     categoryQuery.Add(
-                        new TermQuery(new Term(filter.Category, filter.Option)),
+                        new TermQuery(new Term(resolvedCategory, filter.Option)),
                         Occur.SHOULD
                     );
                 }
+
                 booleanQuery.Add(categoryQuery, Occur.MUST);
             }
 
