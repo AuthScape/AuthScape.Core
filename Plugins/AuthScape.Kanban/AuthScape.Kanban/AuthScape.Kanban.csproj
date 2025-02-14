@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Kanban</PackageId>
     <Title>AuthScape.Kanban</Title>
-    <Version>1.2.219</Version>
+    <Version>1.2.222</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Kanban</Product>
