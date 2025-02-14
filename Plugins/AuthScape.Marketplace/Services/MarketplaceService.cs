@@ -74,7 +74,24 @@ namespace AuthScape.Marketplace.Services
                     var categoryQuery = new BooleanQuery();
                     foreach (var filter in group)
                     {
-                        categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                        if (!String.IsNullOrWhiteSpace(filter.Subcategory))
+                        {
+                            //categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Subcategory)), Occur.SHOULD);
+
+                            var childCategory = await databaseContext.ProductCardCategories
+                                .AsNoTracking()
+                                .Where(z => z.ParentName == filter.Category)
+                                .FirstOrDefaultAsync();
+
+                            if (childCategory != null)
+                            {
+                                categoryQuery.Add(new TermQuery(new Term(childCategory.Name, filter.Option)), Occur.SHOULD);
+                            }
+                        }
+                        else
+                        {
+                            categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                        }
                     }
 
                     // Add the category subquery as a MUST clause to the main query (AND between categories)
