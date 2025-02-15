@@ -251,21 +251,25 @@ namespace AuthScape.Marketplace.Services
                         if (parentCategory != null)
                         {
                             // Use showAllPossibleHits (the full set) to calculate subcategory counts
-                            foreach (var docHit in showAllPossibleHits)
+                            // New code: using filtered hits only
+                            // Instead of iterating over showAllPossibleHits, iterate over otherHits 
+                            // (which apply the filters from other categories)
+                            foreach (var docHit in otherHits)
                             {
                                 var doc2 = searcher.Doc(docHit.Doc);
+                                // Assuming the field "Category" holds the subcategory value
                                 var subCat = doc2.Get("Category");
+                                // And "ParentCategory" holds the name of the parent option for the subcategory
                                 var parentCat = doc2.Get("ParentCategory");
-                                if (subCat != null && parentCat != null && parentCat == value)
+
+                                if (!string.IsNullOrWhiteSpace(subCat) &&
+                                    !string.IsNullOrWhiteSpace(parentCat) &&
+                                    parentCat.Equals(value, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    var subCater = subcategories.FirstOrDefault(z => z.Key == subCat);
-                                    if (subCater == null)
+                                    var existingSubCat = subcategories.FirstOrDefault(z =>
+                                        z.Key.Equals(subCat, StringComparison.OrdinalIgnoreCase));
+                                    if (existingSubCat == null)
                                     {
-                                        if (subCat == "Hutches")
-                                        {
-
-                                        }
-
                                         subcategories.Add(new FilterOption()
                                         {
                                             Key = subCat,
@@ -274,10 +278,12 @@ namespace AuthScape.Marketplace.Services
                                     }
                                     else
                                     {
-                                        subCater.Value++;
+                                        existingSubCat.Value++;
                                     }
                                 }
                             }
+
+
 
                             // Only add this parent option if there are subcategories available
                             if (subcategories.Any())
