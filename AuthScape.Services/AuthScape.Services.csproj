@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <Version>1.2.222</Version>
+    <Version>1.2.224</Version>
     <Company>ZuechB</Company>
     <Product>AuthScape</Product>
     <Authors>ZuechB</Authors>
