@@ -39,7 +39,7 @@ namespace AuthScape.ContentManagement.Services
 
             if (pageId == null) { throw new Exception("Id must be provided"); }
 
-            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug).FirstOrDefaultAsync();
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
 
 
