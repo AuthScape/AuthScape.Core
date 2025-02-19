@@ -25,7 +25,7 @@ namespace AuthScape.Marketplace.Services
         Task Generate(long PlatformId, long? OemCompanyId = null);
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
         Task UploadCardsFile<T>(Stream stream, int platformType = 1, long? CompanyId = null) where T : new();
-        Task UploadCards<T>(List<T> productCards, int platformId = 1, long? companyId = null) where T : new();
+        Task UploadCards<T>(List<T> productCards, int platformId = 1, long? companyId = null, bool clearExisingRecords = true) where T : new();
         Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null);
     }
 
@@ -713,8 +713,18 @@ namespace AuthScape.Marketplace.Services
         }
 
 
-        public async Task UploadCards<T>(List<T> productCards, int platformId = 1, long? companyId = null) where T : new()
+        public async Task UploadCards<T>(List<T> productCards, int platformId = 1, long? companyId = null, bool clearExisingRecords = true) where T : new()
         {
+            if (clearExisingRecords)
+            {
+                databaseContext.ProductCardFields.RemoveRange(await databaseContext.ProductCardFields.Where(p => p.PlatformId == platformId && p.CompanyId == companyId).ToListAsync());
+                databaseContext.ProductCardAndCardFieldMapping.RemoveRange(await databaseContext.ProductCardAndCardFieldMapping.Where(p => p.PlatformId == platformId && p.CompanyId == companyId).ToListAsync());
+                databaseContext.ProductCardCategories.RemoveRange(await databaseContext.ProductCardCategories.Where(p => p.PlatformId == platformId && p.CompanyId == companyId).ToListAsync());
+                databaseContext.ProductCards.RemoveRange(await databaseContext.ProductCards.Where(p => p.PlatformId == platformId && p.CompanyId == companyId).ToListAsync());
+                await databaseContext.SaveChangesAsync();
+            }
+
+
             // start creating the order for the products
             foreach (var newProduct in productCards)
             {
@@ -751,6 +761,24 @@ namespace AuthScape.Marketplace.Services
                     {
                         var category = (MarketplaceIndex)System.Attribute.GetCustomAttribute(property, typeof(MarketplaceIndex));
 
+
+
+
+
+
+                        string? parentValue = null;
+
+                        var foundParentProperty = properties
+                            .Where(p => p.Name == category.ParentCategory)
+                            .FirstOrDefault();
+
+                        if (foundParentProperty != null)
+                        {
+                            parentValue = foundParentProperty.GetValue(newProduct).ToString();
+                        }
+
+
+
                         var categoryName = property.Name;
                         if (!String.IsNullOrWhiteSpace(category.CategoryName))
                         {
@@ -760,7 +788,7 @@ namespace AuthScape.Marketplace.Services
                         // categories
                         var parentProduct = await databaseContext.ProductCardCategories
                             .AsNoTracking()
-                            .Where(p => p.Name.ToLower() == categoryName.ToLower())
+                            .Where(p => p.Name.ToLower() == categoryName.ToLower() && p.CompanyId == companyId && p.PlatformId == platformId)
                             .FirstOrDefaultAsync();
 
                         if (parentProduct == null)
@@ -771,6 +799,7 @@ namespace AuthScape.Marketplace.Services
                                 ProductCardCategoryType = category.ProductCardCategoryType,
                                 PlatformId = platformId,
                                 CompanyId = companyId,
+                                ParentName = category.ParentCategory
                             };
 
                             await databaseContext.ProductCardCategories.AddAsync(parentProduct);
@@ -782,7 +811,7 @@ namespace AuthScape.Marketplace.Services
                         {
                             var productField1 = await databaseContext.ProductCardFields
                                 .AsNoTracking()
-                                .Where(p => p.Name.ToLower() == valueAsString.ToLower())
+                                .Where(p => p.Name.ToLower() == valueAsString.ToLower() && p.CompanyId == companyId && p.PlatformId == platformId)
                                 .FirstOrDefaultAsync();
 
                             if (productField1 == null)
@@ -793,6 +822,8 @@ namespace AuthScape.Marketplace.Services
                                     Name = valueAsString,
                                     PlatformId = platformId,
                                     CompanyId = companyId,
+                                    ProductCardFieldParentId = null,
+                                    ProductCardFieldParentName = parentValue
                                 };
 
                                 await databaseContext.ProductCardFields.AddAsync(productField1);
@@ -812,6 +843,51 @@ namespace AuthScape.Marketplace.Services
                         }
                     }
                 }
+            }
+
+            // now that all the fields have been added, we are going to go back through and remap the parents
+
+
+            var parentsFound = await databaseContext.ProductCardCategories
+                .AsNoTracking()
+                .Where(p => !String.IsNullOrWhiteSpace(p.ParentName))
+                .ToListAsync();
+
+            foreach (var parentFound in parentsFound)
+            {
+                var parent = await databaseContext.ProductCardCategories
+                    .AsNoTracking()
+                    .Where(z => z.Name == parentFound.ParentName)
+                    .FirstOrDefaultAsync();
+
+                if (parent == null)
+                {
+                    continue;
+                }
+
+                // the parent and child Id are found
+                var childId = parentFound.Id;
+                var parentId = parent.Id;
+
+                var listOfParents = await databaseContext.ProductCardFields
+                        .AsNoTracking()
+                        .Where(z => z.ProductCategoryId == parentId)
+                        .ToListAsync();
+
+                var listOfAllSubCategories = await databaseContext.ProductCardFields
+                    .Where(p => p.ProductCategoryId == childId)
+                    .ToListAsync();
+
+                foreach (var subcategory in listOfAllSubCategories)
+                {
+                    var foundParent = listOfParents.Where(z => z.Name == subcategory.ProductCardFieldParentName).FirstOrDefault();
+                    if (foundParent != null)
+                    {
+                        subcategory.ProductCardFieldParentId = foundParent.Id;
+                    }
+                }
+
+                await databaseContext.SaveChangesAsync();
             }
         }
 
