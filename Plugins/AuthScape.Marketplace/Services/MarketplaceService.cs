@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Services.Context;
 using Services.Database;
+using System;
 using System.Globalization;
 using System.Reflection;
 using static AuthScape.Marketplace.Services.MarketplaceService;
@@ -81,7 +82,7 @@ namespace AuthScape.Marketplace.Services
 
                             var childCategory = await databaseContext.ProductCardCategories
                                 .AsNoTracking()
-                                .Where(z => z.ParentName == filter.Category)
+                                .Where(z => z.ParentName == filter.Category && z.PlatformId == searchParams.PlatformId)
                                 .FirstOrDefaultAsync();
 
                             if (childCategory != null)
@@ -224,7 +225,7 @@ namespace AuthScape.Marketplace.Services
                     .Where(f => !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                Query otherFiltersQuery = await BuildOtherFiltersQuery(otherFilters, databaseContext);
+                Query otherFiltersQuery = await BuildOtherFiltersQuery(otherFilters, databaseContext, platformId);
 
                 // Get hits matching other filters
                 var otherHits = searcher.Search(otherFiltersQuery, int.MaxValue).ScoreDocs;
@@ -235,7 +236,7 @@ namespace AuthScape.Marketplace.Services
                 // Check if the category is a parent category by looking for a related record in the database
                 var parentCategory = await databaseContext.ProductCardCategories
                     .AsNoTracking()
-                    .Where(p => p.ParentName == category)
+                    .Where(p => p.ParentName == category && p.PlatformId == platformId)
                     .FirstOrDefaultAsync();
 
                 foreach (var hit in otherHits)
@@ -353,7 +354,7 @@ namespace AuthScape.Marketplace.Services
 
         public async Task<Query> BuildOtherFiltersQuery(
     List<SearchParamFilter> otherFilters,
-    DatabaseContext databaseContext) // Add database context
+    DatabaseContext databaseContext, int platformId) // Add database context
         {
             if (!otherFilters.Any())
                 return new MatchAllDocsQuery();
@@ -376,7 +377,7 @@ namespace AuthScape.Marketplace.Services
                 {
                     var childCategory = await databaseContext.ProductCardCategories
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(z => z.ParentName == originalCategory);
+                        .FirstOrDefaultAsync(z => z.ParentName == originalCategory && z.PlatformId == platformId);
 
                     if (childCategory != null)
                         resolvedCategory = childCategory.Name;
