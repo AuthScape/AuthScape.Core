@@ -9,8 +9,7 @@
       },
       {
         "Path": "IDP\\IDP.csproj",
-        "Action": "Start",
-        "DebugTarget": "IIS Express"
+        "Action": "StartWithoutDebugging"
       }
     ]
   }

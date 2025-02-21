@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using AuthScape.Models.PaymentGateway;
 using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
+using AuthScape.UserManagementSystem.Models;
+using AuthScape.UserManageSystem.Models;
 
 namespace AuthScape.Models.Users
 {
@@ -31,5 +33,8 @@ namespace AuthScape.Models.Users
         public string? Permissions { get; set; }
         [NotMapped]
         public string? Roles { get; set; }
+        [NotMapped]
+        public List<CustomFieldResult> CustomFields { get; set; }
+
     }
 }

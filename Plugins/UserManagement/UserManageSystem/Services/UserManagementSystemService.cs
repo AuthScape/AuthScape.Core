@@ -37,6 +37,8 @@ namespace AuthScape.UserManageSystem.Services
         Task UpdateCompany(CompanyEditParam param);
         Task<CustomField?> GetCustomField(Guid id);
         Task AddUpdateCustomField(CustomFieldParam param);
+        Task DeleteCustomField(Guid id);
+        Task DeleteCustomTab(Guid id);
         Task<List<CustomFieldTab>> GetCustomTabs(CustomFieldPlatformType platformType);
         Task<Guid> CreateTab(string name, CustomFieldPlatformType platformType);
         Task CreateUserAccount(string FirstName, string LastName, string Email);
@@ -228,56 +230,112 @@ namespace AuthScape.UserManageSystem.Services
                 }
             });
 
-
             var users = await usersQuery
-                .OrderBy(c => c.FirstName).ThenBy(c => c.LastName)
+                .OrderBy(c => c.FirstName)
+                .ThenBy(c => c.LastName)
                 .ToPagedResultAsync(offset, length);
+
+            var userIds = users.Select(u => u.Id).ToHashSet();
+
+            var userRoles = await databaseContext.UserRoles
+                    .AsNoTracking()
+                    .Where(u => userIds.Contains(u.UserId))
+                    .GroupBy(u => u.UserId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Select(u => u.RoleId).ToList());
+
+            var roleNames = await databaseContext.Roles.AsNoTracking().ToDictionaryAsync(r => r.Id, r => r.Name);
+
+            //var permissions = new List<string>();
+
+            var userClaims = await databaseContext.UserClaims
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.UserId) && u.ClaimType == "permissions")
+                .ToDictionaryAsync(u => u.UserId, u => string.IsNullOrWhiteSpace(u.ClaimValue) ? u.ClaimValue.Split(",").Select(v => Guid.Parse(v)).ToList() : null);
+
+            var claimValues = userClaims.Values.Where(v => v != null).SelectMany(l => l).ToHashSet();
+
+            var userPermissions = await databaseContext.Permissions
+                .AsNoTracking()
+                .Where(p => claimValues.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+            //if (!String.IsNullOrWhiteSpace(usrClaim))
+            //{
+            //    var allClaims = usrClaim.Split(",");
+            //    foreach (var allClaim in allClaims)
+            //    {
+            //        var _permission = await databaseContext.Permissions.Where(p => p.Id == Guid.Parse(allClaim)).Select(s => s.Name).FirstOrDefaultAsync();
+            //        if (!String.IsNullOrWhiteSpace(_permission))
+            //        {
+            //            permissions.Add(_permission);
+            //        }
+            //    }
+            //}
+
+            var userCustomFields = await databaseContext.UserCustomFields.AsNoTracking()
+                .Include(cf => cf.CustomField)
+                .Where(cf => userIds.Contains(cf.UserId))
+                .GroupBy(cf => cf.UserId)
+                .ToDictionaryAsync(g => g.Key, g => g.Select(cf => new CustomFieldResult
+                {
+                    CustomFieldId = cf.CustomFieldId,
+                    CustomFieldType = cf.CustomField.FieldType,
+                    IsRequired = cf.CustomField.IsRequired,
+                    Name = cf.CustomField.Name,
+                    Size = cf.CustomField.GridSize,
+                    TabId = cf.CustomField.TabId,
+                    Value = cf.Value
+                }).ToList());
 
             foreach (var user in users)
             {
-                var roles = new List<string>();
-                var userRoles = await databaseContext.UserRoles
-                    .AsNoTracking()
-                    .Where(u => u.UserId == user.Id)
-                    .Select(u => u.RoleId)
-                    .ToListAsync();
 
-                foreach (var usrRoleId in userRoles)
-                {
-                    var role = await databaseContext.Roles
-                        .AsNoTracking()
-                        .Where(c => c.Id == usrRoleId)
-                        .Select(z => z.Name)
-                        .FirstOrDefaultAsync();
+                if (userRoles != null && userRoles.ContainsKey(user.Id)) user.Roles = String.Join(",", userRoles[user.Id].Select(roleId => roleNames[roleId]));
+                if (userClaims != null && userClaims.ContainsKey(user.Id)) user.Permissions = String.Join(",", userClaims[user.Id].Select(cv => userPermissions[cv]));
+                if (userCustomFields != null && userCustomFields.ContainsKey(user.Id)) user.CustomFields = userCustomFields[user.Id];
 
-                    if (role != null)
-                    {
-                        roles.Add(role);
-                    }
-                }
+                //var userRoles = await databaseContext.UserRoles
+                //    .AsNoTracking()
+                //    .Where(u => u.UserId == user.Id)
+                //    .Select(u => u.RoleId)
+                //    .ToListAsync();
 
-                var permissions = new List<string>();
-                var usrClaim = await databaseContext.UserClaims
-                    .AsNoTracking()
-                    .Where(u => u.UserId == user.Id && u.ClaimType == "permissions")
-                    .Select(s => s.ClaimValue)
-                    .FirstOrDefaultAsync();
+                //foreach (var usrRoleId in userRoles)
+                //{
+                //    var role = await databaseContext.Roles
+                //        .AsNoTracking()
+                //        .Where(c => c.Id == usrRoleId)
+                //        .Select(z => z.Name)
+                //        .FirstOrDefaultAsync();
 
-                if (!String.IsNullOrWhiteSpace(usrClaim))
-                {
-                    var allClaims = usrClaim.Split(",");
-                    foreach (var allClaim in allClaims)
-                    {
-                        var _permission = await databaseContext.Permissions.Where(p => p.Id == Guid.Parse(allClaim)).Select(s => s.Name).FirstOrDefaultAsync();
-                        if (!String.IsNullOrWhiteSpace(_permission))
-                        {
-                            permissions.Add(_permission);
-                        }
-                    }
-                }
+                //    if (role != null)
+                //    {
+                //        roles.Add(role);
+                //    }
+                //}
 
-                user.Roles = String.Join(",", roles);
-                user.Permissions = String.Join(",", permissions);
+                //var permissions = new List<string>();
+                //var usrClaim = await databaseContext.UserClaims
+                //    .AsNoTracking()
+                //    .Where(u => u.UserId == user.Id && u.ClaimType == "permissions")
+                //    .Select(s => s.ClaimValue)
+                //    .FirstOrDefaultAsync();
+
+                //if (!String.IsNullOrWhiteSpace(usrClaim))
+                //{
+                //    var allClaims = usrClaim.Split(",");
+                //    foreach (var allClaim in allClaims)
+                //    {
+                //        var _permission = await databaseContext.Permissions.Where(p => p.Id == Guid.Parse(allClaim)).Select(s => s.Name).FirstOrDefaultAsync();
+                //        if (!String.IsNullOrWhiteSpace(_permission))
+                //        {
+                //            permissions.Add(_permission);
+                //        }
+                //    }
+                //}
+
+                //user.Roles = String.Join(",", roles);
+                //user.Permissions = String.Join(",", permissions);
             }
 
             return users;
@@ -872,6 +930,63 @@ namespace AuthScape.UserManageSystem.Services
                 .AsNoTracking()
                 .Where(a => a.Id == id && (a.CompanyId == null || a.CompanyId == signedInUser.CompanyId))
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task DeleteCustomField(Guid id)
+        {
+            var signedInUser = await userManagementService.GetSignedInUser();
+
+            var customField = await databaseContext.CustomFields
+                .Where(a => a.Id == id).FirstOrDefaultAsync();
+
+            if (customField != null)
+            {
+                if (customField.CustomFieldPlatformType == CustomFieldPlatformType.Users)
+                {
+                    var userCustomFieldValues = await databaseContext.UserCustomFields.Where(f => f.CustomFieldId == customField.Id).ToListAsync();
+                    
+                    if (userCustomFieldValues != null)
+                    {
+                        databaseContext.UserCustomFields.RemoveRange(userCustomFieldValues);
+                    }
+                }
+                else if (customField.CustomFieldPlatformType == CustomFieldPlatformType.Companies)
+                {
+                    var companyCustomFieldValues = await databaseContext.CompanyCustomFields.Where(f => f.CustomFieldId == customField.Id).ToListAsync();
+                    if (companyCustomFieldValues != null)
+                    {
+                        databaseContext.CompanyCustomFields.RemoveRange(companyCustomFieldValues);
+                    }
+                }
+                else if (customField.CustomFieldPlatformType == CustomFieldPlatformType.Locations)
+                {
+
+                }
+
+                databaseContext.CustomFields.Remove(customField);
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task DeleteCustomTab(Guid id)
+        {
+            var signedInUser = await userManagementService.GetSignedInUser();
+
+            var customTab = await databaseContext.CustomFieldsTab
+                .Where(a => a.Id == id).FirstOrDefaultAsync();
+
+            if (customTab != null)
+            {
+                var customFieldValues = await databaseContext.CustomFields.Where(f => f.TabId == id).ToListAsync();
+                if (customFieldValues != null)
+                {
+                    for (int i = 0; i < customFieldValues.Count; i++) 
+                        customFieldValues[i].TabId = null;
+                }
+               
+                databaseContext.CustomFieldsTab.Remove(customTab);
+                await databaseContext.SaveChangesAsync();
+            }
         }
 
         public async Task UpdateCompany(CompanyEditParam param)

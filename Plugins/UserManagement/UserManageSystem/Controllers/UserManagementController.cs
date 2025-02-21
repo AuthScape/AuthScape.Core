@@ -295,6 +295,20 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok();
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCustomField(Guid id)
+        {
+            await userManagementSystemService.DeleteCustomField(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCustomTab(Guid id)
+        {
+            await userManagementSystemService.DeleteCustomTab(id);
+            return Ok();
+        }
+
         [HttpPost]
         public async Task<IActionResult> UpdateCompany(CompanyEditParam param)
         {

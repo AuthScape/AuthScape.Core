@@ -10,6 +10,6 @@ namespace AuthScape.UserManageSystem.Models
         public CustomFieldPlatformType CustomFieldPlatformType { get; set; } = CustomFieldPlatformType.Users;
         public bool IsRequired { get; set; }
         public int? GridSize { get; set; }
-        public Guid TabSelection { get; set; }
+        public Guid? TabSelection { get; set; }
     }
 }
