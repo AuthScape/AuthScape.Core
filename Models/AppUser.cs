@@ -14,6 +14,7 @@ namespace AuthScape.Models.Users
         public string LastName { get; set; }
         public string? locale { get; set; }
         public DateTimeOffset Created { get; set; }
+        public DateTimeOffset? Archived { get; set; }
         public DateTimeOffset LastLoggedIn { get; set; }
         public bool IsActive { get; set; }
         public string? PhotoUri { get; set; }

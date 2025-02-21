@@ -27,7 +27,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<Permission>> GetPermissions();
         Task<UserEditResult?> GetUser(long userId);
         Task UpdateUser(UserEditResult user);
-        Task<bool> AddUser(string firstName, string lastName, string email, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
+        Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
         Task<List<Company>> GetCompanies(string? name = null);
         Task<List<Location>> GetLocations(long companyId, string? name = null);
         Task<string> ChangeUserPassword(long userId, string newPassword);
@@ -37,13 +37,15 @@ namespace AuthScape.UserManageSystem.Services
         Task UpdateCompany(CompanyEditParam param);
         Task<CustomField?> GetCustomField(Guid id);
         Task AddUpdateCustomField(CustomFieldParam param);
+        Task ArchiveUser(long id);
+
         Task DeleteCustomField(Guid id);
         Task DeleteCustomTab(Guid id);
         Task<List<CustomFieldTab>> GetCustomTabs(CustomFieldPlatformType platformType);
         Task<Guid> CreateTab(string name, CustomFieldPlatformType platformType);
         Task CreateUserAccount(string FirstName, string LastName, string Email);
         Task<List<CompanyDataGrid>> GetAllCompanies();
-        Task<MemoryStream?> GetDownloadTemplate();
+        Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType);
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -79,6 +81,16 @@ namespace AuthScape.UserManageSystem.Services
             await databaseContext.SaveChangesAsync();
         }
 
+        public async Task ArchiveUser(long id)
+        {
+            var user = await databaseContext.Users.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                user.IsActive = false;
+                user.Archived = DateTimeOffset.Now;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
         public async Task AssignUserToRole(long roleId, long userId)
         {
             await databaseContext.UserRoles.AddAsync(new Microsoft.AspNetCore.Identity.IdentityUserRole<long>()
@@ -250,7 +262,7 @@ namespace AuthScape.UserManageSystem.Services
             var userClaims = await databaseContext.UserClaims
                 .AsNoTracking()
                 .Where(u => userIds.Contains(u.UserId) && u.ClaimType == "permissions")
-                .ToDictionaryAsync(u => u.UserId, u => string.IsNullOrWhiteSpace(u.ClaimValue) ? u.ClaimValue.Split(",").Select(v => Guid.Parse(v)).ToList() : null);
+                .ToDictionaryAsync(u => u.UserId, u => !string.IsNullOrWhiteSpace(u.ClaimValue) ? u.ClaimValue.Split(",").Select(v => Guid.Parse(v)).ToList() : null);
 
             var claimValues = userClaims.Values.Where(v => v != null).SelectMany(l => l).ToHashSet();
 
@@ -355,12 +367,13 @@ namespace AuthScape.UserManageSystem.Services
             return await databaseContext.Permissions.ToListAsync();
         }
 
-        public async Task<MemoryStream?> GetDownloadTemplate()
+        public async Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType)
         {
-            var arrayCustomFields = await databaseContext.CustomFields.ToListAsync();
+            var arrayCustomFields = await databaseContext.CustomFields
+                .AsNoTracking().Where(cf => cf.CustomFieldPlatformType == platformType).ToListAsync();
 
             var csv = new StringBuilder();
-            csv.Append("FirstName,LastName,Email,Password,CompanyId,Roles,Permissions");
+            csv.Append("FirstName,LastName,Email,Password,CompanyId,PhoneNumber,Roles,Permissions");
 
             if (arrayCustomFields != null && arrayCustomFields.Count() > 0)
             {
@@ -530,6 +543,7 @@ namespace AuthScape.UserManageSystem.Services
                 usr.NormalizedEmail = user.Email.ToUpper();
                 usr.NormalizedUserName = user.Email.ToUpper();
                 usr.IsActive = user.IsActive;
+                usr.PhoneNumber = user.PhoneNumber;
                 usr.CompanyId = user.CompanyId;
                 usr.LocationId = user.LocationId;
 
@@ -666,18 +680,22 @@ namespace AuthScape.UserManageSystem.Services
             }
         }
 
-        public async Task<bool> AddUser(string firstName, string lastName, string email, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null)
+        public async Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null,
+            string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null)
         {
             var newUser = new AppUser();
             newUser.FirstName = firstName;
             newUser.LastName = lastName;
             newUser.Email = email;
             newUser.locale = "Eastern Standard Time";
+            newUser.PhoneNumber = phoneNumber;
             newUser.UserName = email;
             newUser.NormalizedEmail = email.ToUpper();
             newUser.NormalizedUserName = email.ToUpper();
             newUser.EmailConfirmed = true;
             newUser.IsActive = true;
+            newUser.Created = DateTimeOffset.Now;
+            
 
             newUser.CompanyId = companyId;
             newUser.LocationId = locationId;
@@ -696,83 +714,102 @@ namespace AuthScape.UserManageSystem.Services
             {
                 if (additionalFields != null)
                 {
-                    foreach (var additionalField in additionalFields)
+
+                    var customFields = await databaseContext.CustomFields.AsNoTracking()
+                        .Where(c => c.CustomFieldPlatformType == CustomFieldPlatformType.Users)
+                        .ToDictionaryAsync(c => c.Name, c => c.Id);
+
+                    var newCustomFieldValues = additionalFields.Select(af => new UserCustomField
                     {
-                        await databaseContext.UserClaims.AddAsync(new IdentityUserClaim<long>()
+                        UserId = newUser.Id,
+                        CustomFieldId = customFields[af.Key],
+                        Value = af.Value,
+                    }).ToList();
+
+                    databaseContext.UserCustomFields.AddRange(newCustomFieldValues);
+
+                    // Custom Fields 
+                    //foreach (var additionalField in additionalFields)
+                    //{
+                    //    await databaseContext.UserClaims.AddAsync(new IdentityUserClaim<long>()
+                    //    {
+                    //        ClaimType = additionalField.Key,
+                    //        ClaimValue = additionalField.Value,
+                    //        UserId = newUser.Id
+                    //    });
+                    //}
+
+                    await databaseContext.SaveChangesAsync();
+
+                }
+
+                if (!String.IsNullOrWhiteSpace(Permissions))
+                {
+                    var newClaimValues = new List<string>();
+
+                    var arrayOfPermissionNames = Permissions.Split(",");
+
+                    var usrClaim = await databaseContext.UserClaims
+                        .Where(p => p.UserId == newUser.Id && p.ClaimType == "permissions")
+                        .FirstOrDefaultAsync();
+
+                    var arrayOfIdsForPermission = new List<string>();
+                    foreach (var permissionName in arrayOfPermissionNames)
+                    {
+
+
+                        var permission = await databaseContext.Permissions
+                            .Where(p => p.Name.ToLower() == permissionName.ToLower())
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync();
+
+                        if (permission != null)
                         {
-                            ClaimType = additionalField.Key,
-                            ClaimValue = additionalField.Value,
-                            UserId = newUser.Id
+                            arrayOfIdsForPermission.Add(permission.Id.ToString());
+                        }
+                    }
+
+                    if (usrClaim != null)
+                    {
+                        usrClaim.ClaimValue = String.Join(",", arrayOfIdsForPermission);
+                    }
+                    else
+                    {
+                        databaseContext.UserClaims.Add(new IdentityUserClaim<long>()
+                        {
+                            UserId = newUser.Id,
+                            ClaimType = "permissions",
+                            ClaimValue = String.Join(",", arrayOfIdsForPermission)
                         });
                     }
 
-                    if (!String.IsNullOrWhiteSpace(Permissions))
+                    await databaseContext.SaveChangesAsync();
+                }
+
+                //databaseContext.UserRoles.RemoveRange(databaseContext.UserRoles.Where(u => u.UserId == newUser.Id));
+                //await databaseContext.SaveChangesAsync();
+
+                if (!String.IsNullOrWhiteSpace(Roles))
+                {
+                    var rolesArray = Roles.Split(",");
+                    foreach (var role in rolesArray)
                     {
-                        var newClaimValues = new List<string>();
-
-                        var arrayOfPermissionNames = Permissions.Split(",");
-
-                        var usrClaim = await databaseContext.UserClaims
-                            .Where(p => p.UserId == newUser.Id && p.ClaimType == "permissions")
+                        var roleItem = await databaseContext.Roles
+                            .Where(r => r.Name.ToLower() == role.ToLower())
                             .FirstOrDefaultAsync();
 
-                        var arrayOfIdsForPermission = new List<string>();
-                        foreach (var permissionName in arrayOfPermissionNames)
+                        if (roleItem != null)
                         {
-                            var permission = await databaseContext.Permissions
-                                .Where(p => p.Name.ToLower() == permissionName.ToLower())
-                                .AsNoTracking()
-                                .FirstOrDefaultAsync();
-
-                            if (permission != null)
+                            await databaseContext.UserRoles.AddAsync(new IdentityUserRole<long>()
                             {
-                                arrayOfIdsForPermission.Add(permission.Id.ToString());
-                            }
-                        }
-
-                        if (usrClaim != null)
-                        {
-                            usrClaim.ClaimValue = String.Join(",", arrayOfIdsForPermission);
-                        }
-                        else
-                        {
-                            databaseContext.UserClaims.Add(new IdentityUserClaim<long>()
-                            {
+                                RoleId = roleItem.Id,
                                 UserId = newUser.Id,
-                                ClaimType = "permissions",
-                                ClaimValue = String.Join(",", arrayOfIdsForPermission)
                             });
                         }
-
-                        await databaseContext.SaveChangesAsync();
                     }
-
-                    //databaseContext.UserRoles.RemoveRange(databaseContext.UserRoles.Where(u => u.UserId == newUser.Id));
-                    //await databaseContext.SaveChangesAsync();
-
-                    if (!String.IsNullOrWhiteSpace(Roles))
-                    {
-                        var rolesArray = Roles.Split(",");
-                        foreach (var role in rolesArray)
-                        {
-                            var roleItem = await databaseContext.Roles
-                                .Where(r => r.Name.ToLower() == role.ToLower())
-                                .FirstOrDefaultAsync();
-
-                            if (roleItem != null)
-                            {
-                                await databaseContext.UserRoles.AddAsync(new IdentityUserRole<long>()
-                                {
-                                    RoleId = roleItem.Id,
-                                    UserId = newUser.Id,
-                                });
-                            }
-                        }
-                        await databaseContext.SaveChangesAsync();
-                    }
-
-                    //await databaseContext.SaveChangesAsync();
+                    await databaseContext.SaveChangesAsync();
                 }
+
             }
 
 
