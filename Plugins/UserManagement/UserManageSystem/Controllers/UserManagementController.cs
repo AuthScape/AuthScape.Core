@@ -125,6 +125,15 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok();
         }
 
+
+        [HttpDelete]
+        public async Task<IActionResult> ArchiveUser(long id)
+        {
+            await userManagementSystemService.ArchiveUser(id);
+            return Ok();
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> UploadUsers(UploadUsersParam param)
         {
@@ -165,6 +174,12 @@ namespace AuthScape.UserManageSystem.Controllers
                         record.CompanyId = companyId;
                     }
 
+                    var phoneNumber = csv.GetField<string?>("PhoneNumber");
+                    if (!String.IsNullOrWhiteSpace(phoneNumber))
+                    {
+                        record.PhoneNumber = phoneNumber;
+                    }
+
                     var locationId = csv.GetField<string?>("LocationId");
                     if (!String.IsNullOrWhiteSpace(locationId))
                     {
@@ -187,7 +202,8 @@ namespace AuthScape.UserManageSystem.Controllers
 
                     // add the properties
                     var headerProperties = csv.HeaderRecord
-                        .Where(h => h != "FirstName" && h != "LastName" && h != "Email" && h != "Password" && h != "CompanyId" && h != "LocationId" && h!= "Roles" && h!= "Permissions").ToList();
+                        .Where(h => h != "FirstName" && h != "LastName" && h != "Email" && h != "Password" && h != "PhoneNumber" &&
+                        h != "CompanyId" && h != "LocationId" && h!= "Roles" && h!= "Permissions").ToList();
 
                     foreach (var headerProperty in headerProperties)
                     {
@@ -208,6 +224,7 @@ namespace AuthScape.UserManageSystem.Controllers
                     uploadField.FirstName,
                     uploadField.LastName,
                     uploadField.Email,
+                    uploadField.PhoneNumber,
                     uploadField.Password,
                     !String.IsNullOrWhiteSpace(uploadField.CompanyId) ? Convert.ToInt64(uploadField.CompanyId) : null,
                     !String.IsNullOrWhiteSpace(uploadField.LocationId) ? Convert.ToInt64(uploadField.LocationId) : null,
@@ -229,9 +246,9 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDownloadTemplate()
+        public async Task<IActionResult> GetDownloadTemplate(CustomFieldPlatformType platformType)
         {
-            var memoryStream = await userManagementSystemService.GetDownloadTemplate();
+            var memoryStream = await userManagementSystemService.GetDownloadTemplate(platformType);
             if (memoryStream != null)
             {
                 return File(memoryStream, "text/csv");
@@ -295,6 +312,20 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok();
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCustomField(Guid id)
+        {
+            await userManagementSystemService.DeleteCustomField(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCustomTab(Guid id)
+        {
+            await userManagementSystemService.DeleteCustomTab(id);
+            return Ok();
+        }
+
         [HttpPost]
         public async Task<IActionResult> UpdateCompany(CompanyEditParam param)
         {
@@ -333,7 +364,7 @@ namespace AuthScape.UserManageSystem.Controllers
         public string? Password { get; set; } = null;
         public string? CompanyId { get; set; } = null;
         public string? LocationId { get; set; } = null;
-
+        public string? PhoneNumber { get; set; } = null;
         public string? Roles { get; set; }
         public string? Permissions { get; set; }
 

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using AuthScape.Models.PaymentGateway;
 using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
+using AuthScape.UserManagementSystem.Models;
+using AuthScape.UserManageSystem.Models;
 
 namespace AuthScape.Models.Users
 {
@@ -12,6 +14,7 @@ namespace AuthScape.Models.Users
         public string LastName { get; set; }
         public string? locale { get; set; }
         public DateTimeOffset Created { get; set; }
+        public DateTimeOffset? Archived { get; set; }
         public DateTimeOffset LastLoggedIn { get; set; }
         public bool IsActive { get; set; }
         public string? PhotoUri { get; set; }
@@ -31,5 +34,8 @@ namespace AuthScape.Models.Users
         public string? Permissions { get; set; }
         [NotMapped]
         public string? Roles { get; set; }
+        [NotMapped]
+        public List<CustomFieldResult> CustomFields { get; set; }
+
     }
 }
