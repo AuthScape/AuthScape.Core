@@ -231,6 +231,7 @@ namespace AuthScape.UserManageSystem.Services
                 LastName = u.LastName,
                 UserName = u.UserName,
                 IsActive = u.IsActive,
+                Archived = u.Archived,
                 PhoneNumber = u.PhoneNumber,
                 Company = new Company()
                 {
