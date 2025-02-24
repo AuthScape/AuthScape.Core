@@ -25,6 +25,7 @@ namespace AuthScape.ContentManagement.Models
         public long Id { get; set; }
         public string Title { get; set; }
         public bool IsRecursive { get; set; }
+        public bool IsHomepage { get; set; }
         public ICollection<Page> Pages { get; set; }
     }
 }

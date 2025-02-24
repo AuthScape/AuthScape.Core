@@ -32,6 +32,7 @@ namespace AuthScape.ContentManagement.Services
             this.userService = userService;
             this.slugService = slugService;
         }
+
         public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
@@ -39,15 +40,29 @@ namespace AuthScape.ContentManagement.Services
 
             if (pageId == null) { throw new Exception("Id must be provided"); }
 
+
+            var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
+
+            if (homepagePageType != null)
+            {
+                if (pageTypeId == homepagePageType.Id)
+                {
+                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id && p.Id != pageId).FirstOrDefaultAsync();
+
+                    if (homepageExisted != null)
+                    {
+                        throw new Exception("Homepage already existed");
+                    }
+                }
+            }
+
             var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
-
-
+            
             var page = await databaseContext.Pages.Where(p => p.Id == pageId).FirstOrDefaultAsync();
+          
             if (page == null) { throw new Exception("Page does not exist"); }
 
-
-      
             page.Title = title;
             page.PageTypeId = pageTypeId;
             page.Description = description;
@@ -63,6 +78,21 @@ namespace AuthScape.ContentManagement.Services
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { }
+
+            var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
+
+            if (homepagePageType != null)
+            {
+                if (pageTypeId == homepagePageType.Id)
+                {
+                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id).FirstOrDefaultAsync();
+
+                    if (homepageExisted != null)
+                    {
+                        throw new Exception("Homepage already existed");
+                    }
+                }
+            }
 
             var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
