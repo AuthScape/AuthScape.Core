@@ -8,7 +8,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.ContentManagement</PackageId>
     <Title>AuthScape.ContentManagement</Title>
-    <Version>1.2.232</Version>
+    <Version>1.2.242</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.ContentManagement</Product>

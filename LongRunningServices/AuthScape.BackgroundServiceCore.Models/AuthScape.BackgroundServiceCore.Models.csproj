@@ -7,11 +7,15 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.BackgroundServiceCore.Models</PackageId>
     <Title>AuthScape.BackgroundServiceCore.Models</Title>
-    <Version>1.2.232</Version>
+    <Version>1.2.242</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.BackgroundServiceCore</Product>
 	<IsPackable>true</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\AuthScape.Models\AuthScape.Models.csproj" />
+  </ItemGroup>
 
 </Project>

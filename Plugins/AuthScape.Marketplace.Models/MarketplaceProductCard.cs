@@ -19,6 +19,8 @@
 
         public string? ParentName { get; set; }
 
+        public bool IsArray { get; set; }
+
         public ProductCardCategoryType ProductCardCategoryType { get; set; }
         public ICollection<ProductCardField> ProductFields { get; set; }
     }
