@@ -30,7 +30,7 @@ namespace AuthScape.TicketSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTicketPublic(CreatePublicTicketParam param)
         {
-            var ticketId = await ticketService.CreateTicketPublic(param.Email, param.FirstName, param.LastName, param.TicketTypeId, param.TicketStatusId, param.Description);
+            var ticketId = await ticketService.CreateTicketPublic(param.Email, param.FirstName, param.LastName, param.TicketTypeId, param.TicketStatusId, param.Description, param.PrivateLabelCompanyId);
             return Ok(ticketId);
         }
 
@@ -161,6 +161,7 @@ namespace AuthScape.TicketSystem.Controllers
         public int TicketTypeId { get; set; }
         public int TicketStatusId { get; set; }
         public string? Description { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
     }
 
     public class CreateTicketMessageParam

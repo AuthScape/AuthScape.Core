@@ -32,6 +32,9 @@ namespace AuthScape.TicketSystem.Modals
         public TicketStatus TicketStatus { get; set; }
 
 
+        public long? PrivateLabelCompanyId { get; set; }
+
+
         public string? CustomTabPayload { get; set; }
 
 

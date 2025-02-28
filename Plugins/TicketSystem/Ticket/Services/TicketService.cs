@@ -20,7 +20,7 @@ namespace AuthScape.TicketSystem.Services
     {
         Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments);
         Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message);
-        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description);
+        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
         Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null);
         Task CreateTicketStatus(string name);
@@ -221,6 +221,15 @@ namespace AuthScape.TicketSystem.Services
                 .Include(t => t.TicketMessages)
                 .AsNoTracking();
 
+            if (!user.Roles.Where(r => r.Name == "Admin").Any())
+            {
+                tickets = tickets.Where(z => z.PrivateLabelCompanyId == user.CompanyId);
+            }
+            else
+            {
+                tickets = tickets.Where(z => z.PrivateLabelCompanyId == null);
+            }
+
             if (ticketStatusId != null)
             {
                 tickets = tickets.Where(p => p.TicketStatusId == (int)ticketStatusId.Value);
@@ -378,7 +387,7 @@ namespace AuthScape.TicketSystem.Services
             return newTicket.Id;
         }
 
-        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description)
+        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, long? PrivateLabelCompanyId = null)
         {
             var newTicket = new Ticket()
             {
@@ -393,6 +402,7 @@ namespace AuthScape.TicketSystem.Services
                 PriorityLevel = PriorityLevel.Medium,
                 Created = SystemTime.Now,
                 LastUpdated = SystemTime.Now,
+                PrivateLabelCompanyId = PrivateLabelCompanyId
             };
 
             await databaseContext.Tickets.AddAsync(newTicket);
