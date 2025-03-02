@@ -10,6 +10,8 @@
         public List<SearchParamFilter>? SearchParamFilters { get; set; }
         public SearchParamFilter? LastFilterSelected { get; set; }
 
+        public List<SearchParamFilter>? Query { get; set; }
+
         public List<CategoryFilters>? CategoryFilters { get; set; }
     }
 
