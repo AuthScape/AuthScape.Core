@@ -1,11 +1,16 @@
 ﻿using AuthScape.ContentManagement.Models;
 using AuthScape.DocumentReader.Controllers;
+using AuthScape.Models;
 using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
 using CoreBackpack;
 using CoreBackpack.Services;
 using CoreBackpack.Time;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Services.Context;
+using Services.Database;
 using System.Text;
 
 namespace AuthScape.ContentManagement.Services
@@ -13,12 +18,17 @@ namespace AuthScape.ContentManagement.Services
     public interface IContentManagementService
     {
         Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12);
+        Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12);
         Task<List<PageType>> GetPageTypes();
+        Task<List<PageRoot>> GetPageRoots();
         Task<Page> GetPage(Guid pageId);
         Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug);
         Task UpdatePageContent(Guid pageId, string data);
         Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug);
+        Task<Guid> CreateNewAsset(string title, IFormFile file, string description);
+        Task UpdateAsset(Guid? assetId, string title, string description);
         Task RemovePage(Guid pageId);
+        Task RemoveAsset(Guid assetId);
         Task<Page> GetPageWithSlug(string slug);
     }
     public class ContentManagementService : IContentManagementService
@@ -26,11 +36,29 @@ namespace AuthScape.ContentManagement.Services
         readonly DatabaseContext databaseContext;
         readonly IUserManagementService userService;
         readonly ISlugService slugService;
-        public ContentManagementService(DatabaseContext databaseContext, IUserManagementService userService, ISlugService slugService)
+        readonly IAzureBlobStorage azureBlobStorage;
+        readonly AppSettings appSettings;
+        public ContentManagementService(DatabaseContext databaseContext, IUserManagementService userService, ISlugService slugService, IAzureBlobStorage azureBlobStorage, IOptions<AppSettings> appSettings)
         {
             this.databaseContext = databaseContext;
             this.userService = userService;
             this.slugService = slugService;
+            this.azureBlobStorage = azureBlobStorage;
+            this.appSettings = appSettings.Value;
+        }
+
+        protected string GetStorageType(string container)
+        {
+            switch (appSettings.Stage)
+            {
+                case Stage.Development:
+                    container += "-dev";
+                    break;
+                case Stage.Staging:
+                    container += "-staging";
+                    break;
+            }
+            return container;
         }
 
         public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug)
@@ -77,7 +105,7 @@ namespace AuthScape.ContentManagement.Services
         public async Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
-            if (signedInUser == null) { }
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
 
             var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
 
@@ -112,6 +140,50 @@ namespace AuthScape.ContentManagement.Services
             await databaseContext.SaveChangesAsync();
             return page.Id;
         }
+
+        public async Task<Guid> CreateNewAsset(string title, IFormFile file, string description)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var containerName = GetStorageType("frontendassets");
+
+            var filesName = await azureBlobStorage.UploadFile(file, containerName, file.Name);
+
+            var url = "https://axiomna.blob.core.windows.net/" + containerName + "/" + filesName;
+
+            var asset = new PageImageAsset
+            {
+                Title = title,
+                FileName = file.FileName,
+                Url = url,
+                CompanyId = (long)signedInUser.CompanyId,
+                Description = description,
+                Created = DateTimeOffset.Now,
+                LastUpdated = DateTimeOffset.Now,
+            };
+
+            databaseContext.PageImageAssets.Add(asset);
+            await databaseContext.SaveChangesAsync();
+            return asset.Id;
+        }
+
+
+        public async Task UpdateAsset(Guid? assetId, string title, string description)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var asset = await databaseContext.PageImageAssets.Where(p => p.Id == assetId).FirstOrDefaultAsync();
+            if (asset == null) { throw new Exception("Page does not exist"); }
+
+            asset.Title = title;
+            asset.Description = description;
+            asset.LastUpdated = DateTimeOffset.Now;
+
+            await databaseContext.SaveChangesAsync();
+        }
+
         public async Task<Page> GetPage(Guid pageId)
         {
             var page = await databaseContext.Pages
@@ -198,16 +270,31 @@ namespace AuthScape.ContentManagement.Services
 
             return pages;
         }
+
         public async Task<List<PageType>> GetPageTypes()
         {
             var pageTypes = await databaseContext.PageTypes.AsNoTracking().ToListAsync();
             return pageTypes;
+        }
+
+        public async Task<List<PageRoot>> GetPageRoots()
+        {
+            var pageRoots = await databaseContext.PageRoots.AsNoTracking().ToListAsync();
+            return pageRoots;
         }
         public async Task RemovePage(Guid pageId)
         {
             var page = await databaseContext.Pages.Where(pt => pt.Id == pageId).FirstOrDefaultAsync();
             if (page == null) { throw new Exception("Page does not exist"); }
             databaseContext.Pages.Remove(page);
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveAsset(Guid assetId)
+        {
+            var asset = await databaseContext.PageImageAssets.Where(pa => pa.Id == assetId).FirstOrDefaultAsync();
+            if (asset == null) { throw new Exception("Asset does not exist"); }
+            databaseContext.PageImageAssets.Remove(asset);
             await databaseContext.SaveChangesAsync();
         }
         public async Task UpdatePageContent(Guid pageId, string data)
@@ -247,5 +334,58 @@ namespace AuthScape.ContentManagement.Services
 
             return page;
         }
+
+        public async Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim().ToLower();
+            }
+
+            var pageAssetQuery = databaseContext.PageImageAssets
+                .AsNoTracking()
+                .Where(pq =>
+                    pq.CompanyId == signedInUser.CompanyId &&
+                    (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
+
+
+            switch (sort)
+            {
+                case 1:
+                    pageAssetQuery = pageAssetQuery.OrderBy(pq => pq.Title);
+                    break;
+                case 2:
+                    pageAssetQuery = pageAssetQuery.OrderByDescending(pq => pq.Title);
+                    break;
+                case 3:
+                    pageAssetQuery = pageAssetQuery.OrderBy(pq => pq.LastUpdated);
+                    break;
+                case 4:
+                    pageAssetQuery = pageAssetQuery.OrderByDescending(pq => pq.LastUpdated);
+                    break;
+            }
+
+            var pageAssets = await pageAssetQuery
+                .Select(p => new PageImageAsset
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    FileName = p.FileName,
+                    Description = p.Description,    
+                    Url = p.Url,
+                    CompanyId = p.CompanyId,
+                    Created = p.Created,    
+                    LastUpdated = p.LastUpdated,
+                })
+                .ToPagedResultAsync(offset - 1, length);
+
+            return pageAssets;
+        }
+
+ 
     }
 }

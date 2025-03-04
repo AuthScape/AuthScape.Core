@@ -44,6 +44,8 @@ namespace Services.Context
 
         public DbSet<Page> Pages { get; set; }
         public DbSet<PageType> PageTypes { get; set; }
+        public DbSet<PageRoot> PageRoots { get; set; }
+        public DbSet<PageImageAsset> PageImageAssets { get; set; }
         public DbSet<Stylesheet> Stylesheets { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Location> Locations { get; set; }

@@ -14,9 +14,24 @@ namespace AuthScape.ContentManagement.Models
                     .WithMany(m => m.Pages)
                     .HasForeignKey(rf => rf.PageTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
+
+                entity.HasOne(e => e.PageRoot)
+                    .WithMany(m => m.Pages)
+                    .HasForeignKey(rf => rf.PageRootId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
             builder.Entity<PageType>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            builder.Entity<PageRoot>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            builder.Entity<PageImageAsset>(entity =>
             {
                 entity.HasKey(e => e.Id);
             });
