@@ -21,6 +21,9 @@ namespace AuthScape.ContentManagement.Models
         public PageRoot PageRoot { get; set; }
         [NotMapped]
         public string TypeTitle { get; set; }
+
+        [NotMapped]
+        public string RootUrl{ get; set; }
     }
     public class PageType
     {
