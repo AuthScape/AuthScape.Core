@@ -150,15 +150,12 @@ namespace AuthScape.ContentManagement.Services
 
             var containerName = GetStorageType("frontendassets");
 
-            var filesName = await azureBlobStorage.UploadFile(file, containerName, file.Name);
-
-            var url = "https://axiomna.blob.core.windows.net/" + containerName + "/" + filesName;
 
             var asset = new PageImageAsset
             {
                 Title = title,
                 FileName = file.FileName,
-                Url = url,
+                Url = "",
                 CompanyId = (long)signedInUser.CompanyId,
                 Description = description,
                 Created = DateTimeOffset.Now,
@@ -167,6 +164,14 @@ namespace AuthScape.ContentManagement.Services
 
             databaseContext.PageImageAssets.Add(asset);
             await databaseContext.SaveChangesAsync();
+
+
+            var filesName = await azureBlobStorage.UploadFile(file, containerName, asset.Id.ToString());
+
+            var url = "https://axiomna.blob.core.windows.net/" + containerName + "/" + asset.Id.ToString();
+
+            asset.Url = url;
+
             return asset.Id;
         }
 
