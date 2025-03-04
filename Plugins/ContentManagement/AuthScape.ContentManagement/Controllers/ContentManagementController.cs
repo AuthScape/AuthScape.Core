@@ -75,14 +75,14 @@ namespace AuthScape.DocumentReader.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateNewPage([FromBody] PageParam param)
         {
-            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.Description, param.Recursion, param.Slug);
+            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug);
             return Ok();
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdatePage([FromBody] PageParam param)
         {
-            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.Description, param.Recursion, param.Slug);
+            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug);
             return Ok();
         }
 
@@ -138,6 +138,7 @@ namespace AuthScape.DocumentReader.Controllers
         public Guid? PageId { get; set; }
         public string Title { get; set; }
         public long PageTypeId { get; set; }
+        public long? PageRootId { get; set; }
         public string Description { get; set; }
         public int? Recursion { get; set; }
         public string Slug { get; set; }

@@ -22,9 +22,9 @@ namespace AuthScape.ContentManagement.Services
         Task<List<PageType>> GetPageTypes();
         Task<List<PageRoot>> GetPageRoots();
         Task<Page> GetPage(Guid pageId);
-        Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug);
+        Task<Guid> CreateNewPage(string title, long pageTypeId,long? pageRootId, string description, int? recursion, string slug);
         Task UpdatePageContent(Guid pageId, string data);
-        Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug);
+        Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug);
         Task<Guid> CreateNewAsset(string title, IFormFile file, string description);
         Task UpdateAsset(Guid? assetId, string title, string description);
         Task RemovePage(Guid pageId);
@@ -61,7 +61,7 @@ namespace AuthScape.ContentManagement.Services
             return container;
         }
 
-        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, string description, int? recursion, string slug)
+        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -84,7 +84,7 @@ namespace AuthScape.ContentManagement.Services
                 }
             }
 
-            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId).FirstOrDefaultAsync();
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId && p.PageRootId == pageRootId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
             
             var page = await databaseContext.Pages.Where(p => p.Id == pageId).FirstOrDefaultAsync();
@@ -97,12 +97,13 @@ namespace AuthScape.ContentManagement.Services
             page.LastUpdated = DateTimeOffset.Now;
             page.Slug = slug;
             page.PageTypeId = pageTypeId;
+            page.PageRootId = pageRootId;
             page.Recursion = recursion;
             page.Slug = slug;
 
             await databaseContext.SaveChangesAsync();
         }
-        public async Task<Guid> CreateNewPage(string title, long pageTypeId, string description, int? recursion, string slug)
+        public async Task<Guid> CreateNewPage(string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -122,7 +123,7 @@ namespace AuthScape.ContentManagement.Services
                 }
             }
 
-            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug).FirstOrDefaultAsync();
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.PageRootId == pageRootId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
 
             var page = new Page          
@@ -133,6 +134,7 @@ namespace AuthScape.ContentManagement.Services
                 Created = DateTimeOffset.Now, 
                 LastUpdated = DateTimeOffset.Now,
                 PageTypeId = pageTypeId,
+                PageRootId = pageRootId,
                 Recursion = recursion,
             };
 
@@ -188,7 +190,7 @@ namespace AuthScape.ContentManagement.Services
         {
             var page = await databaseContext.Pages
                 .AsNoTracking()
-                .Include(p => p.PageType)
+                .Include(p => p.PageType).Include(p => p.PageRoot)
                 .Where(pq => pq.Id == pageId)
                 .Select(p => new Page
                 {
@@ -201,8 +203,10 @@ namespace AuthScape.ContentManagement.Services
                     Created = p.Created,
                     LastUpdated = p.LastUpdated,
                     PageTypeId = p.PageTypeId,
+                    PageRootId = p.PageRootId,
                     Recursion = p.Recursion,
                     TypeTitle = p.PageType.Title,
+                    RootUrl = p.PageRoot.RootUrl,
                 }).FirstOrDefaultAsync();
 
             if (page == null)
@@ -226,6 +230,7 @@ namespace AuthScape.ContentManagement.Services
             var pageQuery = databaseContext.Pages
                 .AsNoTracking()
                 .Include(pt => pt.PageType) 
+                .Include(pt => pt.PageRoot)
                 .Where(pq =>
                     pq.CompanyId == signedInUser.CompanyId &&
                     (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
@@ -263,8 +268,10 @@ namespace AuthScape.ContentManagement.Services
                     Created = p.Created,
                     LastUpdated = p.LastUpdated,
                     PageTypeId = p.PageTypeId,
+                    PageRootId = p.PageRootId,
                     Recursion = p.Recursion,
                     TypeTitle = p.PageType.Title,
+                    RootUrl = p.PageRoot.RootUrl,
                 })
                 .ToPagedResultAsync(offset - 1, length);
 
