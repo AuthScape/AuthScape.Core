@@ -172,6 +172,8 @@ namespace AuthScape.ContentManagement.Services
 
             asset.Url = url;
 
+            await databaseContext.SaveChangesAsync();
+
             return asset.Id;
         }
 
