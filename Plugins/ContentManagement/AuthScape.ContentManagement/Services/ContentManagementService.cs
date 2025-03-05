@@ -168,7 +168,7 @@ namespace AuthScape.ContentManagement.Services
 
             var filesName = await azureBlobStorage.UploadFile(file, containerName, asset.Id.ToString());
 
-            var url = "https://axiomna.blob.core.windows.net/" + containerName + "/" + asset.Id.ToString() + ".jpg";
+            var url = "https://axiomna.blob.core.windows.net/" + containerName + "/" + asset.Id.ToString() + Path.GetExtension(file.FileName);
 
             asset.Url = url;
 
