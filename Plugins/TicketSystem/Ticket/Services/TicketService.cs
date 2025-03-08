@@ -22,7 +22,7 @@ namespace AuthScape.TicketSystem.Services
         Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message);
         Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
-        Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null);
+        Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null);
         Task CreateTicketStatus(string name);
         Task CreateTicketType(string name);
         Task<List<TicketStatus>> GetTicketStatuses();
@@ -210,7 +210,7 @@ namespace AuthScape.TicketSystem.Services
 
         }
 
-        public async Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null)
+        public async Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null)
         {
             var user = await userManagementService.GetSignedInUser();
 
