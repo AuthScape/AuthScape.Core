@@ -52,7 +52,7 @@ namespace AuthScape.TicketSystem.Controllers
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetTickets(GetTicketRequestParam param)
         {
-            var tickets = await ticketService.GetTickets(param.offset, param.length, param.ticketStatusId, param.ticketTypeId);
+            var tickets = await ticketService.GetTickets(param.offset, param.length, param.ticketStatusId, param.ticketTypeId, param.PrivateLabelCompanyId);
             return Ok(new ReactDataTable
             {
                 draw = 0,
@@ -175,6 +175,7 @@ namespace AuthScape.TicketSystem.Controllers
 
     public class GetTicketRequestParam
     {
+        public long? PrivateLabelCompanyId { get; set; } = null;
         public int offset { get; set; } = 0;
         public int length { get; set; } = 20;
         public int? ticketStatusId { get; set; } = null;
