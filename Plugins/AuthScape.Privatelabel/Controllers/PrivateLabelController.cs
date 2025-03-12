@@ -11,6 +11,7 @@ using OpenIddict.Validation.AspNetCore;
 using Microsoft.Extensions.Options;
 using Services.Database;
 using Services.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthScape.PrivateLabel.Controllers
 {
@@ -22,13 +23,17 @@ namespace AuthScape.PrivateLabel.Controllers
         readonly IUserManagementService userManagementService;
         readonly IAzureWebAppService azureWebAppService;
         readonly AppSettings appSettings;
+        readonly DatabaseContext databaseContext;
+        readonly System.Net.Http.IHttpClientFactory httpClientFactory;
 
-        public PrivateLabelController(IOptions<AppSettings> appSettings, IPrivateLabelService privateLabelService, IUserManagementService userManagementService, IAzureWebAppService azureWebAppService)
+        public PrivateLabelController(IOptions<AppSettings> appSettings, DatabaseContext databaseContext, System.Net.Http.IHttpClientFactory httpClientFactory, IPrivateLabelService privateLabelService, IUserManagementService userManagementService, IAzureWebAppService azureWebAppService)
         {
             this.privateLabelService = privateLabelService;
             this.userManagementService = userManagementService;
             this.azureWebAppService = azureWebAppService;
             this.appSettings = appSettings.Value;
+            this.databaseContext = databaseContext;
+            this.httpClientFactory = httpClientFactory;
         }
 
         //[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
@@ -238,6 +243,20 @@ namespace AuthScape.PrivateLabel.Controllers
         public async Task<IActionResult> GetManifestFile (string domain)
         {
             return Ok(await privateLabelService.GetManifestFile(domain));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFavIcon(long oemCompanyId)
+        {
+            var dnsRecord = await databaseContext.DnsRecords.AsNoTracking().Where(d => d.CompanyId == oemCompanyId).FirstOrDefaultAsync();
+            if (dnsRecord != null)
+            {
+                var httpClient = httpClientFactory.CreateClient();
+                var stream = await httpClient.GetStreamAsync(dnsRecord.FavIcon);
+                return File(stream, "image/x-icon"); // Set MIME type to "image/x-icon"
+            }
+
+            return BadRequest();
         }
     }
 

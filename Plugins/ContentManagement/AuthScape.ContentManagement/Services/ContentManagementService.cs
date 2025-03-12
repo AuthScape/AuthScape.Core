@@ -17,16 +17,16 @@ namespace AuthScape.ContentManagement.Services
 {
     public interface IContentManagementService
     {
-        Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12);
-        Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12);
+        Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12, long? privateLabelCompanyId = null);
+        Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null);
         Task<List<PageType>> GetPageTypes();
-        Task<List<PageRoot>> GetPageRoots();
+        Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null);
         Task<Page> GetPage(Guid pageId);
-        Task<Guid> CreateNewPage(string title, long pageTypeId,long? pageRootId, string description, int? recursion, string slug);
+        Task<Guid> CreateNewPage(string title, long pageTypeId,long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
         Task UpdatePageContent(Guid pageId, string data);
-        Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug);
-        Task<Guid> CreateNewAsset(string title, IFormFile file, string description);
-        Task UpdateAsset(Guid? assetId, string title, string description);
+        Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
+        Task<Guid> CreateNewAsset(string title, IFormFile file, string description, long? PrivateLabelCompanyId = null);
+        Task UpdateAsset(Guid? assetId, string title, string description, long? PrivateLabelCompanyId = null);
         Task RemovePage(Guid pageId);
         Task RemoveAsset(Guid assetId);
         Task<Page> GetPageWithSlug(string slug);
@@ -62,7 +62,7 @@ namespace AuthScape.ContentManagement.Services
             return container;
         }
 
-        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug)
+        public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -76,7 +76,7 @@ namespace AuthScape.ContentManagement.Services
             {
                 if (pageTypeId == homepagePageType.Id)
                 {
-                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id && p.Id != pageId).FirstOrDefaultAsync();
+                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id && p.Id != pageId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
 
                     if (homepageExisted != null)
                     {
@@ -85,10 +85,10 @@ namespace AuthScape.ContentManagement.Services
                 }
             }
 
-            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId && p.PageRootId == pageRootId).FirstOrDefaultAsync();
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId && p.PageRootId == pageRootId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
             
-            var page = await databaseContext.Pages.Where(p => p.Id == pageId).FirstOrDefaultAsync();
+            var page = await databaseContext.Pages.Where(p => p.Id == pageId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
           
             if (page == null) { throw new Exception("Page does not exist"); }
 
@@ -104,7 +104,7 @@ namespace AuthScape.ContentManagement.Services
 
             await databaseContext.SaveChangesAsync();
         }
-        public async Task<Guid> CreateNewPage(string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug)
+        public async Task<Guid> CreateNewPage(string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -129,7 +129,7 @@ namespace AuthScape.ContentManagement.Services
 
             var page = new Page          
             {   Title = title,
-                CompanyId = signedInUser.CompanyId, 
+                CompanyId = PrivateLabelCompanyId, 
                 Description = description,
                 Slug = slug, 
                 Created = DateTimeOffset.Now, 
@@ -188,7 +188,7 @@ namespace AuthScape.ContentManagement.Services
             return copypage.Id;
         }
 
-        public async Task<Guid> CreateNewAsset(string title, IFormFile file, string description)
+        public async Task<Guid> CreateNewAsset(string title, IFormFile file, string description, long? PrivateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -201,7 +201,7 @@ namespace AuthScape.ContentManagement.Services
                 Title = title,
                 FileName = file.FileName,
                 Url = "",
-                CompanyId = (long)signedInUser.CompanyId,
+                CompanyId = PrivateLabelCompanyId,
                 Description = description,
                 Created = DateTimeOffset.Now,
                 LastUpdated = DateTimeOffset.Now,
@@ -222,12 +222,12 @@ namespace AuthScape.ContentManagement.Services
         }
 
 
-        public async Task UpdateAsset(Guid? assetId, string title, string description)
+        public async Task UpdateAsset(Guid? assetId, string title, string description, long? PrivateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
 
-            var asset = await databaseContext.PageImageAssets.Where(p => p.Id == assetId).FirstOrDefaultAsync();
+            var asset = await databaseContext.PageImageAssets.Where(p => p.Id == assetId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
             if (asset == null) { throw new Exception("Page does not exist"); }
 
             asset.Title = title;
@@ -267,7 +267,7 @@ namespace AuthScape.ContentManagement.Services
 
             return page;
         }
-        public async Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12)
+        public async Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12, long? privateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
 
@@ -283,7 +283,7 @@ namespace AuthScape.ContentManagement.Services
                 .Include(pt => pt.PageType) 
                 .Include(pt => pt.PageRoot)
                 .Where(pq =>
-                    pq.CompanyId == signedInUser.CompanyId &&
+                    pq.CompanyId == privateLabelCompanyId &&
                     (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
 
             if (chipFilters != null && chipFilters.Length > 0)
@@ -335,9 +335,9 @@ namespace AuthScape.ContentManagement.Services
             return pageTypes;
         }
 
-        public async Task<List<PageRoot>> GetPageRoots()
+        public async Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null)
         {
-            var pageRoots = await databaseContext.PageRoots.AsNoTracking().ToListAsync();
+            var pageRoots = await databaseContext.PageRoots.AsNoTracking().Where(z => z.CompanyId == privateLabelCompanyId).ToListAsync();
             return pageRoots;
         }
         public async Task RemovePage(Guid pageId)
@@ -393,7 +393,7 @@ namespace AuthScape.ContentManagement.Services
             return page;
         }
 
-        public async Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12)
+        public async Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null)
         {
             var signedInUser = await userService.GetSignedInUser();
 
@@ -407,7 +407,7 @@ namespace AuthScape.ContentManagement.Services
             var pageAssetQuery = databaseContext.PageImageAssets
                 .AsNoTracking()
                 .Where(pq =>
-                    pq.CompanyId == signedInUser.CompanyId &&
+                    pq.CompanyId == privateLabelCompanyId &&
                     (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
 
 

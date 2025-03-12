@@ -39,6 +39,7 @@ namespace AuthScape.ContentManagement.Models
         public long Id { get; set; }
         public string Title { get; set; }
         public string RootUrl { get; set; }
+        public long? CompanyId { get; set; }
         public bool IsInHeaderNavigation { get; set; }
         public ICollection<Page> Pages { get; set; }
     }

@@ -23,7 +23,7 @@ namespace AuthScape.DocumentReader.Controllers
         [HttpPost]
         public async Task<IActionResult> GetPages([FromBody] DataGridParam dataGridParam)
         {
-            var data = await _contentManagementService.GetPages(dataGridParam.Search, dataGridParam.Sort, dataGridParam.ChipFilters, dataGridParam.Offset, dataGridParam.Length);
+            var data = await _contentManagementService.GetPages(dataGridParam.Search, dataGridParam.Sort, dataGridParam.ChipFilters, dataGridParam.Offset, dataGridParam.Length, dataGridParam.PrivateLabelCompanyId);
             return Ok(new ReactDataTable()
             {
                 recordsTotal = data.total,
@@ -35,7 +35,7 @@ namespace AuthScape.DocumentReader.Controllers
         [HttpPost]
         public async Task<IActionResult> GetPageAssets([FromBody] DataGridParam dataGridParam)
         {
-            var data = await _contentManagementService.GetPageAssets(dataGridParam.Search, dataGridParam.Sort, dataGridParam.Offset, dataGridParam.Length);
+            var data = await _contentManagementService.GetPageAssets(dataGridParam.Search, dataGridParam.Sort, dataGridParam.Offset, dataGridParam.Length, dataGridParam.PrivateLabelCompanyId);
             return Ok(new ReactDataTable()
             {
                 recordsTotal = data.total,
@@ -52,9 +52,9 @@ namespace AuthScape.DocumentReader.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPageRoots()
+        public async Task<IActionResult> GetPageRoots(long? privateLabelCompanyId = null)
         {
-            var pageRoots = await _contentManagementService.GetPageRoots();
+            var pageRoots = await _contentManagementService.GetPageRoots(privateLabelCompanyId);
             return Ok(pageRoots);
         }
 
@@ -75,14 +75,14 @@ namespace AuthScape.DocumentReader.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateNewPage([FromBody] PageParam param)
         {
-            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug);
+            await _contentManagementService.CreateNewPage(param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug, param.PrivateLabelCompanyId);
             return Ok();
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdatePage([FromBody] PageParam param)
         {
-            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug);
+            await _contentManagementService.UpdatePage(param.PageId, param.Title, param.PageTypeId, param.PageRootId, param.Description, param.Recursion, param.Slug, param.PrivateLabelCompanyId);
             return Ok();
         }
 
@@ -96,14 +96,14 @@ namespace AuthScape.DocumentReader.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateNewAsset([FromForm] AssetParam param)
         {
-            await _contentManagementService.CreateNewAsset(param.Title, param.File, param.Description);
+            await _contentManagementService.CreateNewAsset(param.Title, param.File, param.Description, param.PrivateLabelCompanyId);
             return Ok();
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdateAsset([FromBody] AssetParam param)
         {
-            await _contentManagementService.UpdateAsset(param.AssetId, param.Title, param.Description);
+            await _contentManagementService.UpdateAsset(param.AssetId, param.Title, param.Description, param.PrivateLabelCompanyId);
             return Ok();
         }
 
@@ -139,6 +139,7 @@ namespace AuthScape.DocumentReader.Controllers
         public string? Search { get; set; }
         public int Sort { get; set; }
         public long[]? ChipFilters { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
     }
 
     public class PageParam
@@ -150,6 +151,7 @@ namespace AuthScape.DocumentReader.Controllers
         public string Description { get; set; }
         public int? Recursion { get; set; }
         public string Slug { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
     }
 
     public class AssetParam
@@ -158,6 +160,7 @@ namespace AuthScape.DocumentReader.Controllers
         public IFormFile? File { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
     }
 
     public class ContentParam

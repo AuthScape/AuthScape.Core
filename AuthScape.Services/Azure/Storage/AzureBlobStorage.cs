@@ -71,12 +71,23 @@ namespace AuthScape.Services.Azure.Storage
 			await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-32x32.jpg"), stream32, true, cacheControl, "image/*");
 
 
+            // 32x32
+            var streamIco32 = imageService.ConvertPhoto(file, ImageMagick.MagickFormat.Ico, new CoreBackpack.Models.ImageSize()
+            {
+                width = 32,
+                height = 32
+            });
+            streamIco32.Seek(0, SeekOrigin.Begin);
+            await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-32x32.ico"), streamIco32, true, cacheControl, "image/*");
+
+
             return new AppIcons()
             {
                 AppIconDefault = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + ".jpg"),
                 AppIcon16x16Uri = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + "-16x16.jpg"),
                 AppIcon32x32Uri = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + "-32x32.jpg"),
-			};
+                Icon32x32Uri = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + "-32x32.ico"),
+            };
 		}
 
 	}
