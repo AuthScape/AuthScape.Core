@@ -30,6 +30,7 @@ namespace AuthScape.ContentManagement.Services
         Task RemovePage(Guid pageId);
         Task RemoveAsset(Guid assetId);
         Task<Page> GetPageWithSlug(string slug);
+        Task<Guid> CreatePageDuplication(Guid pageId);
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -143,6 +144,50 @@ namespace AuthScape.ContentManagement.Services
             return page.Id;
         }
 
+        public async Task<Guid> CreatePageDuplication(Guid pageId)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var page = await databaseContext.Pages.AsNoTracking().Where(p => p.Id == pageId).FirstOrDefaultAsync();
+            if (page == null)
+            {
+                throw new Exception("Page does not exist");
+            }
+
+            var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
+
+            if (homepagePageType != null)
+            {
+                if (page.PageTypeId == homepagePageType.Id)
+                {
+
+                    throw new Exception("Homepage already existed");
+                }
+            }
+
+            var copypage = new Page
+            {
+                Title = "",
+                CompanyId = signedInUser.CompanyId,
+                Description = page.Description,
+                Content = page.Content,
+                Slug = "",
+                Created = DateTimeOffset.Now,
+                LastUpdated = DateTimeOffset.Now,
+                PageTypeId = page.PageTypeId,
+                PageRootId = page.PageRootId,
+                Recursion = page.Recursion,
+            };
+
+            databaseContext.Pages.Add(copypage);
+            await databaseContext.SaveChangesAsync();
+            copypage.Title = page.Title + "-" + copypage.Id;
+            copypage.Slug = page.Slug + "-" + copypage.Id;
+            await databaseContext.SaveChangesAsync();
+            return copypage.Id;
+        }
+
         public async Task<Guid> CreateNewAsset(string title, IFormFile file, string description)
         {
             var signedInUser = await userService.GetSignedInUser();
@@ -164,7 +209,6 @@ namespace AuthScape.ContentManagement.Services
 
             databaseContext.PageImageAssets.Add(asset);
             await databaseContext.SaveChangesAsync();
-
 
             var filesName = await azureBlobStorage.UploadFile(file, containerName, asset.Id.ToString());
 
