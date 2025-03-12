@@ -122,6 +122,14 @@ namespace AuthScape.DocumentReader.Controllers
             await _contentManagementService.RemoveAsset(assetId);
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CreatePageDuplication(Guid pageId)
+        {
+            await _contentManagementService.CreatePageDuplication(pageId);
+            return Ok();
+        }
+
     }
 
     public class DataGridParam
