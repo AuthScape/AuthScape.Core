@@ -30,7 +30,7 @@ namespace AuthScape.ContentManagement.Services
         Task RemovePage(Guid pageId);
         Task RemoveAsset(Guid assetId);
         Task<Page> GetPageWithSlug(string slug);
-        Task<Guid> CreatePageDuplication(Guid pageId);
+        Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId);
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -144,7 +144,7 @@ namespace AuthScape.ContentManagement.Services
             return page.Id;
         }
 
-        public async Task<Guid> CreatePageDuplication(Guid pageId)
+        public async Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId)
         {
             var signedInUser = await userService.GetSignedInUser();
             if (signedInUser == null) { throw new Exception("User is not logged in"); }
@@ -169,7 +169,7 @@ namespace AuthScape.ContentManagement.Services
             var copypage = new Page
             {
                 Title = "",
-                CompanyId = signedInUser.CompanyId,
+                CompanyId = oemCompanyId,
                 Description = page.Description,
                 Content = page.Content,
                 Slug = "",
