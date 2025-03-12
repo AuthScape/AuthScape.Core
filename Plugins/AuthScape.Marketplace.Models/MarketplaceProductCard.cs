@@ -35,6 +35,7 @@
 
         public string? ProductCardFieldParentName { get; set; }
         public Guid? ProductCardFieldParentId { get; set; }
+        public bool IsAvailable { get; set; } // The ML says it has it
 
         public ProductCardCategory ProductCategory { get; set; }
         public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }

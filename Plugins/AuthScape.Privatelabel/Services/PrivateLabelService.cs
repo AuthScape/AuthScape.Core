@@ -15,6 +15,8 @@ using CoreBackpack.Services;
 using AuthScape.PrivateLabel.Models;
 using AuthScape.Document.Models;
 using Newtonsoft.Json;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs;
 
 namespace AuthScape.PrivateLabel.Services
 {
@@ -237,14 +239,14 @@ namespace AuthScape.PrivateLabel.Services
                     appIcons += "-staging";
 				}
 
-
                 var appIconsUrl = await azureBlobStorage.StoreAppIcons(file, appIcons, dnsRecord.Id.ToString());
 
                 dnsRecord.AppIconUrl = appIconsUrl.AppIconDefault;
                 dnsRecord.AppIcon16Url = appIconsUrl.AppIcon16x16Uri;
                 dnsRecord.AppIcon32Url = appIconsUrl.AppIcon32x32Uri;
+                dnsRecord.FavIcon = appIconsUrl.Icon32x32Uri;
 
-				await databaseContext.SaveChangesAsync();
+                await databaseContext.SaveChangesAsync();
 			}
         }
 
