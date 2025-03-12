@@ -124,9 +124,9 @@ namespace AuthScape.DocumentReader.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePageDuplication(Guid pageId)
+        public async Task<IActionResult> CreatePageDuplication(Guid pageId, long oemCompanyId)
         {
-            await _contentManagementService.CreatePageDuplication(pageId);
+            await _contentManagementService.CreatePageDuplication(pageId, oemCompanyId);
             return Ok();
         }
 
