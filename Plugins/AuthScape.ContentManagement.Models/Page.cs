@@ -18,6 +18,7 @@ namespace AuthScape.ContentManagement.Models
         public DateTimeOffset LastUpdated { get; set; }
         public int? Recursion {  get; set; }
         public PageType PageType { get; set; }
+        public int? Order { get; set; }
         public PageRoot PageRoot { get; set; }
         [NotMapped]
         public string TypeTitle { get; set; }
@@ -43,6 +44,7 @@ namespace AuthScape.ContentManagement.Models
         public string RootUrl { get; set; }
         public long? CompanyId { get; set; }
         public bool IsInHeaderNavigation { get; set; }
+        public int? Order { get; set; }
         public ICollection<Page> Pages { get; set; }
     }
 
