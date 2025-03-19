@@ -20,6 +20,7 @@ namespace AuthScape.ContentManagement.Models
         public PageType PageType { get; set; }
         public int? Order { get; set; }
         public PageRoot PageRoot { get; set; }
+        public bool Highlight { get; set; }
         [NotMapped]
         public string TypeTitle { get; set; }
 
@@ -44,6 +45,7 @@ namespace AuthScape.ContentManagement.Models
         public string RootUrl { get; set; }
         public long? CompanyId { get; set; }
         public bool IsInHeaderNavigation { get; set; }
+        public bool Highlight { get; set; }
         public int? Order { get; set; }
         public ICollection<Page> Pages { get; set; }
     }
