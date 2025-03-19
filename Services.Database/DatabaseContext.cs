@@ -14,8 +14,6 @@ using AuthScape.TicketSystem.Modals;
 using Models.Users;
 using AuthScape.Plugins.Invoices.Models;
 using AuthScape.NodeService.Models;
-using BackgroundServiceCore.DataModels;
-using AuthScape.BackgroundServiceCore.Models;
 using AuthScape.Analytics.Models;
 using Models.Kanban;
 using Models;
@@ -186,13 +184,6 @@ namespace Services.Context
 
         #endregion
 
-        #region BackgroundServiceApp
-
-        public DbSet<QueuedActivity> QueuedActivity { get; set; }
-        public DbSet<QueuedActivityLog> QueuedActivityLogs { get; set; }
-
-        #endregion
-
         #region Kanban
 
         public DbSet<KanbanCard> KanbanCards { get; set; }
@@ -347,23 +338,6 @@ namespace Services.Context
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
-
-            #endregion
-
-            #region BackgroundServiceApp
-
-
-            builder.Entity<QueuedActivity>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
-            });
-
-            builder.Entity<QueuedActivityLog>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
-            });
 
             #endregion
 
