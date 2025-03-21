@@ -21,6 +21,7 @@ namespace AuthScape.ContentManagement.Models
         public int? Order { get; set; }
         public PageRoot PageRoot { get; set; }
         public bool Highlight { get; set; }
+        public bool IsContainedButton { get; set; }
         [NotMapped]
         public string TypeTitle { get; set; }
 

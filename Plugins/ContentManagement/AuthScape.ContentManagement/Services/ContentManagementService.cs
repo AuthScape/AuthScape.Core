@@ -115,7 +115,7 @@ namespace AuthScape.ContentManagement.Services
             {
                 if (pageTypeId == homepagePageType.Id)
                 {
-                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id).FirstOrDefaultAsync();
+                    var homepageExisted = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
 
                     if (homepageExisted != null)
                     {
@@ -124,7 +124,7 @@ namespace AuthScape.ContentManagement.Services
                 }
             }
 
-            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.PageRootId == pageRootId).FirstOrDefaultAsync();
+            var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.PageRootId == pageRootId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
 
             var page = new Page          
