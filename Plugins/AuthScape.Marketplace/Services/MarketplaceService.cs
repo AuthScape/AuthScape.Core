@@ -426,8 +426,8 @@ namespace AuthScape.Marketplace.Services
             var products = await databaseContext.ProductCards
                 .Where(p => p.CompanyId == OemCompanyId && p.PlatformId == PlatformId)
                 .Include(p => p.ProductCardAndCardFieldMapping)
-                .ThenInclude(z => z.ProductField)
-                .ThenInclude(z => z.ProductCategory)
+                //.ThenInclude(z => z.ProductField)
+                //.ThenInclude(z => z.ProductCategory)
                 .ToListAsync();
 
             foreach (var product in products)
@@ -446,17 +446,41 @@ namespace AuthScape.Marketplace.Services
 
                 foreach (var field in product.ProductCardAndCardFieldMapping)
                 {
-                    var fieldName = field.ProductField.Name;
-                    var categoryName = field.ProductField.ProductCategory.Name;
-                    var productCardCategoryType = field.ProductField.ProductCategory.ProductCardCategoryType;
+                    //var fieldName = field.ProductField.Name;
+
+
+
+
+                    var productField = await databaseContext.ProductCardFields.Where(z =>
+                        z.Id == field.ProductFieldId &&
+                        z.PlatformId == PlatformId &&
+                        z.CompanyId == OemCompanyId
+                    ).AsNoTracking().FirstOrDefaultAsync();
+
+
+
+                    var productCardCategory = await databaseContext.ProductCardCategories.Where(z =>
+                        z.Id == productField.ProductCategoryId.Value &&
+                        z.PlatformId == PlatformId &&
+                        z.CompanyId == OemCompanyId
+                    ).AsNoTracking().FirstOrDefaultAsync();
+
+
+
+
+                    var categoryName = productCardCategory.Name;
+                    var productCardCategoryType = productCardCategory.ProductCardCategoryType;
+
+                    //var categoryName = field.ProductField.ProductCategory.Name;
+                    //var productCardCategoryType = field.ProductField.ProductCategory.ProductCardCategoryType;
 
                     if (productCardCategoryType == ProductCardCategoryType.StringField)
                     {
-                        doc.Fields.Add(new StringField(categoryName, fieldName, Field.Store.YES));
+                        doc.Fields.Add(new StringField(categoryName, productField.Name, Field.Store.YES));
                     }
                     else if (productCardCategoryType == ProductCardCategoryType.None)
                     {
-                        doc.Fields.Add(new StringField(categoryName, fieldName, Field.Store.YES));
+                        doc.Fields.Add(new StringField(categoryName, productField.Name, Field.Store.YES));
                     }
                 }
 

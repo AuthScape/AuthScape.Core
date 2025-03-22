@@ -7,7 +7,7 @@
         public string? ReferenceId { get; set; } // used to reference your products table for analytics
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
-        public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
+        public ICollection<ProductCardAndCardFieldMapping>? ProductCardAndCardFieldMapping { get; set; }
     }
 
     public class ProductCardCategory
@@ -22,13 +22,13 @@
         public bool IsArray { get; set; }
 
         public ProductCardCategoryType ProductCardCategoryType { get; set; }
-        public ICollection<ProductCardField> ProductFields { get; set; }
+        //public ICollection<ProductCardField>? ProductFields { get; set; }
     }
 
     public class ProductCardField
     {
         public Guid Id { get; set; }
-        public Guid ProductCategoryId { get; set; }
+        public Guid? ProductCategoryId { get; set; }
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
         public string Name { get; set; }
@@ -37,20 +37,20 @@
         public Guid? ProductCardFieldParentId { get; set; }
         public bool IsAvailable { get; set; } // The ML says it has it
 
-        public ProductCardCategory ProductCategory { get; set; }
-        public ICollection<ProductCardAndCardFieldMapping> ProductCardAndCardFieldMapping { get; set; }
+        //public ProductCardCategory? ProductCategory { get; set; }
+        //public ICollection<ProductCardAndCardFieldMapping>? ProductCardAndCardFieldMapping { get; set; }
     }
 
     public class ProductCardAndCardFieldMapping
     {
         public Guid Id { get; set; }
-        public Guid ProductFieldId { get; set; }
-        public Guid ProductId { get; set; }
+        public Guid? ProductFieldId { get; set; }
+        public Guid? ProductId { get; set; }
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
 
-        public ProductCard Product { get; set; }
-        public ProductCardField ProductField { get; set; }
+        public ProductCard? Product { get; set; }
+        //public ProductCardField? ProductField { get; set; }
     }
 
 

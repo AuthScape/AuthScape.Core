@@ -24,10 +24,10 @@ namespace AuthScape.Marketplace.Models
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
-                entity.HasOne(e => e.ProductCategory)
-                    .WithMany(m => m.ProductFields)
-                    .HasForeignKey(rf => rf.ProductCategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
+                //entity.HasOne(e => e.ProductCategory)
+                //    .WithMany(m => m.ProductFields)
+                //    .HasForeignKey(rf => rf.ProductCategoryId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
             builder.Entity<ProductCardAndCardFieldMapping>(entity =>
@@ -40,10 +40,10 @@ namespace AuthScape.Marketplace.Models
                     .HasForeignKey(rf => rf.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
 
-                entity.HasOne(e => e.ProductField)
-                    .WithMany(m => m.ProductCardAndCardFieldMapping)
-                    .HasForeignKey(rf => rf.ProductFieldId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
+                //entity.HasOne(e => e.ProductField)
+                //    .WithMany(m => m.ProductCardAndCardFieldMapping)
+                //    .HasForeignKey(rf => rf.ProductFieldId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
             builder.Entity<AnalyticsMarketplaceImpressionsClicks>(entity =>
