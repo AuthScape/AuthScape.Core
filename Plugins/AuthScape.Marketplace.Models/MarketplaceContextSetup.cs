@@ -35,10 +35,10 @@ namespace AuthScape.Marketplace.Models
                 entity.HasKey(e => new { e.Id, e.ProductId, e.ProductFieldId });
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
-                entity.HasOne(e => e.Product)
-                    .WithMany(m => m.ProductCardAndCardFieldMapping)
-                    .HasForeignKey(rf => rf.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
+                //entity.HasOne(e => e.Product)
+                //    .WithMany(m => m.ProductCardAndCardFieldMapping)
+                //    .HasForeignKey(rf => rf.ProductId)
+                //    .OnDelete(DeleteBehavior.ClientSetNull);
 
                 //entity.HasOne(e => e.ProductField)
                 //    .WithMany(m => m.ProductCardAndCardFieldMapping)

@@ -425,7 +425,7 @@ namespace AuthScape.Marketplace.Services
 
             var products = await databaseContext.ProductCards
                 .Where(p => p.CompanyId == OemCompanyId && p.PlatformId == PlatformId)
-                .Include(p => p.ProductCardAndCardFieldMapping)
+                //.Include(p => p.ProductCardAndCardFieldMapping)
                 //.ThenInclude(z => z.ProductField)
                 //.ThenInclude(z => z.ProductCategory)
                 .ToListAsync();
@@ -444,7 +444,16 @@ namespace AuthScape.Marketplace.Services
                 //    doc.Add(new StringField("Photo", product.Photo, Field.Store.YES));
                 //}
 
-                foreach (var field in product.ProductCardAndCardFieldMapping)
+
+
+                var productFields = await databaseContext.ProductCardAndCardFieldMapping.Where(z =>
+                        z.PlatformId == PlatformId &&
+                        z.CompanyId == OemCompanyId &&
+                        z.ProductId == product.Id
+                    ).AsNoTracking().ToListAsync();
+
+
+                foreach (var field in productFields)
                 {
                     //var fieldName = field.ProductField.Name;
 
