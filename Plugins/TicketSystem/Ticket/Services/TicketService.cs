@@ -358,7 +358,7 @@ namespace AuthScape.TicketSystem.Services
             var newTicket = new Ticket()
             {
                 Email = signedInUser.Email,
-                Title = description + " from " + signedInUser.FirstName,
+                Title = signedInUser.FirstName,
                 FirstName = signedInUser.FirstName,
                 LastName = signedInUser.LastName,
                 TicketTypeId = ticketTypeId,
@@ -392,7 +392,7 @@ namespace AuthScape.TicketSystem.Services
             var newTicket = new Ticket()
             {
                 Email = email,
-                Title = description + " from " + firstName,
+                Title = firstName,
                 FirstName = firstName,
                 LastName = lastName,
                 TicketTypeId = ticketTypeId,

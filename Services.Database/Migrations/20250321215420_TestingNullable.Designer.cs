@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250321215420_TestingNullable")]
+    partial class TestingNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -916,6 +919,8 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id", "ProductId", "ProductFieldId");
 
+                    b.HasIndex("ProductFieldId");
+
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductCardAndCardFieldMapping");
@@ -982,6 +987,8 @@ namespace Services.Database.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProductCategoryId");
 
                     b.ToTable("ProductCardFields");
                 });
@@ -2849,12 +2856,28 @@ namespace Services.Database.Migrations
 
             modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardAndCardFieldMapping", b =>
                 {
+                    b.HasOne("AuthScape.Marketplace.Models.ProductCardField", "ProductField")
+                        .WithMany("ProductCardAndCardFieldMapping")
+                        .HasForeignKey("ProductFieldId")
+                        .IsRequired();
+
                     b.HasOne("AuthScape.Marketplace.Models.ProductCard", "Product")
                         .WithMany("ProductCardAndCardFieldMapping")
                         .HasForeignKey("ProductId")
                         .IsRequired();
 
                     b.Navigation("Product");
+
+                    b.Navigation("ProductField");
+                });
+
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardField", b =>
+                {
+                    b.HasOne("AuthScape.Marketplace.Models.ProductCardCategory", "ProductCategory")
+                        .WithMany("ProductFields")
+                        .HasForeignKey("ProductCategoryId");
+
+                    b.Navigation("ProductCategory");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.StoreCredit", b =>
@@ -3273,6 +3296,16 @@ namespace Services.Database.Migrations
                 });
 
             modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCard", b =>
+                {
+                    b.Navigation("ProductCardAndCardFieldMapping");
+                });
+
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardCategory", b =>
+                {
+                    b.Navigation("ProductFields");
+                });
+
+            modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardField", b =>
                 {
                     b.Navigation("ProductCardAndCardFieldMapping");
                 });
