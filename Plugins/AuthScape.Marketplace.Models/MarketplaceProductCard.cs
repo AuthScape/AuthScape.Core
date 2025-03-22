@@ -7,7 +7,7 @@
         public string? ReferenceId { get; set; } // used to reference your products table for analytics
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
-        public ICollection<ProductCardAndCardFieldMapping>? ProductCardAndCardFieldMapping { get; set; }
+        //public ICollection<ProductCardAndCardFieldMapping>? ProductCardAndCardFieldMapping { get; set; }
     }
 
     public class ProductCardCategory
@@ -49,7 +49,7 @@
         public long? CompanyId { get; set; }
         public int PlatformId { get; set; }
 
-        public ProductCard? Product { get; set; }
+        //public ProductCard? Product { get; set; }
         //public ProductCardField? ProductField { get; set; }
     }
 
