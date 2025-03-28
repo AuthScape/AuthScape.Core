@@ -160,6 +160,12 @@ namespace AuthScape.PrivateLabel.Controllers
             return Ok(await privateLabelService.GetCompanyIdFromDomain(domain));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetThirdPartyAnalytics(string privateLabelDomain)
+        {
+            return Ok(await privateLabelService.GetAnalyticsTrackingCodes(privateLabelDomain));
+        }
+
         [HttpPost]
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GenerateDomain(AddDomainToWebAppRequest request)

@@ -1,10 +1,9 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
-using AuthScape.Marketplace.Models.CSVReader;
 
 namespace Models.Marketplace
 {
-    public class ProductTest : BaseProductCSVReader
+    public class ProductTest : BaseNLPProduct
     {
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string? Description { get; set; }

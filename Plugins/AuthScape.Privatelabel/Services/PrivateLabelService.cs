@@ -17,6 +17,7 @@ using AuthScape.Document.Models;
 using Newtonsoft.Json;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
+using AuthScape.Models.Exceptions;
 
 namespace AuthScape.PrivateLabel.Services
 {
@@ -36,6 +37,7 @@ namespace AuthScape.PrivateLabel.Services
         Task<List<Domain>> GetAllDomains(long? companyId = null);
         Task CreateDNSRecords(string openIdApplicationId, string newDomain);
         Task<ManifestFile> GetManifestFile(string domain);
+        Task<ThirdPartyAnalytics?> GetAnalyticsTrackingCodes(string privateLabelDomain);
     }
 
     public class PrivateLabelService : IPrivateLabelService
@@ -401,6 +403,24 @@ namespace AuthScape.PrivateLabel.Services
             }
 
             return dnsRecord;
+        }
+
+        public async Task<ThirdPartyAnalytics?> GetAnalyticsTrackingCodes(string privateLabelDomain)
+        {
+            if (privateLabelDomain != null)
+            {
+                return await databaseContext.DnsRecords
+                    .AsNoTracking()
+                    .Where(z => z.Domain == privateLabelDomain)
+                    .Select(z => new ThirdPartyAnalytics()
+                    {
+                        GoogleAnalytics = z.GoogleAnaltyics,
+                        MicrosoftClairty = z.MicrosoftClarity
+                    })
+                    .FirstOrDefaultAsync();
+            }
+
+            throw new BadRequestException("Private Label domain does not exist");
         }
 
         public async Task CreateDNSRecords(string openIdApplicationId, string newDomain)

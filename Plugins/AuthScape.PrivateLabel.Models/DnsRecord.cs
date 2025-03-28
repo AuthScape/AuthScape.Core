@@ -24,6 +24,9 @@
         public string? FontFamily { get; set; }
         public string? FavIcon { get; set; }
 
+        public string? GoogleAnaltyics { get; set; }
+        public string? MicrosoftClarity { get; set; }
+
         public string? MinifiedCSSFile { get; set; }
 
         public string? DNSErrorMessage { get; set; }
