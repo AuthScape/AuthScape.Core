@@ -7,11 +7,11 @@ namespace AuthScape.Marketplace.Models
     {
         public static void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<ProductCard>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
-            });
+            //builder.Entity<ProductCard>(entity =>
+            //{
+            //    entity.HasKey(e => e.Id);
+            //    entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            //});
 
             builder.Entity<ProductCardCategory>(entity =>
             {
@@ -19,32 +19,32 @@ namespace AuthScape.Marketplace.Models
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
 
-            builder.Entity<ProductCardField>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            //builder.Entity<ProductCardField>(entity =>
+            //{
+            //    entity.HasKey(e => e.Id);
+            //    entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
-                //entity.HasOne(e => e.ProductCategory)
-                //    .WithMany(m => m.ProductFields)
-                //    .HasForeignKey(rf => rf.ProductCategoryId)
-                //    .OnDelete(DeleteBehavior.ClientSetNull);
-            });
+            //    //entity.HasOne(e => e.ProductCategory)
+            //    //    .WithMany(m => m.ProductFields)
+            //    //    .HasForeignKey(rf => rf.ProductCategoryId)
+            //    //    .OnDelete(DeleteBehavior.ClientSetNull);
+            //});
 
-            builder.Entity<ProductCardAndCardFieldMapping>(entity =>
-            {
-                entity.HasKey(e => new { e.Id, e.ProductId, e.ProductFieldId });
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            //builder.Entity<ProductCardAndCardFieldMapping>(entity =>
+            //{
+            //    entity.HasKey(e => new { e.Id, e.ProductId, e.ProductFieldId });
+            //    entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
-                //entity.HasOne(e => e.Product)
-                //    .WithMany(m => m.ProductCardAndCardFieldMapping)
-                //    .HasForeignKey(rf => rf.ProductId)
-                //    .OnDelete(DeleteBehavior.ClientSetNull);
+            //    //entity.HasOne(e => e.Product)
+            //    //    .WithMany(m => m.ProductCardAndCardFieldMapping)
+            //    //    .HasForeignKey(rf => rf.ProductId)
+            //    //    .OnDelete(DeleteBehavior.ClientSetNull);
 
-                //entity.HasOne(e => e.ProductField)
-                //    .WithMany(m => m.ProductCardAndCardFieldMapping)
-                //    .HasForeignKey(rf => rf.ProductFieldId)
-                //    .OnDelete(DeleteBehavior.ClientSetNull);
-            });
+            //    //entity.HasOne(e => e.ProductField)
+            //    //    .WithMany(m => m.ProductCardAndCardFieldMapping)
+            //    //    .HasForeignKey(rf => rf.ProductFieldId)
+            //    //    .OnDelete(DeleteBehavior.ClientSetNull);
+            //});
 
             builder.Entity<AnalyticsMarketplaceImpressionsClicks>(entity =>
             {

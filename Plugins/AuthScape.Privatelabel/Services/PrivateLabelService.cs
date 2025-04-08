@@ -7,7 +7,6 @@ using Services.Context;
 using Microsoft.EntityFrameworkCore;
 using NUglify;
 using System.Text;
-using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using AuthScape.Services.Azure.Storage;
 using Scryber.OpenType;
@@ -15,8 +14,6 @@ using CoreBackpack.Services;
 using AuthScape.PrivateLabel.Models;
 using AuthScape.Document.Models;
 using Newtonsoft.Json;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs;
 using AuthScape.Models.Exceptions;
 
 namespace AuthScape.PrivateLabel.Services
@@ -27,6 +24,7 @@ namespace AuthScape.PrivateLabel.Services
         Task SetFontFamily(string domain, string fontFamily, long? CompanyId = null);
         Task SetCustomCSS(string domain, string customCSS, long? CompanyId = null);
         Task SetCustomHtml(string domain, string customHtml, long? CompanyId = null);
+        Task<string?> GetHTMLImports(long oemCompanyId);
         Task<List<PrivateLabelDNSFields>> GetDNSFields(string domain, long? companyId = null);
         Task SetDNSField(Guid id, Guid fieldId, string value);
         Task<DnsRecord> GetEditorData(string domain, long? companyId = null);
@@ -163,6 +161,19 @@ namespace AuthScape.PrivateLabel.Services
                 //var fields = await databaseContext.DnsRecordFields.Where(d => d.DnsRecordId == dnsRecord.Id).AsNoTracking().ToListAsync();
 
                 return dnsRecord.MinifiedCSSFile;
+            }
+
+            return null;
+        }
+
+        public async Task<string?> GetHTMLImports(long oemCompanyId)
+        {
+            var dnsRecord = await databaseContext.DnsRecords.AsNoTracking().Where(d => d.CompanyId == oemCompanyId).FirstOrDefaultAsync();
+            if (dnsRecord != null)
+            {
+                //var fields = await databaseContext.DnsRecordFields.Where(d => d.DnsRecordId == dnsRecord.Id).AsNoTracking().ToListAsync();
+
+                return dnsRecord.MinifiedHTML;
             }
 
             return null;
@@ -388,6 +399,8 @@ namespace AuthScape.PrivateLabel.Services
                     CompanyId = s.CompanyId,
                     DemoCompanyId = s.DemoCompanyId,
                     FavIcon = s.FavIcon,
+                    GoogleAnalytics4Code = s.GoogleAnaltyics, // Google Analytics 4 Code
+                    MicrosoftClarityCode = s.MicrosoftClarity // Microsoft Clarity Code
                 })
                 .FirstOrDefaultAsync();
 

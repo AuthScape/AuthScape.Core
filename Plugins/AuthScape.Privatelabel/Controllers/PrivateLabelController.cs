@@ -138,6 +138,14 @@ namespace AuthScape.PrivateLabel.Controllers
             return Content(dnsRecord, "text/css");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetHTMLImports(long oemCompanyId)
+        {
+            var dnsRecord = await privateLabelService.GetHTMLImports(oemCompanyId);
+            return Content(dnsRecord, "text/javascript");
+        }
+
+
         [HttpPost]
 		[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
 		public async Task<IActionResult> UploadAppIcon([FromForm] UploadFileStorage appIconFile)

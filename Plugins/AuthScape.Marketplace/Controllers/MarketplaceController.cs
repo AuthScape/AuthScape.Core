@@ -29,12 +29,12 @@ namespace AuthScape.Marketplace.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> Index(long platformId = 1, long? companyId = null)
-        {
-            await marketplaceService.Generate(platformId, companyId);
+        //[HttpGet]
+        //public async Task<IActionResult> Index(long platformId = 1, long? companyId = null)
+        //{
+        //    await marketplaceService.Generate(platformId, companyId);
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
     }
 }
