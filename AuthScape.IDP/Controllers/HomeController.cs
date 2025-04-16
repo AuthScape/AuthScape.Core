@@ -18,8 +18,8 @@ namespace IDP.Controllers
 
         public IActionResult Index()
         {
-            var returnUrl = appSettings.LoginRedirectUrl + "/login";
-            return Redirect(returnUrl);
+            //var returnUrl = appSettings.LoginRedirectUrl + "/login";
+            return Redirect("/Identity/Account/Manage/index");
             //return View();
         }
         public IActionResult Error()
