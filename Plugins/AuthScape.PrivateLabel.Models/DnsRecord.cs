@@ -33,6 +33,10 @@
 
         public long? DemoCompanyId { get; set; }
 
+        public bool RedirectTrafficToCanonical { get; set; }
+
+        public string? CanonicalBaseUrl { get; set; }
+
 
         public ICollection<PrivateLabelSelectedFields> PrivateLabelSelectedFields { get; set; }
     }
