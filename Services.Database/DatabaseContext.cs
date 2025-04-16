@@ -22,6 +22,7 @@ using AuthScape.UserManagementSystem.Models;
 using AuthScape.UserManageSystem.Models;
 using AuthScape.Marketplace.Models;
 using AuthScape.ContentManagement.Models;
+using Fido2Identity;
 
 namespace Services.Context
 {
@@ -47,6 +48,7 @@ namespace Services.Context
         public DbSet<Stylesheet> Stylesheets { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Location> Locations { get; set; }
+        public DbSet<FidoStoredCredential> FidoStoredCredential => Set<FidoStoredCredential>();
 
         #region Marketplace
 
@@ -219,6 +221,8 @@ namespace Services.Context
             {
                 entity.HasKey(e => e.ThirdPartyAuthenticationType);
             });
+
+            builder.Entity<FidoStoredCredential>().HasKey(m => m.Id);
 
             #region Documents
 
