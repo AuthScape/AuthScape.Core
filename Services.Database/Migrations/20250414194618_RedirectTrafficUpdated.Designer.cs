@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250414194618_RedirectTrafficUpdated")]
+    partial class RedirectTrafficUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2146,46 +2149,6 @@ namespace Services.Database.Migrations
                     b.HasIndex("CustomFieldId");
 
                     b.ToTable("UserCustomFields");
-                });
-
-            modelBuilder.Entity("Fido2Identity.FidoStoredCredential", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<Guid>("AaGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CredType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DescriptorJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<byte[]>("PublicKey")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<DateTime>("RegDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("SignatureCounter")
-                        .HasColumnType("bigint");
-
-                    b.Property<byte[]>("UserHandle")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<byte[]>("UserId")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FidoStoredCredential");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>

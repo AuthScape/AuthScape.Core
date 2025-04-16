@@ -400,7 +400,10 @@ namespace AuthScape.PrivateLabel.Services
                     DemoCompanyId = s.DemoCompanyId,
                     FavIcon = s.FavIcon,
                     GoogleAnalytics4Code = s.GoogleAnaltyics, // Google Analytics 4 Code
-                    MicrosoftClarityCode = s.MicrosoftClarity // Microsoft Clarity Code
+                    MicrosoftClarityCode = s.MicrosoftClarity, // Microsoft Clarity Code
+                    CanonicalBaseUrl = s.CanonicalBaseUrl,
+                    RedirectTrafficToCanonical = s.RedirectTrafficToCanonical
+                    //CompanyName = s.Company.Title
                 })
                 .FirstOrDefaultAsync();
 
