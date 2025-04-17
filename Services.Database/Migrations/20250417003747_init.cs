@@ -12,6 +12,63 @@ namespace Services.Database.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AnalyticsMails",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Html = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TemplateId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TemplateName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MessageId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsMails", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnalyticsMarketplaceImpressionsClicks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Platform = table.Column<int>(type: "int", nullable: false),
+                    ProductOrServiceClicked = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    JSONProductList = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    JSONFilterSelected = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: true),
+                    OemCompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsMarketplaceImpressionsClicks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnalyticsSessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    UserId = table.Column<long>(type: "bigint", nullable: true),
+                    LocationId = table.Column<long>(type: "bigint", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Value = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Started = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Ended = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Deleted = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Duration = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Device = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsSessions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
                 {
@@ -32,6 +89,7 @@ namespace Services.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    Logo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeactivated = table.Column<bool>(type: "bit", nullable: false)
@@ -57,19 +115,32 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DnsRecordFields",
+                name: "CustomFieldsTab",
                 columns: table => new
                 {
-                    DnsRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CSSSelector = table.Column<int>(type: "int", nullable: false),
-                    CSSProperty = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Selector = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CSSValue = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    PlatformType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DnsRecordFields", x => new { x.DnsRecordId, x.CSSSelector });
+                    table.PrimaryKey("PK_CustomFieldsTab", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DocumentMatchMemories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    DocumentTypeId = table.Column<long>(type: "bigint", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: false),
+                    FileColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ToColumnName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentMatchMemories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -93,11 +164,33 @@ namespace Services.Database.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TableName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TypeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AssemblyFullName = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    AssemblyFullName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Type = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DocumentTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FidoStoredCredential",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    PublicKey = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    UserHandle = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    SignatureCounter = table.Column<long>(type: "bigint", nullable: false),
+                    CredType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RegDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AaGuid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DescriptorJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FidoStoredCredential", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -126,6 +219,37 @@ namespace Services.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InvoiceLineItemNames", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KanbanCardCollaborators",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    FromRoleId = table.Column<long>(type: "bigint", nullable: false),
+                    FromColumnId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ToRoleId = table.Column<long>(type: "bigint", nullable: false),
+                    ToColumnId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KanbanCardCollaborators", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KanbanColumns",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Slug = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Index = table.Column<int>(type: "int", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    RoleId = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KanbanColumns", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -202,23 +326,68 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Pages",
+                name: "PageImageAssets",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PageImageAssets", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PageRoots",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PageType = table.Column<int>(type: "int", nullable: false),
-                    Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MetaDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    HtmlData = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CssData = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                    RootUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    IsInHeaderNavigation = table.Column<bool>(type: "bit", nullable: false),
+                    Highlight = table.Column<bool>(type: "bit", nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Pages", x => x.Id);
+                    table.PrimaryKey("PK_PageRoots", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PageTypes",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsRecursive = table.Column<bool>(type: "bit", nullable: false),
+                    IsHomepage = table.Column<bool>(type: "bit", nullable: false),
+                    IsLink = table.Column<bool>(type: "bit", nullable: false),
+                    IsEmail = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PageTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Permissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Permissions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -243,35 +412,35 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "QueuedActivity",
+                name: "PrivateLabelFields",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    FieldType = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TimeZoneById = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CronExpression = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ActivityName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRunning = table.Column<bool>(type: "bit", nullable: false),
-                    IsDiabled = table.Column<bool>(type: "bit", nullable: false),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CSSSelector = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CSSProperty = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QueuedActivity", x => x.Id);
+                    table.PrimaryKey("PK_PrivateLabelFields", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "QueuedActivityLogs",
+                name: "ProductCardCategories",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
-                    QueuedActivityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    PlatformId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    ParentName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsArray = table.Column<bool>(type: "bit", nullable: false),
+                    ProductCardCategoryType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QueuedActivityLogs", x => x.Id);
+                    table.PrimaryKey("PK_ProductCardCategories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -285,6 +454,44 @@ namespace Services.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SharedDocuments", x => new { x.UserId, x.DocumentId });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Sheets",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sheets", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SomeSheet",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    CustomerNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TestAccountNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Supplier = table.Column<long>(type: "bigint", nullable: true),
+                    DealerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GrossSales = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Rebatable = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PONumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    InvoiceNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PublishedToPlatformDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UploadId = table.Column<long>(type: "bigint", nullable: false),
+                    RemoveRecord = table.Column<bool>(type: "bit", nullable: false),
+                    UpdateRecord = table.Column<bool>(type: "bit", nullable: false),
+                    AddRecord = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SomeSheet", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -367,6 +574,117 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AnalyticsMailTrackings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    EventType = table.Column<int>(type: "int", nullable: false),
+                    MarketingCampaignId = table.Column<long>(type: "bigint", nullable: true),
+                    MarketingCampaignName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Arguments = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    InternalEventId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    InternalMessageId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MarketingCampaignSplitId = table.Column<long>(type: "bigint", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExternalUserId = table.Column<long>(type: "bigint", nullable: true),
+                    MarketingCampaignVersion = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MessageId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AnalyticsMailId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsMailTrackings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AnalyticsMailTrackings_AnalyticsMails_AnalyticsMailId",
+                        column: x => x.AnalyticsMailId,
+                        principalTable: "AnalyticsMails",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnalyticsConversions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: true),
+                    LocationId = table.Column<long>(type: "bigint", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    TransactionId = table.Column<long>(type: "bigint", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsConversions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AnalyticsConversions_AnalyticsSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "AnalyticsSessions",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnalyticsEvents",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UserId = table.Column<long>(type: "bigint", nullable: true),
+                    LocationId = table.Column<long>(type: "bigint", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Label = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Uri = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Host = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Referrer = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Deleted = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsEvents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AnalyticsEvents_AnalyticsSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "AnalyticsSessions",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnalyticsPageViews",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UserId = table.Column<long>(type: "bigint", nullable: true),
+                    LocationId = table.Column<long>(type: "bigint", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Uri = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Host = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Referrer = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Deleted = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnalyticsPageViews", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AnalyticsPageViews_AnalyticsSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "AnalyticsSessions",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -391,7 +709,7 @@ namespace Services.Database.Migrations
                 name: "DnsRecords",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
                     Domain = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AppIconUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -408,9 +726,13 @@ namespace Services.Database.Migrations
                     HeaderCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FontFamily = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FavIcon = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GoogleAnaltyics = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MicrosoftClarity = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MinifiedCSSFile = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DNSErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DemoCompanyId = table.Column<long>(type: "bigint", nullable: true)
+                    DemoCompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    RedirectTrafficToCanonical = table.Column<bool>(type: "bit", nullable: false),
+                    CanonicalBaseUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -445,6 +767,29 @@ namespace Services.Database.Migrations
                         name: "FK_Locations_Companies_CompanyId",
                         column: x => x.CompanyId,
                         principalTable: "Companies",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CustomFields",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FieldType = table.Column<int>(type: "int", nullable: false),
+                    CustomFieldPlatformType = table.Column<int>(type: "int", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    GridSize = table.Column<int>(type: "int", nullable: true),
+                    TabId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomFields", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CustomFields_CustomFieldsTab_TabId",
+                        column: x => x.TabId,
+                        principalTable: "CustomFieldsTab",
                         principalColumn: "Id");
                 });
 
@@ -494,7 +839,12 @@ namespace Services.Database.Migrations
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
                     LocationId = table.Column<long>(type: "bigint", nullable: true),
                     UserId = table.Column<long>(type: "bigint", nullable: true),
-                    HeaderRow = table.Column<int>(type: "int", nullable: false, defaultValue: 1)
+                    FileUri = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    HeaderRow = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    Rules = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ArchivedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ArchivedBy = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -569,6 +919,28 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "KanbanCards",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    Identifier = table.Column<long>(type: "bigint", nullable: true),
+                    UserCount = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    KanbanColumnId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Index = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KanbanCards", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KanbanCards_KanbanColumns_KanbanColumnId",
+                        column: x => x.KanbanColumnId,
+                        principalTable: "KanbanColumns",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OpenIddictAuthorizations",
                 columns: table => new
                 {
@@ -593,6 +965,40 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Pages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Slug = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PageTypeId = table.Column<long>(type: "bigint", nullable: false),
+                    PageRootId = table.Column<long>(type: "bigint", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Recursion = table.Column<int>(type: "int", nullable: true),
+                    Order = table.Column<int>(type: "int", nullable: true),
+                    Highlight = table.Column<bool>(type: "bit", nullable: false),
+                    IsContainedButton = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Pages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Pages_PageRoots_PageRootId",
+                        column: x => x.PageRootId,
+                        principalTable: "PageRoots",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Pages_PageTypes_PageTypeId",
+                        column: x => x.PageTypeId,
+                        principalTable: "PageTypes",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tickets",
                 columns: table => new
                 {
@@ -612,7 +1018,9 @@ namespace Services.Database.Migrations
                     LocationId = table.Column<long>(type: "bigint", nullable: true),
                     PriorityLevel = table.Column<int>(type: "int", nullable: false),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    PrivateLabelCompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    CustomTabPayload = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -630,6 +1038,29 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PrivateLabelSelectedFields",
+                columns: table => new
+                {
+                    DnsRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PrivateLabelFieldId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CSSValue = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PrivateLabelSelectedFields", x => new { x.DnsRecordId, x.PrivateLabelFieldId });
+                    table.ForeignKey(
+                        name: "FK_PrivateLabelSelectedFields_DnsRecords_DnsRecordId",
+                        column: x => x.DnsRecordId,
+                        principalTable: "DnsRecords",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PrivateLabelSelectedFields_PrivateLabelFields_PrivateLabelFieldId",
+                        column: x => x.PrivateLabelFieldId,
+                        principalTable: "PrivateLabelFields",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
                 {
@@ -639,6 +1070,7 @@ namespace Services.Database.Migrations
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     locale = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Archived = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     LastLoggedIn = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     PhotoUri = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -676,6 +1108,42 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CompanyCustomFields",
+                columns: table => new
+                {
+                    CompanyId = table.Column<long>(type: "bigint", nullable: false),
+                    CustomFieldId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyCustomFields", x => new { x.CompanyId, x.CustomFieldId });
+                    table.ForeignKey(
+                        name: "FK_CompanyCustomFields_CustomFields_CustomFieldId",
+                        column: x => x.CustomFieldId,
+                        principalTable: "CustomFields",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserCustomFields",
+                columns: table => new
+                {
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    CustomFieldId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserCustomFields", x => new { x.UserId, x.CustomFieldId });
+                    table.ForeignKey(
+                        name: "FK_UserCustomFields_CustomFields_CustomFieldId",
+                        column: x => x.CustomFieldId,
+                        principalTable: "CustomFields",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Documents",
                 columns: table => new
                 {
@@ -706,13 +1174,42 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Attributes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    DocumentComponentId = table.Column<long>(type: "bigint", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attributes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Attributes_DocumentComponents_DocumentComponentId",
+                        column: x => x.DocumentComponentId,
+                        principalTable: "DocumentComponents",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DocumentMappings",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DocumentComponentId = table.Column<long>(type: "bigint", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ToName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UploadedSheetUri = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsSearchableKey = table.Column<bool>(type: "bit", nullable: false),
+                    OnlyAddRowIfColumnFound = table.Column<bool>(type: "bit", nullable: false),
+                    RememberForNextTime = table.Column<bool>(type: "bit", nullable: false),
+                    IsNewColumn = table.Column<bool>(type: "bit", nullable: false),
+                    AttributeFieldType = table.Column<int>(type: "int", nullable: false),
+                    IsColumnRequired = table.Column<bool>(type: "bit", nullable: false),
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
                     UserId = table.Column<long>(type: "bigint", nullable: true),
                     LocationId = table.Column<long>(type: "bigint", nullable: true)
@@ -724,6 +1221,23 @@ namespace Services.Database.Migrations
                         name: "FK_DocumentMappings_DocumentComponents_DocumentComponentId",
                         column: x => x.DocumentComponentId,
                         principalTable: "DocumentComponents",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KanbanAssignedTos",
+                columns: table => new
+                {
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    KanbanCardId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KanbanAssignedTos", x => new { x.UserId, x.KanbanCardId });
+                    table.ForeignKey(
+                        name: "FK_KanbanAssignedTos_KanbanCards_KanbanCardId",
+                        column: x => x.KanbanCardId,
+                        principalTable: "KanbanCards",
                         principalColumn: "Id");
                 });
 
@@ -770,7 +1284,8 @@ namespace Services.Database.Migrations
                     ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    URL = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    URL = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Payload = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -926,6 +1441,7 @@ namespace Services.Database.Migrations
                     InvoiceToUserId = table.Column<long>(type: "bigint", nullable: true),
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
                     LocationId = table.Column<long>(type: "bigint", nullable: true),
+                    ShipToLocationId = table.Column<long>(type: "bigint", nullable: true),
                     InvoiceState = table.Column<int>(type: "int", nullable: false),
                     Secret = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -1031,6 +1547,29 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SheetAttributes",
+                columns: table => new
+                {
+                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AttributeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SheetAttributes", x => new { x.ProductId, x.AttributeId });
+                    table.ForeignKey(
+                        name: "FK_SheetAttributes_Attributes_AttributeId",
+                        column: x => x.AttributeId,
+                        principalTable: "Attributes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SheetAttributes_Sheets_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Sheets",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InvoiceLineItems",
                 columns: table => new
                 {
@@ -1111,6 +1650,26 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AnalyticsConversions_SessionId",
+                table: "AnalyticsConversions",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnalyticsEvents_SessionId",
+                table: "AnalyticsEvents",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnalyticsMailTrackings_AnalyticsMailId",
+                table: "AnalyticsMailTrackings",
+                column: "AnalyticsMailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnalyticsPageViews_SessionId",
+                table: "AnalyticsPageViews",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -1158,6 +1717,21 @@ namespace Services.Database.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attributes_DocumentComponentId",
+                table: "Attributes",
+                column: "DocumentComponentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CompanyCustomFields_CustomFieldId",
+                table: "CompanyCustomFields",
+                column: "CustomFieldId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomFields_TabId",
+                table: "CustomFields",
+                column: "TabId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DnsRecords_CompanyId",
@@ -1235,6 +1809,16 @@ namespace Services.Database.Migrations
                 column: "LocationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_KanbanAssignedTos_KanbanCardId",
+                table: "KanbanAssignedTos",
+                column: "KanbanCardId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KanbanCards_KanbanColumnId",
+                table: "KanbanCards",
+                column: "KanbanColumnId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Locations_CompanyId",
                 table: "Locations",
                 column: "CompanyId");
@@ -1276,6 +1860,26 @@ namespace Services.Database.Migrations
                 filter: "[ReferenceId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Pages_PageRootId",
+                table: "Pages",
+                column: "PageRootId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pages_PageTypeId",
+                table: "Pages",
+                column: "PageTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PrivateLabelSelectedFields_PrivateLabelFieldId",
+                table: "PrivateLabelSelectedFields",
+                column: "PrivateLabelFieldId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SheetAttributes_AttributeId",
+                table: "SheetAttributes",
+                column: "AttributeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StoreCredits_CompanyId",
                 table: "StoreCredits",
                 column: "CompanyId");
@@ -1311,6 +1915,11 @@ namespace Services.Database.Migrations
                 column: "TicketTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserCustomFields_CustomFieldId",
+                table: "UserCustomFields",
+                column: "CustomFieldId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserLocations_LocationId",
                 table: "UserLocations",
                 column: "LocationId");
@@ -1335,6 +1944,21 @@ namespace Services.Database.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AnalyticsConversions");
+
+            migrationBuilder.DropTable(
+                name: "AnalyticsEvents");
+
+            migrationBuilder.DropTable(
+                name: "AnalyticsMailTrackings");
+
+            migrationBuilder.DropTable(
+                name: "AnalyticsMarketplaceImpressionsClicks");
+
+            migrationBuilder.DropTable(
+                name: "AnalyticsPageViews");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1350,19 +1974,22 @@ namespace Services.Database.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CompanyCustomFields");
+
+            migrationBuilder.DropTable(
                 name: "Coupons");
-
-            migrationBuilder.DropTable(
-                name: "DnsRecordFields");
-
-            migrationBuilder.DropTable(
-                name: "DnsRecords");
 
             migrationBuilder.DropTable(
                 name: "DocumentMappings");
 
             migrationBuilder.DropTable(
+                name: "DocumentMatchMemories");
+
+            migrationBuilder.DropTable(
                 name: "Documents");
+
+            migrationBuilder.DropTable(
+                name: "FidoStoredCredential");
 
             migrationBuilder.DropTable(
                 name: "FlowEdges");
@@ -1380,6 +2007,12 @@ namespace Services.Database.Migrations
                 name: "InvoicePayments");
 
             migrationBuilder.DropTable(
+                name: "KanbanAssignedTos");
+
+            migrationBuilder.DropTable(
+                name: "KanbanCardCollaborators");
+
+            migrationBuilder.DropTable(
                 name: "Loggings");
 
             migrationBuilder.DropTable(
@@ -1389,19 +2022,31 @@ namespace Services.Database.Migrations
                 name: "OpenIddictTokens");
 
             migrationBuilder.DropTable(
+                name: "PageImageAssets");
+
+            migrationBuilder.DropTable(
                 name: "Pages");
+
+            migrationBuilder.DropTable(
+                name: "Permissions");
 
             migrationBuilder.DropTable(
                 name: "Plans");
 
             migrationBuilder.DropTable(
-                name: "QueuedActivity");
+                name: "PrivateLabelSelectedFields");
 
             migrationBuilder.DropTable(
-                name: "QueuedActivityLogs");
+                name: "ProductCardCategories");
 
             migrationBuilder.DropTable(
                 name: "SharedDocuments");
+
+            migrationBuilder.DropTable(
+                name: "SheetAttributes");
+
+            migrationBuilder.DropTable(
+                name: "SomeSheet");
 
             migrationBuilder.DropTable(
                 name: "StoreCredits");
@@ -1425,16 +2070,22 @@ namespace Services.Database.Migrations
                 name: "TicketParticipants");
 
             migrationBuilder.DropTable(
+                name: "UserCustomFields");
+
+            migrationBuilder.DropTable(
                 name: "UserLocations");
 
             migrationBuilder.DropTable(
                 name: "WalletPaymentMethods");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "AnalyticsMails");
 
             migrationBuilder.DropTable(
-                name: "DocumentComponents");
+                name: "AnalyticsSessions");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "DocumentFolders");
@@ -1449,22 +2100,49 @@ namespace Services.Database.Migrations
                 name: "Invoices");
 
             migrationBuilder.DropTable(
+                name: "KanbanCards");
+
+            migrationBuilder.DropTable(
                 name: "OpenIddictAuthorizations");
+
+            migrationBuilder.DropTable(
+                name: "PageRoots");
+
+            migrationBuilder.DropTable(
+                name: "PageTypes");
+
+            migrationBuilder.DropTable(
+                name: "DnsRecords");
+
+            migrationBuilder.DropTable(
+                name: "PrivateLabelFields");
+
+            migrationBuilder.DropTable(
+                name: "Attributes");
+
+            migrationBuilder.DropTable(
+                name: "Sheets");
 
             migrationBuilder.DropTable(
                 name: "Tickets");
 
             migrationBuilder.DropTable(
-                name: "Wallets");
+                name: "CustomFields");
 
             migrationBuilder.DropTable(
-                name: "DocumentTypes");
+                name: "Wallets");
 
             migrationBuilder.DropTable(
                 name: "DocumentSegments");
 
             migrationBuilder.DropTable(
+                name: "KanbanColumns");
+
+            migrationBuilder.DropTable(
                 name: "OpenIddictApplications");
+
+            migrationBuilder.DropTable(
+                name: "DocumentComponents");
 
             migrationBuilder.DropTable(
                 name: "TicketStatuses");
@@ -1473,7 +2151,13 @@ namespace Services.Database.Migrations
                 name: "TicketTypes");
 
             migrationBuilder.DropTable(
+                name: "CustomFieldsTab");
+
+            migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "DocumentTypes");
 
             migrationBuilder.DropTable(
                 name: "Locations");

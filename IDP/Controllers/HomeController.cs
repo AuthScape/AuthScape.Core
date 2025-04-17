@@ -76,46 +76,46 @@ namespace IDP.Controllers
 
 
 
-        [HttpPost]
-        public ActionResult StartAuthentication(string username)
-        {
-            var user = databaseContext.Users.FirstOrDefault(u => u.UserName == username);
-            //var credentials = databaseContext.Credentials.Where(c => c.UserId == user.UserId).ToList();
+        //[HttpPost]
+        //public ActionResult StartAuthentication(string username)
+        //{
+        //    var user = databaseContext.Users.FirstOrDefault(u => u.UserName == username);
+        //    //var credentials = databaseContext.Credentials.Where(c => c.UserId == user.UserId).ToList();
 
-            var options = new
-            {
-                challenge = ToBase64UrlString(RandomNumberGenerator.GetBytes(32)),
-                allowCredentials = credentials.Select(c => new
-                {
-                    type = "public-key",
-                    id = ToBase64UrlString(c.CredentialId),
-                    transports = new[] { "internal" }
-                }),
-                userVerification = "preferred",
-                timeout = 60000
-            };
+        //    var options = new
+        //    {
+        //        challenge = ToBase64UrlString(RandomNumberGenerator.GetBytes(32)),
+        //        allowCredentials = credentials.Select(c => new
+        //        {
+        //            type = "public-key",
+        //            id = ToBase64UrlString(c.CredentialId),
+        //            transports = new[] { "internal" }
+        //        }),
+        //        userVerification = "preferred",
+        //        timeout = 60000
+        //    };
 
-            return Json(options);
-        }
+        //    return Json(options);
+        //}
 
-        [HttpPost]
-        public async Task<ActionResult> FinishAuthentication(AuthenticatorAssertionRawResponse assertionResponse)
-        {
-            var credential = db.Credentials
-                .FirstOrDefault(c => c.CredentialId == Base64UrlDecode(assertionResponse.id));
+        //[HttpPost]
+        //public async Task<ActionResult> FinishAuthentication(AuthenticatorAssertionRawResponse assertionResponse)
+        //{
+        //    var credential = db.Credentials
+        //        .FirstOrDefault(c => c.CredentialId == Base64UrlDecode(assertionResponse.id));
 
-            if (VerifySignature(
-                assertionResponse.response.authenticatorData,
-                assertionResponse.response.clientDataJSON,
-                assertionResponse.response.signature,
-                credential.PublicKey))
-            {
-                credential.SignCount++;
-                db.SaveChanges();
-                return Ok();
-            }
+        //    if (VerifySignature(
+        //        assertionResponse.response.authenticatorData,
+        //        assertionResponse.response.clientDataJSON,
+        //        assertionResponse.response.signature,
+        //        credential.PublicKey))
+        //    {
+        //        credential.SignCount++;
+        //        db.SaveChanges();
+        //        return Ok();
+        //    }
 
-            return BadRequest("Authentication failed");
-        }
+        //    return BadRequest("Authentication failed");
+        //}
     }
 }
