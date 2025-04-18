@@ -167,6 +167,9 @@ namespace mvcTest.Areas.Identity.Pages.Account
                 user.FirstName = Input.FirstName;
                 user.LastName = Input.LastNane;
                 user.locale = timezone;
+                user.Created = SystemTime.Now;
+                user.LastLoggedIn = SystemTime.Now;
+                user.IsActive = true;
 
                 //result.Errors
 
