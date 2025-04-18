@@ -79,6 +79,24 @@ namespace IDP.Services
 
                 // Note: no client registration is created for resource_server_2
                 // as it uses local token validation instead of introspection.
+
+                // update page types
+                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                {
+                    Title = "Link",
+                    IsLink = true
+                });
+
+                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                {
+                    Title = "Page",
+                });
+
+                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                {
+                    Title = "Home Page",
+                    IsHomepage = true
+                });
             }
 
             async Task CreateScopesAsync()

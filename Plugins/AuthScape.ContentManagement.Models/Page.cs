@@ -32,7 +32,6 @@ namespace AuthScape.ContentManagement.Models
     {
         public long Id { get; set; }
         public string Title { get; set; }
-        public bool IsRecursive { get; set; }
         public bool IsHomepage { get; set; }
         public bool IsLink { get; set; }
         public bool IsEmail { get; set; }
