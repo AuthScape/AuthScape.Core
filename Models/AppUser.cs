@@ -1,10 +1,9 @@
-﻿using System.ComponentModel;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using AuthScape.Models.PaymentGateway;
 using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
-using AuthScape.UserManagementSystem.Models;
 using AuthScape.UserManageSystem.Models;
+using Models.Authentication;
 
 namespace AuthScape.Models.Users
 {
@@ -28,6 +27,8 @@ namespace AuthScape.Models.Users
         public ICollection<StoreCredit> GiftedCredit { get; set; } // credits that you gifted to another user
 
         public ICollection<UserLocations> UserLocations { get; set; }
+
+        public virtual ICollection<Fido2Credential> Credentials { get; set; }
 
 
         [NotMapped]

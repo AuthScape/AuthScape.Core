@@ -79,7 +79,7 @@
                             </section>
                         </div>
                         <div>
-                            <button onclick="RegPassKey();">Testing passkey</button>
+                            <button onclick="register()">Sign in with Windows Hello</button>
                         </div>
                     </div>
                 </div>
@@ -164,54 +164,30 @@
 
     <script type="text/javascript">
 
-        function base64urlToUint8Array(base64UrlString) {
-          // Add padding if necessary
-          const padding = '='.repeat((4 - base64UrlString.length % 4) % 4);
-          const base64 = (base64UrlString + padding)
-            // Replace URL-specific characters with standard Base64 characters
-            .replace(/-/g, '+')
-            .replace(/_/g, '/');
-
-          // Decode the Base64 string to a binary string
-          const rawData = atob(base64);
-          const outputArray = new Uint8Array(rawData.length);
-
-          // Convert each character to its corresponding char code in the Uint8Array
-          for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-          }
-          return outputArray;
-        }
-
-        async function RegPassKey() {
-
-            const username = "brandonzuech@gmail.com";
-
-            // Get registration options from server
-            const optionsResponse = await fetch('/Home/StartRegistration', {
+        async function register() {
+            const options = await fetch('/home/GetRegistrationOptions').then(r => r.json());
+            options.authenticatorSelection = {
+                authenticatorAttachment: 'platform',
+                userVerification: 'required'
+            };
+            const credential = await navigator.credentials.create({ publicKey: options });
+            await fetch('/home/RegisterCredential', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
+                body: JSON.stringify(credential)
             });
-            const options = await optionsResponse.json();
+        }
 
-            // Convert some values to Uint8Array
-            options.user.id = base64urlToUint8Array(options.user.id);
-            options.challenge = base64urlToUint8Array(options.challenge);
-
-            // Create credential
-            const credential = await navigator.credentials.create({
-                publicKey: options
+        async function authenticate() {
+            const options = await fetch('/home/GetAssertionOptions').then(r => r.json());
+            options.userVerification = 'required';
+            const assertion = await navigator.credentials.get({ publicKey: options });
+            await fetch('/home/VerifyAssertion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(assertion)
             });
-
-            // // Send credential to server
-            // const response = await fetch('/Home/FinishRegistration', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(credentialToJSON(credential))
-            // });
-
-            // if (response.ok) alert('Registration successful!');
+            window.location.href = '/home'; // Redirect on success
         }
 
     

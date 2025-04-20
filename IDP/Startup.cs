@@ -12,7 +12,6 @@ using System;
 using AuthScape.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using AuthScape.StripePayment.Services;
-using Fido2Identity;
 
 namespace IDP
 {
@@ -37,8 +36,7 @@ namespace IDP
                 services.AddIdentity<AppUser, Role>()
                     .AddEntityFrameworkStores<DatabaseContext>()
                     .AddDefaultTokenProviders()
-                    .AddDefaultUI()
-                    .AddTokenProvider<Fido2UserTwoFactorTokenProvider>("FIDO2");
+                    .AddDefaultUI();
 
                 // database connections
                 if (_currentEnvironment.IsDevelopment())

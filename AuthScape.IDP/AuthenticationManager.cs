@@ -19,9 +19,6 @@ using Services.Tracking;
 using AuthScape.Services;
 using Services.Cores;
 using AuthScape.IDP.Services;
-using Microsoft.EntityFrameworkCore;
-using Fido2NetLib;
-using Fido2Identity;
 
 namespace AuthScape.IDP
 {
@@ -155,6 +152,14 @@ namespace AuthScape.IDP
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
 
+            services.AddFido2(options =>
+            {
+                options.ServerDomain = "yourdomain.com";
+                options.ServerName = "Your App";
+                options.Origins = new HashSet<string> { "https://yourdomain.com" };
+                options.TimestampDriftTolerance = 300000; // 5 minutes
+            });
+
 
             services.AddCors();
             services.AddControllersWithViews();
@@ -170,11 +175,6 @@ namespace AuthScape.IDP
             // Register the worker responsible of seeding the database with the sample clients.
             // Note: in a real world application, this step should be part of a setup script.
             services.AddHostedService<IDPHostedService>();
-
-
-            services.Configure<Fido2Configuration>(Configuration.GetSection("fido2"));
-            services.AddScoped<Fido2Store>();
-
 
 
             services.AddTransient<ICorsPolicyProvider, CorsPolicyManager>();
