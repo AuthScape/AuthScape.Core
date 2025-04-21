@@ -16,7 +16,7 @@ namespace Models.Authentication
         public uint SignatureCounter { get; set; }
         public string CredType { get; set; }
         public DateTime RegDate { get; set; }
-        public string AaGuid { get; set; }
+        public string? AaGuid { get; set; }
 
         public long UserId { get; set; }
         public AppUser User { get; set; }
