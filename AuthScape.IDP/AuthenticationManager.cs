@@ -154,9 +154,9 @@ namespace AuthScape.IDP
 
             services.AddFido2(options =>
             {
-                options.ServerDomain = "yourdomain.com";
+                options.ServerDomain = "localhost";
                 options.ServerName = "Your App";
-                options.Origins = new HashSet<string> { "https://yourdomain.com" };
+                options.Origins = new HashSet<string> { "https://localhost:44303" };
                 options.TimestampDriftTolerance = 300000; // 5 minutes
             });
 

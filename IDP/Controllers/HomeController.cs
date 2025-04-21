@@ -13,6 +13,9 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using Models.Authentication;
+using StrongGrid.Resources;
+using Services.Database;
+using Microsoft.Extensions.Options;
 
 namespace IDP.Controllers
 {
@@ -22,17 +25,20 @@ namespace IDP.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IFido2 _fido2;
         private readonly SignInManager<AppUser> _signInManager;
+        readonly AppSettings appSettings;
 
         public HomeController(
             DatabaseContext databaseContext,
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            IFido2 fido2)
+            IFido2 fido2,
+            IOptions<AppSettings> appSettings)
         {
             _databaseContext = databaseContext;
             _userManager = userManager;
             _fido2 = fido2;
             _signInManager = signInManager;
+            this.appSettings = appSettings.Value;
         }
 
         [HttpGet]
@@ -41,92 +47,109 @@ namespace IDP.Controllers
             var user = await _userManager.FindByNameAsync(username);
             if (user == null) return Json(new { error = "User not found" });
 
-            var existingCredentials = user.Credentials
+            var existingCredentials = await _databaseContext.Fido2Credentials
+                .Where(z => z.UserId == user.Id)
                 .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
-                .ToList();
+                .ToListAsync();
 
-            // Direct options creation with required parameters
             var options = _fido2.RequestNewCredential(
-                user: new Fido2User
+                new Fido2User
                 {
-                    Id = BitConverter.GetBytes(user.Id),
+                    Id = Encoding.UTF8.GetBytes(user.Id.ToString()),
                     Name = user.UserName,
                     DisplayName = user.UserName
                 },
-                excludeCredentials: existingCredentials,
-                authenticatorSelection: new AuthenticatorSelection
+                existingCredentials,
+                new AuthenticatorSelection
                 {
-                    AuthenticatorAttachment = AuthenticatorAttachment.Platform, // Force Windows Hello
-                    UserVerification = UserVerificationRequirement.Required, // Require PIN
-                    RequireResidentKey = true // Passwordless
+                    AuthenticatorAttachment = AuthenticatorAttachment.Platform,
+                    UserVerification = UserVerificationRequirement.Required,
+                    RequireResidentKey = true,
                 },
-                AttestationConveyancePreference.None
+                AttestationConveyancePreference.Direct
             );
 
-            HttpContext.Session.SetString("fido2Challenge", Base64Url.Encode(options.Challenge));
+            // Store the FULL options properly
+            var optionsJson = JsonConvert.SerializeObject(options);
+            HttpContext.Session.SetString("fido2Challenge",
+                Base64Url.Encode(Encoding.UTF8.GetBytes(optionsJson)));
+
             return Json(options);
         }
 
         [HttpPost]
         public async Task<IActionResult> RegisterCredential([FromBody] AuthenticatorAttestationRawResponse response)
         {
-            var challenge = HttpContext.Session.GetString("fido2Challenge");
-            if (string.IsNullOrEmpty(challenge))
+            try
             {
-                return BadRequest("Challenge is missing or invalid.");
-            }
-
-            // Parse the challenge from JSON
-            var originalChallenge = JsonConvert.DeserializeObject<CredentialCreateOptions>(challenge);
-
-            var success = await _fido2.MakeNewCredentialAsync(
-                response,
-                originalChallenge,
-                async (args, cancellationToken) =>
+                // 1. Retrieve and decode the stored challenge PROPERLY
+                var base64Challenge = HttpContext.Session.GetString("fido2Challenge");
+                if (string.IsNullOrEmpty(base64Challenge))
                 {
-                    // Verify credential uniqueness logic here
-                    var existingCredential = await _databaseContext.Fido2Credentials
-                        .AnyAsync(c => c.CredentialId.SequenceEqual(args.CredentialId), cancellationToken);
-
-                    return !existingCredential;
-                }
-            );
-
-            if (success.Status == "ok")
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
-                {
-                    return BadRequest("User not found.");
+                    return BadRequest(new { error = "Challenge is missing or invalid" });
                 }
 
-                user.Credentials.Add(new Fido2Credential
+                // 2. Decode and deserialize the original options
+                var decodedBytes = Base64Url.Decode(base64Challenge);
+                var optionsJson = Encoding.UTF8.GetString(decodedBytes);
+                var originalChallenge = JsonConvert.DeserializeObject<CredentialCreateOptions>(optionsJson);
+
+                // 3. Validate the credential properly
+                var success = await _fido2.MakeNewCredentialAsync(
+                    response,
+                    originalChallenge,
+                    async (args, cancellationToken) =>
+                    {
+                        var existingCredential = await _databaseContext.Fido2Credentials
+                            .AnyAsync(c => c.CredentialId.SequenceEqual(args.CredentialId), cancellationToken);
+                        return !existingCredential;
+                    });
+
+                // 4. Handle the result
+                if (success.Status == "ok")
                 {
-                    CredentialId = success.Result.CredentialId,
-                    PublicKey = success.Result.PublicKey,
-                    UserHandle = success.Result.User.Id,
-                    SignatureCounter = (uint)success.Result.Counter,
-                    CredType = success.Result.CredType,
-                    RegDate = DateTime.Now,
-                    AaGuid = success.Result.Aaguid.ToString()
-                });
+                    var user = await _userManager.FindByIdAsync(Encoding.UTF8.GetString(originalChallenge.User.Id));
+                    if (user == null)
+                    {
+                        return BadRequest(new { error = "User not found" });
+                    }
 
-                await _userManager.UpdateAsync(user);
-                return Ok();
+                    await _databaseContext.Fido2Credentials.AddAsync(new Fido2Credential
+                    {
+                        CredentialId = success.Result.CredentialId,
+                        PublicKey = success.Result.PublicKey,
+                        UserHandle = success.Result.User.Id,
+                        SignatureCounter = (uint)success.Result.Counter,
+                        CredType = success.Result.CredType,
+                        RegDate = DateTime.Now,
+                        AaGuid = success.Result.Aaguid != Guid.Empty
+                            ? success.Result.Aaguid.ToString()
+                            : null, // Handle empty GUIDs
+                        UserId = user.Id
+                    });
+                    await _databaseContext.SaveChangesAsync();
+
+                    //await _userManager.UpdateAsync(user);
+                    return Ok(new { success = true });
+                }
+
+                return BadRequest(new { error = success.ErrorMessage });
             }
-
-            return BadRequest(success.ErrorMessage);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = $"Internal error: {ex.Message}" });
+            }
         }
-
         [HttpGet]
         public async Task<JsonResult> GetAssertionOptions(string username)
         {
             var user = await _userManager.FindByNameAsync(username);
             if (user == null) return Json(new { error = "User not found" });
 
-            var allowedCredentials = user.Credentials
+            var allowedCredentials = await _databaseContext.Fido2Credentials
                 .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
-                .ToList();
+                .ToListAsync();
+
 
             var options = _fido2.GetAssertionOptions(
                 allowedCredentials,
@@ -156,7 +179,7 @@ namespace IDP.Controllers
             var assertionOptions = new AssertionOptions
             {
                 Challenge = challenge,
-                RpId = "your-domain.com", // Match your Fido2 configuration
+                RpId = "localhost", // Match your Fido2 configuration
                 AllowCredentials = new List<PublicKeyCredentialDescriptor>
         {
             new PublicKeyCredentialDescriptor(credential.CredentialId)
@@ -181,11 +204,13 @@ namespace IDP.Controllers
                 await _databaseContext.SaveChangesAsync();
 
                 // Get user from UserHandle
-                var userId = BitConverter.ToInt64(credential.UserHandle, 0);  // ← Use credential.UserHandle
+                var userId = Encoding.UTF8.GetString(credential.UserHandle);  // ← Use credential.UserHandle
                 var user = await _userManager.FindByIdAsync(userId.ToString());
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return Ok();
+
+                var returnUrl = appSettings.LoginRedirectUrl + "/login";
+                return Ok(returnUrl);
             }
 
             return BadRequest(result.ErrorMessage);
