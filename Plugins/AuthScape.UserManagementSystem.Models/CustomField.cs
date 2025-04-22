@@ -15,6 +15,7 @@ namespace AuthScape.UserManagementSystem.Models
 
         public ICollection<UserCustomField> UserCustomFields { get; set; }
         public ICollection<CompanyCustomField> CompanyCustomFields { get; set; }
+        public ICollection<LocationCustomField> LocationCustomFields { get; set; }
 
         public long? CompanyId { get; set; }
         

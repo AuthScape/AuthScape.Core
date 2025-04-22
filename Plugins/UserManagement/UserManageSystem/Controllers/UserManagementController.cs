@@ -332,7 +332,22 @@ namespace AuthScape.UserManageSystem.Controllers
             await userManagementSystemService.UpdateCompany(param);
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateLocation(LocationEditParam param)
+        {
+            await userManagementSystemService.UpdateLocation(param);
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLocation(long locationId)
+        {
+            await userManagementSystemService.GetLocation(locationId);
+            return Ok();
+        }
     }
+
 
     public class CreateTabParam
     {

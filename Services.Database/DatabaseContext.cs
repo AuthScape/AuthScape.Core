@@ -65,6 +65,9 @@ namespace Services.Context
         public DbSet<CustomField> CustomFields { get; set; }
         public DbSet<UserCustomField> UserCustomFields { get; set; }
         public DbSet<CompanyCustomField> CompanyCustomFields { get; set; }
+        public DbSet<LocationCustomField> LocationCustomFields { get; set; }
+
+
         public DbSet<CustomFieldTab> CustomFieldsTab { get; set; }
         public DbSet<Permission> Permissions { get; set; }
 
@@ -546,6 +549,16 @@ namespace Services.Context
 
                 entity.HasOne(e => e.CustomField)
                     .WithMany(m => m.CompanyCustomFields)
+                    .HasForeignKey(rf => rf.CustomFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            builder.Entity<LocationCustomField>(entity =>
+            {
+                entity.HasKey(e => new { e.LocationId,  e.CustomFieldId });
+
+                entity.HasOne(e => e.CustomField)
+                    .WithMany(m => m.LocationCustomFields)
                     .HasForeignKey(rf => rf.CustomFieldId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });

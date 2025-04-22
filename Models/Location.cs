@@ -1,4 +1,5 @@
 ﻿
+using AuthScape.UserManageSystem.Models;
 using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -19,7 +20,7 @@ namespace AuthScape.Models.Users
         public float? lng { get; set; }
 
 
-        public bool IsArchived { get; set; }
+        public bool IsDeactivated { get; set; }
 
 
         [NotMapped]
@@ -33,5 +34,9 @@ namespace AuthScape.Models.Users
         public Company Company { get; set; }
         public ICollection<AppUser> Users { get; set; }
         public ICollection<UserLocations> UserLocations { get; set; }
+
+
+        [NotMapped]
+        public List<CustomFieldResult> CustomFields { get; set; }
     }
 }

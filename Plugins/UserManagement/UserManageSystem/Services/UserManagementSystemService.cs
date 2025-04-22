@@ -46,6 +46,8 @@ namespace AuthScape.UserManageSystem.Services
         Task CreateUserAccount(string FirstName, string LastName, string Email);
         Task<List<CompanyDataGrid>> GetAllCompanies();
         Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType);
+        Task UpdateLocation(LocationEditParam param);
+        Task<Location> GetLocation(long locationId);
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -1029,41 +1031,140 @@ namespace AuthScape.UserManageSystem.Services
 
         public async Task UpdateCompany(CompanyEditParam param)
         {
-            var company = await databaseContext.Companies
-                .Where(c => c.Id == param.Id)
+            if (param.Id == -1)
+            {
+                var newCompany = new Company()
+                {
+                    Title = param.Title,
+                    IsDeactivated = param.IsDeactivated,
+                };
+
+                await databaseContext.Companies.AddAsync(newCompany);
+            }
+            else
+            {
+                var company = await databaseContext.Companies
+                    .Where(c => c.Id == param.Id)
+                    .FirstOrDefaultAsync();
+
+                if (company != null)
+                {
+                    company.Title = param.Title;
+                    company.IsDeactivated = param.IsDeactivated;
+                }
+            }
+            await databaseContext.SaveChangesAsync();
+
+
+            // new custom field logic here....
+            foreach (var customField in param.CustomFields)
+            {
+                var userCustomField = await databaseContext.CompanyCustomFields
+                    .Where(c => c.CustomFieldId == customField.CustomFieldId && c.CompanyId == param.Id)
+                    .FirstOrDefaultAsync();
+
+                if (userCustomField != null)
+                {
+                    userCustomField.Value = customField.Value;
+                }
+                else
+                {
+                    await databaseContext.CompanyCustomFields.AddAsync(new CompanyCustomField()
+                    {
+                        CustomFieldId = customField.CustomFieldId,
+                        CompanyId = param.Id,
+                        Value = customField.Value
+                    });
+                }
+            }
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateLocation(LocationEditParam param)
+        {
+            if (param.Id == -1)
+            {
+                var newLocation = new Location()
+                {
+                    Title = param.Title,
+                    IsDeactivated = param.IsDeactivated,
+                    CompanyId = param.CompanyId
+                };
+
+                await databaseContext.Locations.AddAsync(newLocation);
+            }
+            else
+            {
+                var location = await databaseContext.Locations
+                    .Where(c => c.Id == param.Id)
+                    .FirstOrDefaultAsync();
+
+                if (location != null)
+                {
+                    location.Title = param.Title;
+                    location.IsDeactivated = param.IsDeactivated;
+                }
+            }
+            await databaseContext.SaveChangesAsync();
+
+
+            // new custom field logic here....
+            foreach (var customField in param.CustomFields)
+            {
+                var userCustomField = await databaseContext.LocationCustomFields
+                    .Where(c => c.CustomFieldId == customField.CustomFieldId && c.LocationId == param.Id)
+                    .FirstOrDefaultAsync();
+
+                if (userCustomField != null)
+                {
+                    userCustomField.Value = customField.Value;
+                }
+                else
+                {
+                    await databaseContext.LocationCustomFields.AddAsync(new LocationCustomField()
+                    {
+                        LocationId = param.Id,
+                        CustomFieldId = customField.CustomFieldId,
+                        Value = customField.Value
+                    });
+                }
+            }
+            await databaseContext.SaveChangesAsync();
+        }
+
+
+        public async Task<Location> GetLocation(long locationId)
+        {
+            var customFields = await databaseContext.CustomFields.AsNoTracking()
+                .Where(c => c.CustomFieldPlatformType == CustomFieldPlatformType.Locations)
+                .Select(c => new CustomFieldResult()
+                {
+                    CustomFieldId = c.Id,
+                    Name = c.Name,
+                    IsRequired = c.IsRequired,
+                    CustomFieldType = c.FieldType,
+                    TabId = c.TabId,
+                    Size = c.GridSize,
+                    Value = ""
+                }).ToListAsync();
+
+            foreach (var field in customFields)
+            {
+                field.Value =
+                    await databaseContext.CompanyCustomFields
+                        .Where(c => c.CustomFieldId == field.CustomFieldId).Select(s => s.Value)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync();
+            }
+
+            var location = await databaseContext.Locations
+                .Where(c => c.Id == locationId)
+                .AsNoTracking()
                 .FirstOrDefaultAsync();
 
-            if (company != null)
-            {
-                company.Title = param.Title;
-                company.IsDeactivated = param.IsDeactivated;
+            location.CustomFields = customFields;
 
-                // new custom field logic here....
-                foreach (var customField in param.CustomFields)
-                {
-                    var userCustomField = await databaseContext.CompanyCustomFields
-                        .Where(c => c.CustomFieldId == customField.CustomFieldId && c.CompanyId == param.Id)
-                        .FirstOrDefaultAsync();
-
-                    if (userCustomField != null)
-                    {
-                        userCustomField.Value = customField.Value;
-                    }
-                    else
-                    {
-                        await databaseContext.CompanyCustomFields.AddAsync(new CompanyCustomField()
-                        {
-                            CustomFieldId = customField.CustomFieldId,
-                            CompanyId = param.Id,
-                            Value = customField.Value
-                        });
-                    }
-                }
-
-                await databaseContext.SaveChangesAsync();
-
-
-            }
+            return location;
         }
     }
 }
