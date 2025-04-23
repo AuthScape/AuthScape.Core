@@ -343,8 +343,7 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLocation(long locationId)
         {
-            await userManagementSystemService.GetLocation(locationId);
-            return Ok();
+            return Ok(await userManagementSystemService.GetLocation(locationId));
         }
     }
 

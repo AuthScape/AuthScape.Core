@@ -147,9 +147,13 @@ namespace IDP.Controllers
             if (user == null) return Json(new { error = "User not found" });
 
             var allowedCredentials = await _databaseContext.Fido2Credentials
+                .Where(c => c.UserId == user.Id)
                 .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
                 .ToListAsync();
 
+            //var registeredCredentials = user.Credentials
+            //    .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
+            //    .ToList();
 
             var options = _fido2.GetAssertionOptions(
                 allowedCredentials,

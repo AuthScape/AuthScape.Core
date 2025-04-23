@@ -7,9 +7,32 @@
 
 <style>
     @Html.Raw(Model.MinifiedCSS)
+
+    .line-container {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 20px;
+    }
+
+    .line-container::before,
+    .line-container::after {
+        content: '';
+        flex: 1;
+        border-top: 1px solid #000;
+    }
+
+    .line-container::before {
+        margin-right: 10px;
+    }
+
+    .line-container::after {
+        margin-left: 10px;
+    }
+
 </style>
 
-<section class="ftco-section">
+<section class="ftco-section" style="padding-bottom:20px;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-5">
@@ -20,6 +43,8 @@
                                 <h3 class="mb-4">Sign In</h3>
                             </div>
                         </div>
+                        
+                        
                         <div>
                             <form id="account" method="post">
                                 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
@@ -28,33 +53,33 @@
                                     <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                                     <span asp-validation-for="Input.Email" class="text-danger"></span>
                                 </div>
-                                <div class="form-floating mb-2">
+                                <div class="form-floating mb-2 d-flex align-items-center justify-content-between">
                                     <label asp-for="Input.Password" class="form-label">Password</label>
-                                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                                    <a id="forgot-password" asp-page="./ForgotPassword" asp-route-returnUrl="@(Model.ReturnUrl)" class="ms-3">Forgot your password?</a>
                                 </div>
+                                <div class="form-floating mb-2">
+                                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                                </div>
+                                <span asp-validation-for="Input.Password" class="text-danger"></span>
                                 <div class="checkbox ml-3 mb-3">
                                     <label asp-for="Input.RememberMe" class="form-label">
                                         <input class="form-check-input" asp-for="Input.RememberMe" />
                                         @Html.DisplayNameFor(m => m.Input.RememberMe)
                                     </label>
                                 </div>
+                                
                                 <div>
-                                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Sign in</button>
                                 </div>
                                 <div>
-                                    <p>
-                                        <a id="forgot-password" asp-page="./ForgotPassword" asp-route-returnUrl="@(Model.ReturnUrl)">Forgot your password?</a>
-                                    </p>
-                                    @*<p>
-                                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
-                                    </p>*@
+                                    <div class="line-container">or</div>
                                 </div>
                             </form>
-                            <p class="text-center">
-                                Don't have an account?
-                                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Sign up</a>
-                            </p>
+
+                            <div class="pt-2">
+                                <button id="login-passkey" class="w-100 btn btn-lg btn-secondary" onclick="login()">Sign in with passkey</button>
+                            </div>
+                            
                         </div>
 
                         <div class="d-flex col-md-6">
@@ -78,11 +103,6 @@
                                 }
                             </section>
                         </div>
-                        <div>
-                            <input type="text" id="username" placeholder="Username">
-                            <button onclick="register()">Register Device</button>
-                            <button onclick="login()">Login</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -90,6 +110,25 @@
     </div>
 </section>
 
+
+<section class="ftco-section" style="padding-top:0;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="wrap">
+                    <div class="login-wrap pt-3">
+                        <div>
+                            <p class="text-center">
+                                Don't have an account?
+                                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Sign up</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 @*<div class="row">
     <div class="col-md-4">
@@ -187,59 +226,9 @@
                 .replace(/=+$/, '');
         }
 
-        // Registration Flow
-        async function register() {
-            const username = document.getElementById('username').value;
-
-            // Step 1: Get registration options from server
-            const optionsResponse = await fetch(`/Home/GetRegistrationOptions?username=${encodeURIComponent(username)}`);
-            const options = await optionsResponse.json();
-
-                    // In your register() function
-            const publicKey = {
-                ...options,
-                rpId: "localhost", // Must match ServerDomain
-                challenge: base64urlToArrayBuffer(options.challenge),
-                user: {
-                    ...options.user,
-                    id: base64urlToArrayBuffer(options.user.id)
-                }
-            };
-
-            // Step 3: Create credential using browser API
-            const credential = await navigator.credentials.create({ publicKey });
-
-            // Step 4: Format response for server
-            const response = {
-                id: credential.id,
-                rawId: arrayBufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
-                    clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
-                }
-            };
-
-            // Step 5: Send registration to server
-            const registrationResponse = await fetch('/Home/RegisterCredential', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json' // 👈 Ensure you accept JSON responses
-                },
-                body: JSON.stringify(response)
-            });
-
-            if (registrationResponse.ok) {
-                alert('Registration successful!');
-            } else {
-                alert('Registration failed: ' + await registrationResponse.text());
-            }
-        }
-
         // Login Flow
         async function login() {
-            const username = document.getElementById('username').value;
+            const username = "brandonzuech@gmail.com";
 
             // Step 1: Get assertion options from server
             const optionsResponse = await fetch(`/Home/GetAssertionOptions?username=${encodeURIComponent(username)}`);
