@@ -1151,7 +1151,7 @@ namespace AuthScape.UserManageSystem.Services
             foreach (var field in customFields)
             {
                 field.Value =
-                    await databaseContext.CompanyCustomFields
+                    await databaseContext.LocationCustomFields
                         .Where(c => c.CustomFieldId == field.CustomFieldId).Select(s => s.Value)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();

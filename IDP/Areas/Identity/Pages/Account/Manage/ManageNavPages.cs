@@ -13,7 +13,7 @@ namespace  mvcTest.Areas.Identity.Pages.Account.Manage
     /// </summary>
     public static class ManageNavPages
     {
-        public static string Fido2Mfa => "Fido2Mfa";
+        public static string PassKey => "PassKey";
 
 
         /// <summary>
@@ -67,8 +67,6 @@ namespace  mvcTest.Areas.Identity.Pages.Account.Manage
         public static string TwoFactorAuthentication => "TwoFactorAuthentication";
 
 
-        public static string Fido2MfaNavClass(ViewContext viewContext) => PageNavClass(viewContext, Fido2Mfa);
-
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -118,6 +116,12 @@ namespace  mvcTest.Areas.Identity.Pages.Account.Manage
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public static string TwoFactorAuthenticationNavClass(ViewContext viewContext) => PageNavClass(viewContext, TwoFactorAuthentication);
+
+        /// <summary>
+        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public static string PassKeyAuthenticationNavClass(ViewContext viewContext) => PageNavClass(viewContext, PassKey);
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
