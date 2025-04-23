@@ -530,6 +530,17 @@ namespace Services.Context
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasOne(e => e.CustomFieldTab)
+                    .WithMany(m => m.CustomFieldTabs)
+                    .HasForeignKey(rf => rf.TabId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            builder.Entity<CustomFieldTab>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
 
             builder.Entity<UserCustomField>(entity =>
