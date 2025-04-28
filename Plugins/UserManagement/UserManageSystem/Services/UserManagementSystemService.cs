@@ -26,7 +26,7 @@ namespace AuthScape.UserManageSystem.Services
         Task AddPermission(string permissionName);
         Task<List<Permission>> GetPermissions();
         Task<UserEditResult?> GetUser(long userId);
-        Task UpdateUser(UserEditResult user);
+        Task<List<UpdatedResponseItem>> UpdateUser(UserEditResult user);
         Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
         Task<List<Company>> GetCompanies(string? name = null);
         Task<List<Location>> GetLocations(long companyId, string? name = null);
@@ -34,7 +34,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType);
         Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null);
         Task<Company> GetCompany(long companyId);
-        Task UpdateCompany(CompanyEditParam param);
+        Task<List<UpdatedResponseItem>> UpdateCompany(CompanyEditParam param);
         Task<CustomField?> GetCustomField(Guid id);
         Task AddUpdateCustomField(CustomFieldParam param);
         Task ArchiveUser(long id);
@@ -519,14 +519,16 @@ namespace AuthScape.UserManageSystem.Services
             };
         }
 
-        public async Task UpdateUser(UserEditResult user)
+        public async Task<List<UpdatedResponseItem>> UpdateUser(UserEditResult user)
         {
             if (user == null)
             {
-                return;
+                return null;
             }
 
             var usr = new AppUser();
+
+            var responseItems = new List<UpdatedResponseItem>();
 
             if (user.Id != -1)
             {
@@ -539,17 +541,51 @@ namespace AuthScape.UserManageSystem.Services
 
             if (usr != null)
             {
-                usr.FirstName = user.FirstName;
-                usr.LastName = user.LastName;
-                usr.UserName = user.Email;
-                usr.Email = user.Email;
-                usr.NormalizedEmail = user.Email.ToUpper();
-                usr.NormalizedUserName = user.Email.ToUpper();
-                usr.IsActive = user.IsActive;
-                usr.PhoneNumber = user.PhoneNumber;
-                usr.CompanyId = user.CompanyId;
-                usr.LocationId = user.LocationId;
+                if (user.FirstName != usr.FirstName)
+                {
+                    usr.FirstName = user.FirstName;
+                    responseItems.Add(new UpdatedResponseItem("FirstName", user.FirstName));
+                }
 
+                if (user.LastName != usr.LastName)
+                {
+                    usr.LastName = user.LastName;
+                    responseItems.Add(new UpdatedResponseItem("LastName", user.LastName));
+                }
+
+                if (user.Email != usr.UserName)
+                {
+                    usr.UserName = user.Email;
+                    usr.Email = user.Email;
+                    usr.NormalizedEmail = user.Email.ToUpper();
+                    usr.NormalizedUserName = user.Email.ToUpper();
+
+                    responseItems.Add(new UpdatedResponseItem("Email", user.Email));
+                }
+
+                if (user.IsActive != usr.IsActive)
+                {
+                    usr.IsActive = user.IsActive;
+                    responseItems.Add(new UpdatedResponseItem("IsActive", user.IsActive.ToString()));
+                }
+
+                if (user.PhoneNumber != usr.PhoneNumber)
+                {
+                    usr.PhoneNumber = user.PhoneNumber;
+                    responseItems.Add(new UpdatedResponseItem("PhoneNumber", user.PhoneNumber));
+                }
+
+                if (user.CompanyId != usr.CompanyId)
+                {
+                    usr.CompanyId = user.CompanyId;
+                    responseItems.Add(new UpdatedResponseItem("CompanyId", user.CompanyId.ToString()));
+                }
+
+                if (user.LocationId != usr.LocationId)
+                {
+                    usr.LocationId = user.LocationId;
+                    responseItems.Add(new UpdatedResponseItem("LocationId", user.LocationId.ToString()));
+                }
 
                 if (String.IsNullOrWhiteSpace(usr.SecurityStamp))
                 {
@@ -642,7 +678,14 @@ namespace AuthScape.UserManageSystem.Services
 
                     if (userCustomField != null)
                     {
-                        userCustomField.Value = customField.Value;
+
+                        if (customField.Value != userCustomField.Value)
+                        {
+                            userCustomField.Value = customField.Value;
+
+
+                            responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
+                        }
                     }
                     else
                     {
@@ -652,35 +695,20 @@ namespace AuthScape.UserManageSystem.Services
                             UserId = usr.Id,
                             Value = customField.Value
                         });
+
+                        responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
                     }
                 }
 
                 await databaseContext.SaveChangesAsync();
 
 
-                // custom fields
-                //foreach (var customField in user.UserCustomFields)
-                //{
-                //    var usrClaim = await databaseContext.UserClaims.Where(u => u.UserId == usr.Id && u.ClaimType == customField.Name).FirstOrDefaultAsync();
-                //    if (usrClaim != null)
-                //    {
-                //        usrClaim.ClaimValue = customField.Value;
-                //    }
-                //    else
-                //    {
-                //        var newUserRole = new IdentityUserClaim<long>();
-                //        newUserRole.UserId = usr.Id;
-                //        newUserRole.ClaimType = customField.Name;
-                //        newUserRole.ClaimValue = customField.Value;
-
-                //        await databaseContext.UserClaims.AddAsync(newUserRole);
-                //    }
-                //}
+                return responseItems;
 
 
-
-                await databaseContext.SaveChangesAsync();
             }
+
+            return null;
         }
 
         public async Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null,
@@ -894,7 +922,6 @@ namespace AuthScape.UserManageSystem.Services
             return message;
         }
 
-
         public async Task CreateUserAccount(string FirstName, string LastName, string Email)
         {
             await databaseContext.Users.AddAsync(new AppUser()
@@ -1029,8 +1056,10 @@ namespace AuthScape.UserManageSystem.Services
             }
         }
 
-        public async Task UpdateCompany(CompanyEditParam param)
+        public async Task<List<UpdatedResponseItem>> UpdateCompany(CompanyEditParam param)
         {
+            var responseItems = new List<UpdatedResponseItem>();
+
             if (param.Id == -1)
             {
                 var newCompany = new Company()
@@ -1038,6 +1067,9 @@ namespace AuthScape.UserManageSystem.Services
                     Title = param.Title,
                     IsDeactivated = param.IsDeactivated,
                 };
+
+                responseItems.Add(new UpdatedResponseItem("Title", param.Title));
+                responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
 
                 await databaseContext.Companies.AddAsync(newCompany);
             }
@@ -1049,8 +1081,17 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (company != null)
                 {
-                    company.Title = param.Title;
-                    company.IsDeactivated = param.IsDeactivated;
+                    if (company.Title != param.Title)
+                    {
+                        company.Title = param.Title;
+                        responseItems.Add(new UpdatedResponseItem("Title", param.Title));
+                    }
+
+                    if (company.IsDeactivated != param.IsDeactivated)
+                    {
+                        company.IsDeactivated = param.IsDeactivated;
+                        responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
+                    }
                 }
             }
             await databaseContext.SaveChangesAsync();
@@ -1065,7 +1106,11 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (userCustomField != null)
                 {
-                    userCustomField.Value = customField.Value;
+                    if (customField.Value != userCustomField.Value)
+                    {
+                        userCustomField.Value = customField.Value;
+                        responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
+                    }
                 }
                 else
                 {
@@ -1075,9 +1120,13 @@ namespace AuthScape.UserManageSystem.Services
                         CompanyId = param.Id,
                         Value = customField.Value
                     });
+
+                    responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
                 }
             }
             await databaseContext.SaveChangesAsync();
+
+            return responseItems;
         }
 
         public async Task UpdateLocation(LocationEditParam param)
