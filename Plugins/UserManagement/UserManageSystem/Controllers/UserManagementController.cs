@@ -121,8 +121,8 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateUser(UserEditResult user)
         {
-            await userManagementSystemService.UpdateUser(user);
-            return Ok();
+            var response = await userManagementSystemService.UpdateUser(user);
+            return Ok(response);
         }
 
 
@@ -329,8 +329,8 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateCompany(CompanyEditParam param)
         {
-            await userManagementSystemService.UpdateCompany(param);
-            return Ok();
+            var response = await userManagementSystemService.UpdateCompany(param);
+            return Ok(response);
         }
 
         [HttpPost]
