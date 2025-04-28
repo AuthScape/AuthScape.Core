@@ -46,7 +46,7 @@ namespace AuthScape.UserManageSystem.Services
         Task CreateUserAccount(string FirstName, string LastName, string Email);
         Task<List<CompanyDataGrid>> GetAllCompanies();
         Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType);
-        Task UpdateLocation(LocationEditParam param);
+        Task<List<UpdatedResponseItem>> UpdateLocation(LocationEditParam param);
         Task<Location> GetLocation(long locationId);
     }
 
@@ -1129,8 +1129,10 @@ namespace AuthScape.UserManageSystem.Services
             return responseItems;
         }
 
-        public async Task UpdateLocation(LocationEditParam param)
+        public async Task<List<UpdatedResponseItem>> UpdateLocation(LocationEditParam param)
         {
+            var responseItems = new List<UpdatedResponseItem>();
+
             if (param.Id == -1)
             {
                 var newLocation = new Location()
@@ -1139,6 +1141,10 @@ namespace AuthScape.UserManageSystem.Services
                     IsDeactivated = param.IsDeactivated,
                     CompanyId = param.CompanyId
                 };
+
+                responseItems.Add(new UpdatedResponseItem("Title", param.Title));
+                responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
+                responseItems.Add(new UpdatedResponseItem("CompanyId", param.CompanyId.ToString()));
 
                 await databaseContext.Locations.AddAsync(newLocation);
             }
@@ -1150,8 +1156,17 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (location != null)
                 {
-                    location.Title = param.Title;
-                    location.IsDeactivated = param.IsDeactivated;
+                    if (param.Title != location.Title)
+                    {
+                        location.Title = param.Title;
+                        responseItems.Add(new UpdatedResponseItem("Title", param.Title));
+                    }
+
+                    if (param.IsDeactivated != location.IsDeactivated)
+                    {
+                        location.IsDeactivated = param.IsDeactivated;
+                        responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
+                    }
                 }
             }
             await databaseContext.SaveChangesAsync();
@@ -1166,7 +1181,11 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (userCustomField != null)
                 {
-                    userCustomField.Value = customField.Value;
+                    if (customField.Value != userCustomField.Value)
+                    {
+                        userCustomField.Value = customField.Value;
+                        responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
+                    }
                 }
                 else
                 {
@@ -1176,9 +1195,13 @@ namespace AuthScape.UserManageSystem.Services
                         CustomFieldId = customField.CustomFieldId,
                         Value = customField.Value
                     });
+
+                    responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
                 }
             }
             await databaseContext.SaveChangesAsync();
+
+            return responseItems;
         }
 
 
@@ -1211,9 +1234,13 @@ namespace AuthScape.UserManageSystem.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
 
-            location.CustomFields = customFields;
+            if (location != null)
+            {
+                location.CustomFields = customFields;
+                return location;
+            }
 
-            return location;
+            return null;
         }
     }
 }
