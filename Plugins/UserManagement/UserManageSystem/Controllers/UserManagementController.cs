@@ -336,8 +336,8 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateLocation(LocationEditParam param)
         {
-            await userManagementSystemService.UpdateLocation(param);
-            return Ok();
+            var response = await userManagementSystemService.UpdateLocation(param);
+            return Ok(response);
         }
 
         [HttpGet]
