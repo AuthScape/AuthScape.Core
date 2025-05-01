@@ -267,9 +267,27 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetLocations(long companyId, string? name = null)
+        public async Task<IActionResult> GetLocations(long? companyId, string? name = null)
         {
-            return Ok(await userManagementSystemService.GetLocations(companyId, name));
+            return Ok(await userManagementSystemService.GetLocationsList(new GetLocationParam()
+            {
+                Name = name,
+                CompanyId = companyId,
+            }));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetLocations(GetLocationParam param)
+        {
+            var users = await userManagementSystemService.GetLocations(param);
+
+            return Ok(new ReactDataTable()
+            {
+                draw = 0,
+                recordsTotal = users.total,
+                recordsFiltered = users.total,
+                data = users.ToList()
+            });
         }
 
         [HttpPut]
@@ -368,6 +386,15 @@ namespace AuthScape.UserManageSystem.Controllers
 
         public long? searchByCompanyId { get; set; }
         public long? searchByRoleId { get; set; }
+    }
+
+    public class GetLocationParam
+    {
+        public int offset { get; set; }
+        public int length { get; set; }
+        public string? Name { get; set; }
+        public long? CompanyId { get; set; }
+        public int CompanyType { get; set; }
     }
 
     public class UserManagementUploadField

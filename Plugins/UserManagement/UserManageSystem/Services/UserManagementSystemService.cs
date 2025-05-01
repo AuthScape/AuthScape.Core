@@ -12,6 +12,7 @@ using StrongGrid.Resources;
 using CoreBackpack.Time;
 using Newtonsoft.Json;
 using System.Text;
+using AuthScape.UserManageSystem.Controllers;
 
 namespace AuthScape.UserManageSystem.Services
 {
@@ -29,7 +30,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<UpdatedResponseItem>> UpdateUser(UserEditResult user);
         Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
         Task<List<Company>> GetCompanies(string? name = null);
-        Task<List<Location>> GetLocations(long companyId, string? name = null);
+        Task<PagedList<Location>> GetLocations(GetLocationParam param);
         Task<string> ChangeUserPassword(long userId, string newPassword);
         Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType);
         Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null);
@@ -37,6 +38,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<UpdatedResponseItem>> UpdateCompany(CompanyEditParam param);
         Task<CustomField?> GetCustomField(Guid id);
         Task AddUpdateCustomField(CustomFieldParam param);
+        Task<List<Location>> GetLocationsList(GetLocationParam param);
         Task ArchiveUser(long id);
 
         Task DeleteCustomField(Guid id);
@@ -872,16 +874,38 @@ namespace AuthScape.UserManageSystem.Services
             }
         }
 
-        public async Task<List<Location>> GetLocations(long companyId, string? name = null)
+        public async Task<PagedList<Location>> GetLocations(GetLocationParam param)
         {
-            if (string.IsNullOrWhiteSpace(name))
+            var locationQuery = databaseContext.Locations.AsNoTracking();
+
+            if (!String.IsNullOrWhiteSpace(param.Name))
             {
-                return await databaseContext.Locations.AsNoTracking().Where(l => l.CompanyId == companyId).ToListAsync();
+                locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
             }
-            else
+
+            if (param.CompanyId != null)
             {
-                return await databaseContext.Locations.AsNoTracking().Where(c => c.CompanyId == companyId && c.Title.ToLower().Contains(name.ToLower())).ToListAsync();
+                locationQuery.Where(l => l.CompanyId == param.CompanyId);
             }
+            
+            return await locationQuery.ToPagedResultAsync(param.offset, param.length);
+        }
+
+        public async Task<List<Location>> GetLocationsList(GetLocationParam param)
+        {
+            var locationQuery = databaseContext.Locations.AsNoTracking();
+
+            if (!String.IsNullOrWhiteSpace(param.Name))
+            {
+                locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
+            }
+
+            if (param.CompanyId != null)
+            {
+                locationQuery.Where(l => l.CompanyId == param.CompanyId);
+            }
+
+            return await locationQuery.ToListAsync();
         }
 
         public async Task<string> ChangeUserPassword(long userId, string newPassword)
