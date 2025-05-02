@@ -16,6 +16,7 @@ using Models.Authentication;
 using StrongGrid.Resources;
 using Services.Database;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 
 namespace IDP.Controllers
 {
@@ -125,8 +126,10 @@ namespace IDP.Controllers
                         AaGuid = success.Result.Aaguid != Guid.Empty
                             ? success.Result.Aaguid.ToString()
                             : null, // Handle empty GUIDs
-                        UserId = user.Id
+                        UserId = user.Id,
+                        DeviceName = $"Device {DateTime.Now:yyyy-MM-dd}"
                     });
+
                     await _databaseContext.SaveChangesAsync();
 
                     //await _userManager.UpdateAsync(user);
@@ -156,7 +159,7 @@ namespace IDP.Controllers
             //    .ToList();
 
             var options = _fido2.GetAssertionOptions(
-                allowedCredentials,
+                new List<PublicKeyCredentialDescriptor>(),
                 UserVerificationRequirement.Required);
 
             // Convert byte[] challenge to base64 URL-safe string
@@ -164,6 +167,43 @@ namespace IDP.Controllers
                                         Base64Url.Encode(options.Challenge));
 
             return Json(options);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetRegisteredDevices()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { error = "User not found" });
+
+            var devices = await _databaseContext.Fido2Credentials
+                .Where(c => c.UserId == user.Id)
+                .Select(c => new
+                {
+                    credentialId = Convert.ToBase64String(c.CredentialId),
+                    registrationDate = c.RegDate,
+                    deviceName = c.DeviceName // You'll need to add this property to your Fido2Credential model
+                })
+                .ToListAsync();
+
+            return Json(devices);
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteCredential(string credentialId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound("User not found");
+
+            var credentialBytes = Convert.FromBase64String(credentialId);
+            var credential = await _databaseContext.Fido2Credentials
+                .FirstOrDefaultAsync(c => c.CredentialId.SequenceEqual(credentialBytes) && c.UserId == user.Id);
+
+            if (credential == null) return NotFound("Credential not found");
+
+            _databaseContext.Fido2Credentials.Remove(credential);
+            await _databaseContext.SaveChangesAsync();
+
+            return Ok();
         }
 
         [HttpPost]
