@@ -532,7 +532,7 @@ namespace Services
 
             foreach (var location in dataLocation)
             {
-                location.TotalUsers = await databaseContext.UserLocations.Where(u => u.LocationId == location.Id).CountAsync();
+                //location.TotalUsers = await databaseContext.UserLocations.Where(u => u.LocationId == location.Id).CountAsync();
                 //var userLocations = await databaseContext.UserLocations.Where(u => u.LocationId == location.Id).ToListAsync();
                 //foreach (var userLocation in userLocations)
                 //{

@@ -23,13 +23,6 @@ namespace AuthScape.Models.Users
         public bool IsDeactivated { get; set; }
 
 
-        [NotMapped]
-        public decimal? AmountDue { get; set; }
-        [NotMapped]
-        public int? TotalUsers { get; set; }
-
-
-
         public long CompanyId { get; set; }
         public Company Company { get; set; }
         public ICollection<AppUser> Users { get; set; }

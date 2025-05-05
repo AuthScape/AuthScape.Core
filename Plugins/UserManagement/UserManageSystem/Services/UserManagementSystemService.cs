@@ -876,7 +876,10 @@ namespace AuthScape.UserManageSystem.Services
 
         public async Task<PagedList<Location>> GetLocations(GetLocationParam param)
         {
-            var locationQuery = databaseContext.Locations.AsNoTracking();
+            var locationQuery = databaseContext
+                .Locations
+                .Include(c => c.Company)
+                .AsNoTracking();
 
             if (!String.IsNullOrWhiteSpace(param.Name))
             {
@@ -888,7 +891,26 @@ namespace AuthScape.UserManageSystem.Services
                 locationQuery.Where(l => l.CompanyId == param.CompanyId);
             }
             
-            return await locationQuery.ToPagedResultAsync(param.offset, param.length);
+            return await locationQuery
+                .Select(z => new Location()
+                {
+                    Id = z.Id,
+                    Title = z.Title,
+                    Address = z.Address,
+                    City = z.City,
+                    State = z.State,
+                    IsDeactivated = z.IsDeactivated,
+                    lat = z.lat,
+                    lng = z.lng,
+                    CompanyId = z.CompanyId,
+                    ZipCode = z.ZipCode,
+                    Company = new Company()
+                    {
+                        Id = z.Company.Id,
+                        Title = z.Company.Title
+                    }
+                })
+                .ToPagedResultAsync(param.offset, param.length);
         }
 
         public async Task<List<Location>> GetLocationsList(GetLocationParam param)
@@ -1163,12 +1185,37 @@ namespace AuthScape.UserManageSystem.Services
                 {
                     Title = param.Title,
                     IsDeactivated = param.IsDeactivated,
-                    CompanyId = param.CompanyId
+                    CompanyId = param.CompanyId,
+
+                    Address = param.Address,
+                    City = param.City,
+                    State = param.State,
+                    ZipCode = param.PostalCode
                 };
 
                 responseItems.Add(new UpdatedResponseItem("Title", param.Title));
                 responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
                 responseItems.Add(new UpdatedResponseItem("CompanyId", param.CompanyId.ToString()));
+
+                if (!String.IsNullOrWhiteSpace(param.Address))
+                {
+                    responseItems.Add(new UpdatedResponseItem("Address", param.Address));
+                }
+
+                if (!String.IsNullOrWhiteSpace(param.City))
+                {
+                    responseItems.Add(new UpdatedResponseItem("City", param.City));
+                }
+
+                if (!String.IsNullOrWhiteSpace(param.State))
+                {
+                    responseItems.Add(new UpdatedResponseItem("State", param.State));
+                }
+
+                if (!String.IsNullOrWhiteSpace(param.PostalCode))
+                {
+                    responseItems.Add(new UpdatedResponseItem("ZipCode", param.PostalCode));
+                }
 
                 await databaseContext.Locations.AddAsync(newLocation);
             }
@@ -1190,6 +1237,30 @@ namespace AuthScape.UserManageSystem.Services
                     {
                         location.IsDeactivated = param.IsDeactivated;
                         responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
+                    }
+
+                    if (param.Address != location.Address)
+                    {
+                        location.Address = param.Address;
+                        responseItems.Add(new UpdatedResponseItem("Address", param.Address));
+                    }
+
+                    if (param.City != location.City)
+                    {
+                        location.City = param.City;
+                        responseItems.Add(new UpdatedResponseItem("City", param.City));
+                    }
+
+                    if (param.State != location.State)
+                    {
+                        location.State = param.State;
+                        responseItems.Add(new UpdatedResponseItem("State", param.State));
+                    }
+
+                    if (param.PostalCode != location.ZipCode)
+                    {
+                        location.ZipCode = param.PostalCode;
+                        responseItems.Add(new UpdatedResponseItem("ZipCode", param.PostalCode));
                     }
                 }
             }
