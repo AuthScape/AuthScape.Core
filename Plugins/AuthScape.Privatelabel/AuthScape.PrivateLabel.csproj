@@ -15,8 +15,10 @@
 
   <ItemGroup>
     <PackageReference Include="Authsome" Version="1.0.8" />
-    <PackageReference Include="NUglify" Version="1.21.11" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
+    <PackageReference Include="NUglify" Version="1.21.15" />
     <PackageReference Include="Scryber.Core.OpenType" Version="6.0.0.5-beta" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
   <ItemGroup>

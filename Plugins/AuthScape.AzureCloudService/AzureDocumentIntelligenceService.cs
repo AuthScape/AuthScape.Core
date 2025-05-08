@@ -1,6 +1,7 @@
 ﻿using AuthScape.AzureCloudService.Models.DocumentIntelligence;
 using Azure;
 using Azure.AI.DocumentIntelligence;
+using Azure.Storage.Blobs;
 
 namespace AuthScape.AzureCloudService
 {
@@ -24,19 +25,24 @@ namespace AuthScape.AzureCloudService
         {
             var adminClient = new DocumentIntelligenceAdministrationClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
 
-            var buildRequest = new BuildDocumentModelContent(param.ModelName, DocumentBuildMode.Neural)
-            {
-                AzureBlobSource = new AzureBlobContentSource(new Uri(param.AzureBlobUri)),
-                Description = param.Description,
-                AllowOverwrite = true
-            };
+            //var blobClient = new BlobContainerClient(new Uri(param.AzureBlobUri), new AzureSasCredential(param.SasToken));
 
-            var operation = await adminClient.BuildDocumentModelAsync(WaitUntil.Completed, buildRequest, CancellationToken.None);
-            var modelDetails = operation.Value;
+            //var buildRequest = DocumentIntelligenceModelFactory.BuildDocumentModelOptions(
+            //    param.ModelName,
+            //    DocumentBuildMode.Neural,
+            //    new AzureBlobSource(new Uri(param.AzureBlobUri))
+            //    {
+            //        Description = param.Description,
+            //        AllowOverwrite = true
+            //    });
 
-            Console.WriteLine($"Model ID: {modelDetails.ModelId}");
-            Console.WriteLine($"Model Description: {modelDetails.Description}");
-            Console.WriteLine($"Model Created On: {modelDetails.CreatedOn}");
+
+            //var operation = await adminClient.BuildDocumentModelAsync(WaitUntil.Completed, buildRequest, CancellationToken.None);
+            //var modelDetails = operation.Value;
+
+            //Console.WriteLine($"Model ID: {modelDetails.ModelId}");
+            //Console.WriteLine($"Model Description: {modelDetails.Description}");
+            //Console.WriteLine($"Model Created On: {modelDetails.CreatedOn}");
         }
 
         public async Task<List<DocumentModel>> GetAllModels()

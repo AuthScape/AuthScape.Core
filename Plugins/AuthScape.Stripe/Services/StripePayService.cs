@@ -677,7 +677,7 @@ namespace AuthScape.StripePayment.Services
             var invoiceItemOptions = new InvoiceItemCreateOptions
             {
                 Customer = stripeCustomerNumber,
-                UnitAmount = MoneyExtender.ConvertToCents(amount),
+                //UnitAmount = MoneyExtender.ConvertToCents(amount),
                 Invoice = stripeInvoiceNumber,
                 Description = name,
                 TaxBehavior = taxBehavior.ToString(),
@@ -712,7 +712,7 @@ namespace AuthScape.StripePayment.Services
             var invoiceItemOptions = new InvoiceItemCreateOptions
             {
                 Customer = customerId,
-                Price = priceObj.Id,
+                //Price = priceObj.Id,
                 Invoice = invoiceId,
                 Quantity = qty,
             };
@@ -759,11 +759,11 @@ namespace AuthScape.StripePayment.Services
             var productItemService = new ProductService();
             foreach (var list in invoiceList)
             {
-                var product = await productItemService.GetAsync(list.Price.ProductId);
-                if (product.Name == productName)
-                {
-                    return list.Id;
-                }
+                //var product = await productItemService.GetAsync(list.Price.ProductId);
+                //if (product.Name == productName)
+                //{
+                //    return list.Id;
+                //}
             }
 
             return null;
@@ -800,31 +800,32 @@ namespace AuthScape.StripePayment.Services
             var invoiceService = new InvoiceService();
             var overallInvoice = await invoiceService.GetAsync(invoiceId);
 
-            if (overallInvoice.Tax != null && overallInvoice.Tax != 0.00m)
-            {
-                var taxVal = MoneyExtender.ConvertToDollars(overallInvoice.Tax.Value) / MoneyExtender.ConvertToDollars(overallInvoice.Subtotal);
-                var percent = Math.Round(taxVal * 100, 3, MidpointRounding.AwayFromZero);
+            //        if (overallInvoice.TotalTaxes != null)
+            //        {
+            //            var taxVal = MoneyExtender.ConvertToDollars(overallInvoice.TotalTaxes) / MoneyExtender.ConvertToDollars(overallInvoice.Subtotal);
+            //            var percent = Math.Round(taxVal * 100, 3, MidpointRounding.AwayFromZero);
 
-				return new InvoiceResponse()
-                {
-                    PercentTax = percent.ToString() + "%",
-                    ShippingAmount = overallInvoice.AmountShipping > 0 ? MoneyExtender.ConvertToDollars(overallInvoice.AmountShipping) : null,
-                    Tax = overallInvoice.Tax != null ? MoneyExtender.ConvertToDollars(overallInvoice.Tax.Value) : 0.00m,
-                    Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
-                    Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
-                };
-            }
-            else
-            {
-                return new InvoiceResponse()
-                {
-                    PercentTax = null,
-                    Tax = 0.00m,
-                    Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
-                    Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
-                };
-            }
+            //return new InvoiceResponse()
+            //            {
+            //                PercentTax = percent.ToString() + "%",
+            //                ShippingAmount = overallInvoice.AmountShipping > 0 ? MoneyExtender.ConvertToDollars(overallInvoice.AmountShipping) : null,
+            //                Tax = overallInvoice.TotalTaxes != null ? MoneyExtender.ConvertToDollars(overallInvoice.TotalTaxes) : 0.00m,
+            //                Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
+            //                Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
+            //            };
+            //        }
+            //        else
+            //        {
+            //            return new InvoiceResponse()
+            //            {
+            //                PercentTax = null,
+            //                Tax = 0.00m,
+            //                Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
+            //                Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
+            //            };
+            //        }
 
+            return new InvoiceResponse();
             
         }
 

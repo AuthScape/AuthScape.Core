@@ -52,7 +52,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     httpClient: new SystemNetHttpClient());
 
                 var subscriptionService = new SubscriptionService(client);
-                var subscription = await subscriptionService.GetAsync(paymentIntent.SubscriptionId);
+                //var subscription = await subscriptionService.GetAsync(paymentIntent.SubscriptionId);
             }
 
             if (stripeEvent.Type == "invoice.payment_failed") // payment fialed
