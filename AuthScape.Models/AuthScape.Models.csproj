@@ -30,12 +30,12 @@
 
   <ItemGroup>
     <PackageReference Include="Fido2.Models" Version="3.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.0" />
-    <PackageReference Include="OpenIddict" Version="6.0.0" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="6.0.0" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="6.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.4" />
+    <PackageReference Include="OpenIddict" Version="6.2.1" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="6.2.1" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="6.2.1" />
   </ItemGroup>
 
 </Project>

@@ -22,9 +22,12 @@
 
   <ItemGroup>
     <PackageReference Include="CoreBackpack" Version="1.0.40" />
-    <PackageReference Include="OpenIddict.Validation" Version="6.0.0" />
-    <PackageReference Include="OpenIddict.Validation.AspNetCore" Version="6.0.0" />
-    <PackageReference Include="Stripe.net" Version="47.1.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
+    <PackageReference Include="OpenIddict.Validation" Version="6.2.1" />
+    <PackageReference Include="OpenIddict.Validation.AspNetCore" Version="6.2.1" />
+    <PackageReference Include="Stripe.net" Version="48.1.0" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
   <ItemGroup>
