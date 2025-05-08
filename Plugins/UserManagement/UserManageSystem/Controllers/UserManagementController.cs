@@ -67,6 +67,13 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetCompaniesForLocation(string searchBName)
+        {
+            var companies = await userManagementSystemService.GetCompanies(0, 50, searchBName);
+            return Ok(companies.ToList());
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetRoles()
         {
             return Ok(await userManagementSystemService.GetAllRoles());

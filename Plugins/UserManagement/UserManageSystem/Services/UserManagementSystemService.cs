@@ -1262,6 +1262,12 @@ namespace AuthScape.UserManageSystem.Services
                         location.ZipCode = param.PostalCode;
                         responseItems.Add(new UpdatedResponseItem("ZipCode", param.PostalCode));
                     }
+
+                    if (param.CompanyId != location.CompanyId)
+                    {
+                        location.CompanyId = param.CompanyId;
+                        responseItems.Add(new UpdatedResponseItem("CompanyId", param.CompanyId.ToString()));
+                    }
                 }
             }
             await databaseContext.SaveChangesAsync();
@@ -1325,6 +1331,7 @@ namespace AuthScape.UserManageSystem.Services
             }
 
             var location = await databaseContext.Locations
+                .Include(z => z.Company)
                 .Where(c => c.Id == locationId)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
@@ -1332,7 +1339,24 @@ namespace AuthScape.UserManageSystem.Services
             if (location != null)
             {
                 location.CustomFields = customFields;
-                return location;
+                return new Location()
+                {
+                    Id = location.Id,
+                    Title = location.Title,
+                    Address = location.Address,
+                    City = location.City,
+                    State = location.State,
+                    IsDeactivated = location.IsDeactivated,
+                    lat = location.lat,
+                    lng = location.lng,
+                    CompanyId = location.CompanyId,
+                    ZipCode = location.ZipCode,
+                    Company = new Company()
+                    {
+                        Id = location.Company.Id,
+                        Title = location.Company.Title,
+                    }
+                };
             }
 
             return null;
