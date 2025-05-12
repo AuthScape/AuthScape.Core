@@ -32,7 +32,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<Company>> GetCompanies(string? name = null);
         Task<PagedList<Location>> GetLocations(GetLocationParam param);
         Task<string> ChangeUserPassword(long userId, string newPassword);
-        Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType);
+        Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType, bool IsDatagrid = false);
         Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null);
         Task<Company> GetCompany(long companyId);
         Task<List<UpdatedResponseItem>> UpdateCompany(CompanyEditParam param);
@@ -131,7 +131,8 @@ namespace AuthScape.UserManageSystem.Services
                     FieldType = param.FieldType,
                     GridSize = param.GridSize,
                     IsRequired = param.IsRequired,
-                    TabId = param.TabSelection
+                    TabId = param.TabSelection,
+                    IsColumnOnDatagrid = param.IsColumnVisibleInDatagrid
                 });
             }
             else
@@ -145,6 +146,7 @@ namespace AuthScape.UserManageSystem.Services
                     customField.GridSize = param.GridSize;
                     customField.IsRequired = param.IsRequired;
                     customField.TabId = param.TabSelection;
+                    customField.IsColumnOnDatagrid = param.IsColumnVisibleInDatagrid;
                 }
             }
 
@@ -178,11 +180,11 @@ namespace AuthScape.UserManageSystem.Services
                 .Include(c => c.Locations)
                 .Where(c => !c.IsDeactivated)
                 .Select(c => new CompanyDataGrid() {
-                Id = c.Id,
-                Logo = c.Logo,
-                Title = c.Title,
-                NumberOfLocations = c.Locations.Count(),
-                NumberOfUsers = c.Users.Count()
+                    Id = c.Id,
+                    Logo = c.Logo,
+                    Title = c.Title,
+                    NumberOfLocations = c.Locations.Count(),
+                    NumberOfUsers = c.Users.Count()
             });
 
 
@@ -912,7 +914,7 @@ namespace AuthScape.UserManageSystem.Services
             {
                 locationQuery.Where(l => l.CompanyId == param.CompanyId);
             }
-            
+
             return await locationQuery
                 .Select(z => new Location()
                 {
@@ -926,11 +928,11 @@ namespace AuthScape.UserManageSystem.Services
                     lng = z.lng,
                     CompanyId = z.CompanyId,
                     ZipCode = z.ZipCode,
-                    Company = new Company()
+                    Company = z.Company != null ? new Company()
                     {
                         Id = z.Company.Id,
                         Title = z.Company.Title
-                    }
+                    } : null
                 })
                 .ToPagedResultAsync(param.offset, param.length);
         }
@@ -1007,13 +1009,13 @@ namespace AuthScape.UserManageSystem.Services
             await databaseContext.SaveChangesAsync();
         }
 
-        public async Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType)
+        public async Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType, bool IsDatagrid = false)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
             return await databaseContext.CustomFields
                 .Include(c => c.CustomFieldTab)
-                .Where(c => (c.CompanyId == null || c.CompanyId == signedInUser.CompanyId) && c.CustomFieldPlatformType == platformType)
+                .Where(c => (c.CompanyId == null || c.CompanyId == signedInUser.CompanyId) && c.CustomFieldPlatformType == platformType && (IsDatagrid ? c.IsColumnOnDatagrid : true))
                 .Select(s => new CustomField()
                 {
                     Id = s.Id,
@@ -1022,7 +1024,8 @@ namespace AuthScape.UserManageSystem.Services
                     GridSize = s.GridSize,
                     IsRequired = s.IsRequired,
                     Name = s.Name,
-                    CustomFieldTab = s.CustomFieldTab
+                    CustomFieldTab = s.CustomFieldTab,
+                    IsColumnOnDatagrid = s.IsColumnOnDatagrid
                 })
                 .AsNoTracking()
                 .ToListAsync();
@@ -1128,9 +1131,10 @@ namespace AuthScape.UserManageSystem.Services
         {
             var responseItems = new List<UpdatedResponseItem>();
 
+            Company company = null;
             if (param.Id == -1)
             {
-                var newCompany = new Company()
+                company = new Company()
                 {
                     Title = param.Title,
                     IsDeactivated = param.IsDeactivated,
@@ -1139,11 +1143,12 @@ namespace AuthScape.UserManageSystem.Services
                 responseItems.Add(new UpdatedResponseItem("Title", param.Title));
                 responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
 
-                await databaseContext.Companies.AddAsync(newCompany);
+                await databaseContext.Companies.AddAsync(company);
             }
             else
             {
-                var company = await databaseContext.Companies
+                company = await databaseContext.Companies
+                    .Include(z => z.Locations)
                     .Where(c => c.Id == param.Id)
                     .FirstOrDefaultAsync();
 
@@ -1162,6 +1167,41 @@ namespace AuthScape.UserManageSystem.Services
                     }
                 }
             }
+
+
+            // Identify locations that need to be added
+            var locationsToAdd = param.Locations.Where(p => !company.Locations.Any(c => c.Id == p.Id)).ToList();
+            foreach (var locationToAdd in locationsToAdd)
+            {
+                var location = await databaseContext.Locations
+                    .Where(z => z.Id == locationToAdd.Id)
+                    .FirstOrDefaultAsync();
+                
+                if (location != null)
+                {
+                    location.CompanyId = param.Id;
+                    await databaseContext.SaveChangesAsync();
+                }
+            }
+
+
+            // Identify locations that need to be removed
+            var locationsToRemove = company.Locations.Where(c => !param.Locations.Any(p => p.Id == c.Id)).ToList();
+            foreach (var locationToRemove in locationsToRemove)
+            {
+
+                var location = await databaseContext.Locations
+                    .Where(z => z.CompanyId == param.Id && z.Id == locationToRemove.Id)
+                    .FirstOrDefaultAsync();
+
+                if (location != null)
+                {
+                    location.CompanyId = null;
+                    await databaseContext.SaveChangesAsync();
+                }
+
+            }
+
             await databaseContext.SaveChangesAsync();
 
 
@@ -1373,11 +1413,11 @@ namespace AuthScape.UserManageSystem.Services
                     lng = location.lng,
                     CompanyId = location.CompanyId,
                     ZipCode = location.ZipCode,
-                    Company = new Company()
+                    Company = location.Company != null ? new Company()
                     {
                         Id = location.Company.Id,
                         Title = location.Company.Title,
-                    }
+                    } : null
                 };
             }
 

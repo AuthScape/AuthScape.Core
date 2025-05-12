@@ -20,6 +20,8 @@ namespace AuthScape.UserManagementSystem.Models
         public long? CompanyId { get; set; }
         
         public CustomFieldTab CustomFieldTab { get; set; }
+
+        public bool IsColumnOnDatagrid { get; set; }
     }
 
     public class CustomFieldTab
