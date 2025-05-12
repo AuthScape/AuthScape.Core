@@ -428,8 +428,30 @@ namespace AuthScape.UserManageSystem.Services
             }
 
             var company = await databaseContext.Companies
+                .Include(z => z.Locations)
                 .Where(c => c.Id == companyId)
                 .AsNoTracking()
+                .Select(z => new Company()
+                {
+                    Id = z.Id,
+                    Title = z.Title,
+                    Logo = z.Logo,
+                    Description = z.Description,
+                    IsDeactivated = z.IsDeactivated,
+                    Locations = z.Locations.Select(l => new Location()
+                    {
+                        Id = l.Id,
+                        Title = l.Title,
+                        Address = l.Address,
+                        City = l.City,
+                        CompanyId = l.CompanyId,
+                        State = l.State,
+                        IsDeactivated = l.IsDeactivated,
+                        lat = l.lat,
+                        lng = l.lng,
+                        ZipCode = l.ZipCode
+                    }).ToList()
+                })
                 .FirstOrDefaultAsync();
 
             company.CustomFields = customFields;
