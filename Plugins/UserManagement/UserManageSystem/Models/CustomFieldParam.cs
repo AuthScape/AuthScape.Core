@@ -11,5 +11,6 @@ namespace AuthScape.UserManageSystem.Models
         public bool IsRequired { get; set; }
         public int? GridSize { get; set; }
         public Guid? TabSelection { get; set; }
+        public bool IsColumnVisibleInDatagrid { get; set; }
     }
 }

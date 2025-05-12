@@ -23,8 +23,8 @@ namespace AuthScape.Models.Users
         public bool IsDeactivated { get; set; }
 
 
-        public long CompanyId { get; set; }
-        public Company Company { get; set; }
+        public long? CompanyId { get; set; }
+        public Company? Company { get; set; }
         public ICollection<AppUser> Users { get; set; }
         public ICollection<UserLocations> UserLocations { get; set; }
 

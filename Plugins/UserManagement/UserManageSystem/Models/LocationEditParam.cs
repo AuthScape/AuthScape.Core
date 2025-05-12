@@ -11,7 +11,7 @@
         public bool IsDeactivated { get; set; }
 
 
-        public long CompanyId { get; set; }
+        public long? CompanyId { get; set; }
 
         public List<CustomFieldResult> CustomFields { get; set; }
     }

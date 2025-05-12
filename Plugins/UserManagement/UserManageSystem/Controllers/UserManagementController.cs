@@ -305,9 +305,9 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCustomFields(CustomFieldPlatformType platformType)
+        public async Task<IActionResult> GetCustomFields(CustomFieldPlatformType platformType, bool IsDatagrid = false)
         {
-            var customFields = await userManagementSystemService.GetAllCustomFields(platformType);
+            var customFields = await userManagementSystemService.GetAllCustomFields(platformType, IsDatagrid);
             return Ok(customFields);
         }
 
