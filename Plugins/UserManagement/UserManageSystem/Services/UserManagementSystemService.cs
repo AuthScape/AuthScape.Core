@@ -23,7 +23,7 @@ namespace AuthScape.UserManageSystem.Services
         Task AssignUserToRole(long roleId, long userId);
         Task RemoveUserFromRole(long roleId, long userId);
         Task<List<IdentityUserClaim<long>>> GetClaims(long userId);
-        Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null);
+        Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true);
         Task AddPermission(string permissionName);
         Task<List<Permission>> GetPermissions();
         Task<UserEditResult?> GetUser(long userId);
@@ -33,13 +33,15 @@ namespace AuthScape.UserManageSystem.Services
         Task<PagedList<Location>> GetLocations(GetLocationParam param);
         Task<string> ChangeUserPassword(long userId, string newPassword);
         Task<List<CustomField>> GetAllCustomFields(CustomFieldPlatformType platformType, bool IsDatagrid = false);
-        Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null);
+        Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null, bool IsActive = true);
         Task<Company> GetCompany(long companyId);
         Task<List<UpdatedResponseItem>> UpdateCompany(CompanyEditParam param);
         Task<CustomField?> GetCustomField(Guid id);
         Task AddUpdateCustomField(CustomFieldParam param);
         Task<List<Location>> GetLocationsList(GetLocationParam param);
         Task ArchiveUser(long id);
+        Task ArchiveLocation(long id);
+        Task ArchiveCompany(long id);
 
         Task DeleteCustomField(Guid id);
         Task DeleteCustomTab(Guid id);
@@ -50,6 +52,13 @@ namespace AuthScape.UserManageSystem.Services
         Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType);
         Task<List<UpdatedResponseItem>> UpdateLocation(LocationEditParam param);
         Task<Location> GetLocation(long locationId);
+
+
+        Task ActivateUser(long id);
+        Task ActivateLocation(long id);
+        Task ActivateCompany(long id);
+
+
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -95,6 +104,62 @@ namespace AuthScape.UserManageSystem.Services
                 await databaseContext.SaveChangesAsync();
             }
         }
+        public async Task ArchiveLocation(long id)
+        {
+            var location = await databaseContext.Locations.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (location != null)
+            {
+                location.IsDeactivated = true;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+        public async Task ArchiveCompany(long id)
+        {
+            var company = await databaseContext.Companies.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (company != null)
+            {
+                company.IsDeactivated = true;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+
+
+        public async Task ActivateUser(long id)
+        {
+            var user = await databaseContext.Users.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                user.IsActive = true;
+                user.Archived = null;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+        public async Task ActivateLocation(long id)
+        {
+            var location = await databaseContext.Locations.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (location != null)
+            {
+                location.IsDeactivated = false;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+        public async Task ActivateCompany(long id)
+        {
+            var company = await databaseContext.Companies.Where(u => u.Id == id).FirstOrDefaultAsync();
+            if (company != null)
+            {
+                company.IsDeactivated = false;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+
+
+
+
+
+
         public async Task AssignUserToRole(long roleId, long userId)
         {
             await databaseContext.UserRoles.AddAsync(new Microsoft.AspNetCore.Identity.IdentityUserRole<long>()
@@ -104,6 +169,11 @@ namespace AuthScape.UserManageSystem.Services
             });
             await databaseContext.SaveChangesAsync();
         }
+
+
+
+
+
 
         public async Task RemoveUserFromRole(long roleId, long userId)
         {
@@ -171,20 +241,21 @@ namespace AuthScape.UserManageSystem.Services
             return await companyQuery.ToListAsync();
         }
 
-        public async Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null)
+        public async Task<PagedList<CompanyDataGrid>> GetCompanies(int offset, int length, string? searchByName = null, bool IsActive = true)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
             var companyQuery = databaseContext.Companies
                 .Include(c => c.Users)
                 .Include(c => c.Locations)
-                .Where(c => !c.IsDeactivated)
+                .Where(c => c.IsDeactivated == !IsActive)
                 .Select(c => new CompanyDataGrid() {
                     Id = c.Id,
                     Logo = c.Logo,
                     Title = c.Title,
+                    IsActive = !c.IsDeactivated,
                     NumberOfLocations = c.Locations.Count(),
-                    NumberOfUsers = c.Users.Count()
+                    NumberOfUsers = c.Users.Count(),
             });
 
 
@@ -201,14 +272,15 @@ namespace AuthScape.UserManageSystem.Services
             return companies;
         }
 
-        public async Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null)
+        public async Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
             var usersQuery = databaseContext.Users
                 .AsNoTracking()
                 .Include(u => u.Company)
-                .AsQueryable();
+                .AsQueryable()
+                .Where(z => z.IsActive == IsActive);
                 
             if (searchByCompanyId != null)
             {
@@ -903,16 +975,17 @@ namespace AuthScape.UserManageSystem.Services
             var locationQuery = databaseContext
                 .Locations
                 .Include(c => c.Company)
-                .AsNoTracking();
+                .AsNoTracking()
+                .Where(z => z.IsDeactivated == !param.IsActive);
 
             if (!String.IsNullOrWhiteSpace(param.Name))
             {
-                locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
+                locationQuery = locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
             }
 
             if (param.CompanyId != null)
             {
-                locationQuery.Where(l => l.CompanyId == param.CompanyId);
+                locationQuery = locationQuery.Where(l => l.CompanyId == param.CompanyId);
             }
 
             return await locationQuery
@@ -924,6 +997,7 @@ namespace AuthScape.UserManageSystem.Services
                     City = z.City,
                     State = z.State,
                     IsDeactivated = z.IsDeactivated,
+                    IsActive = !z.IsDeactivated,
                     lat = z.lat,
                     lng = z.lng,
                     CompanyId = z.CompanyId,

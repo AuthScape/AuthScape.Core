@@ -33,7 +33,7 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> GetUsers(GetUsersParam param)
         {
-            var users = await userManagementSystemService.GetUsers(param.offset, param.length, param.searchByName, param.searchByCompanyId, param.searchByRoleId);
+            var users = await userManagementSystemService.GetUsers(param.offset, param.length, param.searchByName, param.searchByCompanyId, param.searchByRoleId, param.IsActive);
 
             return Ok(new ReactDataTable()
             {
@@ -55,7 +55,7 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> GetCompanies(GetUsersParam param)
         {
-            var users = await userManagementSystemService.GetCompanies(param.offset, param.length, param.searchByName);
+            var users = await userManagementSystemService.GetCompanies(param.offset, param.length, param.searchByName, param.IsActive);
 
             return Ok(new ReactDataTable()
             {
@@ -133,12 +133,65 @@ namespace AuthScape.UserManageSystem.Controllers
         }
 
 
+
+
+
+
         [HttpDelete]
         public async Task<IActionResult> ArchiveUser(long id)
         {
             await userManagementSystemService.ArchiveUser(id);
             return Ok();
         }
+
+        [HttpDelete]
+        public async Task<IActionResult> ArchiveLocation(long id)
+        {
+            await userManagementSystemService.ArchiveLocation(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> ArchiveCompany(long id)
+        {
+            await userManagementSystemService.ArchiveCompany(id);
+            return Ok();
+        }
+
+
+        [HttpDelete]
+        public async Task<IActionResult> ActivateUser(long id)
+        {
+            await userManagementSystemService.ActivateUser(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> ActivateLocation(long id)
+        {
+            await userManagementSystemService.ActivateLocation(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> ActivateCompany(long id)
+        {
+            await userManagementSystemService.ActivateCompany(id);
+            return Ok();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         [HttpPost]
@@ -393,6 +446,8 @@ namespace AuthScape.UserManageSystem.Controllers
 
         public long? searchByCompanyId { get; set; }
         public long? searchByRoleId { get; set; }
+
+        public bool IsActive { get; set; }
     }
 
     public class GetLocationParam
@@ -402,6 +457,8 @@ namespace AuthScape.UserManageSystem.Controllers
         public string? Name { get; set; }
         public long? CompanyId { get; set; }
         public int CompanyType { get; set; }
+
+        public bool IsActive { get; set; }
     }
 
     public class UserManagementUploadField
