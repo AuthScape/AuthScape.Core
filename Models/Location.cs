@@ -31,5 +31,8 @@ namespace AuthScape.Models.Users
 
         [NotMapped]
         public List<CustomFieldResult> CustomFields { get; set; }
+
+        [NotMapped]
+        public bool IsActive { get; set; }
     }
 }

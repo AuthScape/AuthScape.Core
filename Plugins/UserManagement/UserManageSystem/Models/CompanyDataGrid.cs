@@ -5,6 +5,7 @@
         public long Id { get; set; }
         public string? Logo { get; set; }
         public string Title { get; set; }
+        public bool IsActive { get; set; }
         public int NumberOfLocations { get; set; }
         public int NumberOfUsers { get; set; }
     }
