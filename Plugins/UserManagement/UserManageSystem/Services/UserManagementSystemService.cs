@@ -1,18 +1,18 @@
-﻿using AuthScape.Models.Users;
+﻿using AuthScape.Models.Exceptions;
+using AuthScape.Models.Users;
 using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
+using AuthScape.UserManagementSystem.Models;
+using AuthScape.UserManageSystem.Controllers;
 using AuthScape.UserManageSystem.Models;
+using CoreBackpack;
+using CoreBackpack.Time;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Models.Users;
 using Services.Context;
-using CoreBackpack;
-using AuthScape.Models.Exceptions;
-using AuthScape.UserManagementSystem.Models;
-using StrongGrid.Resources;
-using CoreBackpack.Time;
-using Newtonsoft.Json;
 using System.Text;
-using AuthScape.UserManageSystem.Controllers;
 
 namespace AuthScape.UserManageSystem.Services
 {
@@ -57,8 +57,6 @@ namespace AuthScape.UserManageSystem.Services
         Task ActivateUser(long id);
         Task ActivateLocation(long id);
         Task ActivateCompany(long id);
-
-
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -66,16 +64,18 @@ namespace AuthScape.UserManageSystem.Services
         readonly DatabaseContext databaseContext;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
+        readonly IAzureBlobStorage azureBlobStorage;
 
         readonly IUserManagementService userManagementService;
 
-        public UserManagementSystemService(DatabaseContext databaseContext, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IUserManagementService userManagementService)
+        public UserManagementSystemService(DatabaseContext databaseContext, IAzureBlobStorage azureBlobStorage, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IUserManagementService userManagementService)
         {
             this.databaseContext = databaseContext;
 
             _userManager = userManager;
             _signInManager = signInManager;
             this.userManagementService = userManagementService;
+            this.azureBlobStorage = azureBlobStorage;
         }
 
         public async Task<List<Role>> GetAllRoles()
@@ -1496,6 +1496,11 @@ namespace AuthScape.UserManageSystem.Services
             }
 
             return null;
+        }
+
+        public async Task UploadPhotos(IFormFile file)
+        {
+            await azureBlobStorage.UploadFile(file, "usermanagement", "filenamehere.jpg");
         }
     }
 }
