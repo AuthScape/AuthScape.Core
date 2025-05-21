@@ -1526,9 +1526,5 @@ namespace AuthScape.UserManageSystem.Services
             }
         }
 
-        public async Task UploadImage()
-        {
-
-        }
     }
 }
