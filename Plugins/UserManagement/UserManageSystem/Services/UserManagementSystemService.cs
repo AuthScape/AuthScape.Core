@@ -7,11 +7,14 @@ using AuthScape.UserManageSystem.Controllers;
 using AuthScape.UserManageSystem.Models;
 using CoreBackpack;
 using CoreBackpack.Time;
+using CoreBackpack.URL;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Models.Users;
 using Services.Context;
+using Services.Database;
 using System.Text;
 
 namespace AuthScape.UserManageSystem.Services
@@ -57,6 +60,8 @@ namespace AuthScape.UserManageSystem.Services
         Task ActivateUser(long id);
         Task ActivateLocation(long id);
         Task ActivateCompany(long id);
+
+        Task UploadLogo(UserManagementCompanyLogo logo);
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -65,10 +70,10 @@ namespace AuthScape.UserManageSystem.Services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
         readonly IAzureBlobStorage azureBlobStorage;
-
         readonly IUserManagementService userManagementService;
+        readonly AppSettings appSettings;
 
-        public UserManagementSystemService(DatabaseContext databaseContext, IAzureBlobStorage azureBlobStorage, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IUserManagementService userManagementService)
+        public UserManagementSystemService(DatabaseContext databaseContext, IOptions<AppSettings> appSettings, IAzureBlobStorage azureBlobStorage, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IUserManagementService userManagementService)
         {
             this.databaseContext = databaseContext;
 
@@ -76,6 +81,7 @@ namespace AuthScape.UserManageSystem.Services
             _signInManager = signInManager;
             this.userManagementService = userManagementService;
             this.azureBlobStorage = azureBlobStorage;
+            this.appSettings = appSettings.Value;
         }
 
         public async Task<List<Role>> GetAllRoles()
@@ -1498,9 +1504,31 @@ namespace AuthScape.UserManageSystem.Services
             return null;
         }
 
-        public async Task UploadPhotos(IFormFile file)
+        public async Task UploadLogo(UserManagementCompanyLogo logo)
         {
-            await azureBlobStorage.UploadFile(file, "usermanagement", "filenamehere.jpg");
+            var company = await databaseContext.Companies.Where(z => z.Id == logo.CompanyId).FirstOrDefaultAsync();
+            if (company != null)
+            {
+                if (!String.IsNullOrWhiteSpace(company.Logo))
+                {
+                    Uri uri = new Uri(company.Logo);
+                    string fileName = Path.GetFileName(uri.AbsolutePath);
+
+                    await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                }
+
+                var guid = Guid.NewGuid();
+                var fullURL = appSettings.Storage.BaseUri + "/usermanagement/logo-" + logo.CompanyId + "-" + guid.ToString() + ".jpg";
+                await azureBlobStorage.UploadFile(logo.File, "usermanagement", "logo-" + logo.CompanyId + "-" + guid.ToString());
+
+                company.Logo = fullURL;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task UploadImage()
+        {
+
         }
     }
 }
