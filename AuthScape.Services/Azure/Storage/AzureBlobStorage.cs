@@ -12,7 +12,32 @@ namespace AuthScape.Services.Azure.Storage
 {
     public interface IAzureBlobStorage
     {
+        /// <summary>
+        /// Upload file to Azure blob storage
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="containerName"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         Task<string> UploadFile(IFormFile file, string containerName, string name);
+
+        /// <summary>
+        /// Remove file from Azure blob storage
+        /// </summary>
+        /// <param name="containerName"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        Task RemoveFile(string containerName, string fileName);
+
+
+        /// <summary>
+        /// Create Store App Icon for PWA
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="containerName"></param>
+        /// <param name="Id"></param>
+        /// <param name="cacheControl"></param>
+        /// <returns></returns>
         Task<AppIcons> StoreAppIcons(IFormFile file, string containerName, string Id, string cacheControl = "max-age=31536000");
 	}
 
@@ -41,6 +66,11 @@ namespace AuthScape.Services.Azure.Storage
             await UploadBlob(appSettings.Storage.AzureConnectionString, file, containerName, (name + fi.Extension), ft, true);
 
             return (name + fi.Extension);
+        }
+
+        public async Task RemoveFile(string containerName, string fileName)
+        {
+            await RemoveBlob(appSettings.Storage.AzureConnectionString, containerName, fileName);
         }
 
         public async Task<AppIcons> StoreAppIcons(IFormFile file, string containerName, string Id, string cacheControl = "max-age=31536000")
