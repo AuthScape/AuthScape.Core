@@ -44,13 +44,11 @@ namespace AuthScape.UserManageSystem.Controllers
             });
         }
 
-
         [HttpGet]
         public async Task<IActionResult> GetAllCompanies()
         {
             return Ok(await userManagementSystemService.GetAllCompanies());
         }
-
 
         [HttpPost]
         public async Task<IActionResult> GetCompanies(GetUsersParam param)
@@ -132,11 +130,6 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok(response);
         }
 
-
-
-
-
-
         [HttpDelete]
         public async Task<IActionResult> ArchiveUser(long id)
         {
@@ -158,7 +151,6 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok();
         }
 
-
         [HttpDelete]
         public async Task<IActionResult> ActivateUser(long id)
         {
@@ -179,20 +171,6 @@ namespace AuthScape.UserManageSystem.Controllers
             await userManagementSystemService.ActivateCompany(id);
             return Ok();
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         [HttpPost]
         public async Task<IActionResult> UploadUsers(UploadUsersParam param)
@@ -319,7 +297,6 @@ namespace AuthScape.UserManageSystem.Controllers
             }
         }
 
-
         [HttpGet]
         public async Task<IActionResult> GetCompanies(string? name = null)
         {
@@ -422,6 +399,13 @@ namespace AuthScape.UserManageSystem.Controllers
         public async Task<IActionResult> GetLocation(long locationId)
         {
             return Ok(await userManagementSystemService.GetLocation(locationId));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadLogo([FromForm] UserManagementCompanyLogo logo)
+        {
+            await userManagementSystemService.UploadLogo(logo);
+            return Ok();
         }
     }
 
