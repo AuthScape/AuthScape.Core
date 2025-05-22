@@ -12,5 +12,6 @@ namespace AuthScape.UserManageSystem.Models
         public int? GridSize { get; set; }
         public Guid? TabSelection { get; set; }
         public bool IsColumnVisibleInDatagrid { get; set; }
+        public string? Properties { get; set; }
     }
 }

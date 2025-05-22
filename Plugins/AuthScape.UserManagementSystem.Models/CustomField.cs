@@ -22,6 +22,8 @@ namespace AuthScape.UserManagementSystem.Models
         public CustomFieldTab CustomFieldTab { get; set; }
 
         public bool IsColumnOnDatagrid { get; set; }
+
+        public string? Properties { get; set; }
     }
 
     public class CustomFieldTab

@@ -210,7 +210,8 @@ namespace AuthScape.UserManageSystem.Services
                     GridSize = param.GridSize,
                     IsRequired = param.IsRequired,
                     TabId = param.TabSelection,
-                    IsColumnOnDatagrid = param.IsColumnVisibleInDatagrid
+                    IsColumnOnDatagrid = param.IsColumnVisibleInDatagrid,
+                    Properties = param.Properties
                 });
             }
             else
@@ -225,6 +226,7 @@ namespace AuthScape.UserManageSystem.Services
                     customField.IsRequired = param.IsRequired;
                     customField.TabId = param.TabSelection;
                     customField.IsColumnOnDatagrid = param.IsColumnVisibleInDatagrid;
+                    customField.Properties = param.Properties;
                 }
             }
 
@@ -497,7 +499,8 @@ namespace AuthScape.UserManageSystem.Services
                     CustomFieldType = c.FieldType,
                     TabId = c.TabId,
                     Size = c.GridSize,
-                    Value = ""
+                    Value = "",
+                    Properties = c.Properties
                 }).ToListAsync();
 
             foreach (var field in customFields)
@@ -1535,6 +1538,8 @@ namespace AuthScape.UserManageSystem.Services
                 var customField = await databaseContext.CompanyCustomFields
                     .Where(z => z.CompanyId == param.Identifier && z.CustomFieldId == param.CustomFieldId)
                     .FirstOrDefaultAsync();
+
+                //customField.CustomField.Properties // this is what I need to do to get the different photo sizes
 
                 if (customField != null)
                 {
