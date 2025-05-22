@@ -1,4 +1,5 @@
 ﻿using AuthScape.UserManagementSystem.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.UserManageSystem.Models
 {
@@ -11,5 +12,8 @@ namespace AuthScape.UserManageSystem.Models
         public CustomFieldType CustomFieldType { get; set; }
         public Guid? TabId { get; set; }
         public string? Value { get; set; }
+
+        [NotMapped]
+        public string? Properties { get; set; }
     }
 }
