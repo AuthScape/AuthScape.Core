@@ -407,6 +407,12 @@ namespace AuthScape.UserManageSystem.Controllers
             await userManagementSystemService.UploadLogo(logo);
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadCustomFieldImage([FromForm] UserManagementCustomFieldImage param)
+        {
+            return Ok(await userManagementSystemService.UploadCustomFieldImage(param));
+        }
     }
 
 
