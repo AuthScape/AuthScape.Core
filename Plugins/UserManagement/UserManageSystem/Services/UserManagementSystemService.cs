@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Models.Users;
+using Newtonsoft.Json;
 using Services.Context;
 using Services.Database;
 using System.Text;
@@ -1533,138 +1534,289 @@ namespace AuthScape.UserManageSystem.Services
 
         public async Task<string?> UploadCustomFieldImage(UserManagementCustomFieldImage param)
         {
+            var coreCustomField = await databaseContext.CustomFields
+                .Where(z => z.Id == param.CustomFieldId)
+                .FirstOrDefaultAsync();
+
             if (param.PlatformType == CustomFieldPlatformType.Companies)
             {
                 var customField = await databaseContext.CompanyCustomFields
+                    .Include(z => z.CustomField)
                     .Where(z => z.CompanyId == param.Identifier && z.CustomFieldId == param.CustomFieldId)
                     .FirstOrDefaultAsync();
 
-                //customField.CustomField.Properties // this is what I need to do to get the different photo sizes
-
-                if (customField != null)
+                var fileSizes = JsonConvert.DeserializeObject<List<FieldImageSize>>(coreCustomField.Properties);
+                if (fileSizes != null)
                 {
-                    if (!String.IsNullOrWhiteSpace(customField.Value))
+                    foreach (var fileSize in fileSizes)
                     {
-                        try
+                        if (customField != null)
                         {
-                            Uri uri = new Uri(customField.Value);
-                            string fileName = Path.GetFileName(uri.AbsolutePath);
+                            if (!String.IsNullOrWhiteSpace(customField.Value))
+                            {
+                                try
+                                {
+                                    Uri uri = new Uri(customField.Value);
+                                    string fileName = Path.GetFileName(uri.AbsolutePath);
 
-                            await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                                    await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                                }
+                                catch (Exception) { }
+                            }
+
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg");
+
+                            customField.Value = fullURL;
                         }
-                        catch(Exception) { }
+                        else
+                        {
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg");
+
+                            customField = new CompanyCustomField()
+                            {
+                                CompanyId = param.Identifier,
+                                CustomFieldId = param.CustomFieldId,
+                                Value = fullURL
+                            };
+                            await databaseContext.CompanyCustomFields.AddAsync(customField);
+                        }
+
+                        await databaseContext.SaveChangesAsync();
                     }
 
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
 
-                    customField.Value = fullURL;
+
                 }
                 else
                 {
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
-
-                    customField = new CompanyCustomField()
+                    string fileSize = "default";
+                    if (customField != null)
                     {
-                        CompanyId = param.Identifier,
-                        CustomFieldId = param.CustomFieldId,
-                        Value = fullURL
-                    };
-                    await databaseContext.CompanyCustomFields.AddAsync(customField);
-                }
+                        //if (!String.IsNullOrWhiteSpace(customField.Value))
+                        //{
+                        //    try
+                        //    {
+                        //        Uri uri = new Uri(customField.Value);
+                        //        string fileName = Path.GetFileName(uri.AbsolutePath);
 
-                await databaseContext.SaveChangesAsync();
+                        //        await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                        //    }
+                        //    catch (Exception) { }
+                        //}
+
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField.Value = fullURL;
+                    }
+                    else
+                    {
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField = new CompanyCustomField()
+                        {
+                            CompanyId = param.Identifier,
+                            CustomFieldId = param.CustomFieldId,
+                            Value = fullURL
+                        };
+                        await databaseContext.CompanyCustomFields.AddAsync(customField);
+                    }
+
+                    await databaseContext.SaveChangesAsync();
+                }
 
                 return customField.Value;
             }
             else if (param.PlatformType == CustomFieldPlatformType.Locations)
             {
                 var customField = await databaseContext.LocationCustomFields
+                    .Include(z => z.CustomField)
                     .Where(z => z.LocationId == param.Identifier && z.CustomFieldId == param.CustomFieldId)
                     .FirstOrDefaultAsync();
 
-                if (customField != null)
+                var fileSizes = JsonConvert.DeserializeObject<List<FieldImageSize>>(coreCustomField.Properties);
+                if (fileSizes != null)
                 {
-                    if (!String.IsNullOrWhiteSpace(customField.Value))
+                    foreach (var fileSize in fileSizes)
                     {
-                        try
+                        if (customField != null)
                         {
-                            Uri uri = new Uri(customField.Value);
-                            string fileName = Path.GetFileName(uri.AbsolutePath);
-                            await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                            //if (!String.IsNullOrWhiteSpace(customField.Value))
+                            //{
+                            //    try
+                            //    {
+                            //        Uri uri = new Uri(customField.Value);
+                            //        string fileName = Path.GetFileName(uri.AbsolutePath);
+
+                            //        await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                            //    }
+                            //    catch (Exception) { }
+                            //}
+
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg");
+
+                            customField.Value = fullURL;
                         }
-                        catch (Exception) { }
+                        else
+                        {
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize.Name + "-" + guid.ToString() + ".jpg");
+
+                            customField = new LocationCustomField()
+                            {
+                                LocationId = param.Identifier,
+                                CustomFieldId = param.CustomFieldId,
+                                Value = fullURL
+                            };
+                            await databaseContext.LocationCustomFields.AddAsync(customField);
+                        }
+
+                        await databaseContext.SaveChangesAsync();
                     }
-
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
-
-                    customField.Value = fullURL;
                 }
                 else
                 {
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
-
-                    customField = new LocationCustomField()
+                    string fileSize = "default";
+                    if (customField != null)
                     {
-                        LocationId = param.Identifier,
-                        CustomFieldId = param.CustomFieldId,
-                        Value = fullURL
-                    };
-                    await databaseContext.LocationCustomFields.AddAsync(customField);
-                }
+                        if (!String.IsNullOrWhiteSpace(customField.Value))
+                        {
+                            try
+                            {
+                                Uri uri = new Uri(customField.Value);
+                                string fileName = Path.GetFileName(uri.AbsolutePath);
 
-                await databaseContext.SaveChangesAsync();
+                                await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                            }
+                            catch (Exception) { }
+                        }
+
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField.Value = fullURL;
+                    }
+                    else
+                    {
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField = new LocationCustomField()
+                        {
+                            LocationId = param.Identifier,
+                            CustomFieldId = param.CustomFieldId,
+                            Value = fullURL
+                        };
+                        await databaseContext.LocationCustomFields.AddAsync(customField);
+                    }
+
+                    await databaseContext.SaveChangesAsync();
+                }
 
                 return customField.Value;
             }
             else if (param.PlatformType == CustomFieldPlatformType.Users)
             {
                 var customField = await databaseContext.UserCustomFields
+                    .Include(z => z.CustomField)
                     .Where(z => z.UserId == param.Identifier && z.CustomFieldId == param.CustomFieldId)
                     .FirstOrDefaultAsync();
 
-                if (customField != null)
+                var fileSizes = JsonConvert.DeserializeObject<List<FieldImageSize>>(coreCustomField.Properties);
+                if (fileSizes != null)
                 {
-                    if (!String.IsNullOrWhiteSpace(customField.Value))
+                    foreach (var fileSize in fileSizes)
                     {
-                        try
+                        if (customField != null)
                         {
-                            Uri uri = new Uri(customField.Value);
-                            string fileName = Path.GetFileName(uri.AbsolutePath);
-                            await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                            if (!String.IsNullOrWhiteSpace(customField.Value))
+                            {
+                                try
+                                {
+                                    Uri uri = new Uri(customField.Value);
+                                    string fileName = Path.GetFileName(uri.AbsolutePath);
+
+                                    await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                                }
+                                catch (Exception) { }
+                            }
+
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                            customField.Value = fullURL;
                         }
-                        catch (Exception) { }
+                        else
+                        {
+                            var guid = Guid.NewGuid();
+                            var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                            await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                            customField = new UserCustomField()
+                            {
+                                UserId = param.Identifier,
+                                CustomFieldId = param.CustomFieldId,
+                                Value = fullURL
+                            };
+                            await databaseContext.UserCustomFields.AddAsync(customField);
+                        }
+
+                        await databaseContext.SaveChangesAsync();
                     }
-
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
-
-                    customField.Value = fullURL;
                 }
                 else
                 {
-                    var guid = Guid.NewGuid();
-                    var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg";
-                    await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + guid.ToString() + ".jpg");
-
-                    customField = new UserCustomField()
+                    string fileSize = "default";
+                    if (customField != null)
                     {
-                        UserId = param.Identifier,
-                        CustomFieldId = param.CustomFieldId,
-                        Value = fullURL
-                    };
-                    await databaseContext.UserCustomFields.AddAsync(customField);
-                }
+                        if (!String.IsNullOrWhiteSpace(customField.Value))
+                        {
+                            try
+                            {
+                                Uri uri = new Uri(customField.Value);
+                                string fileName = Path.GetFileName(uri.AbsolutePath);
 
-                await databaseContext.SaveChangesAsync();
+                                await azureBlobStorage.RemoveFile("usermanagement", fileName);
+                            }
+                            catch (Exception) { }
+                        }
+
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField.Value = fullURL;
+                    }
+                    else
+                    {
+                        var guid = Guid.NewGuid();
+                        var fullURL = appSettings.Storage.BaseUri + "/usermanagement/customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg";
+                        await azureBlobStorage.UploadFile(param.File, "usermanagement", "customField-" + param.Identifier + "-" + param.CustomFieldId + "-" + fileSize + "-" + guid.ToString() + ".jpg");
+
+                        customField = new UserCustomField()
+                        {
+                            UserId = param.Identifier,
+                            CustomFieldId = param.CustomFieldId,
+                            Value = fullURL
+                        };
+                        await databaseContext.UserCustomFields.AddAsync(customField);
+                    }
+
+                    await databaseContext.SaveChangesAsync();
+                }
 
                 return customField.Value;
             }
