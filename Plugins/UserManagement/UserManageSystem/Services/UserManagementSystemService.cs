@@ -1587,9 +1587,6 @@ namespace AuthScape.UserManageSystem.Services
 
                         await databaseContext.SaveChangesAsync();
                     }
-
-
-
                 }
                 else
                 {
