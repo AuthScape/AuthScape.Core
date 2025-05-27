@@ -118,6 +118,10 @@ namespace API
                 services.AddScoped<IFlowService, FlowService>();
 
                 services.AddScoped<IUserManagementSystemService, UserManagementSystemService>();
+                services.AddScoped<ICustomFieldService, CustomFieldService>();
+
+                
+
                 services.AddScoped<IStripeConnectService, StripeConnectService>();
 
 
