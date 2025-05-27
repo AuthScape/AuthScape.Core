@@ -3,6 +3,7 @@ using AuthScape.DocumentReader.Controllers;
 using AuthScape.Models;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
+using AuthScape.UserManagementSystem.Models;
 using CoreBackpack;
 using CoreBackpack.Services;
 using CoreBackpack.Time;
@@ -443,7 +444,5 @@ namespace AuthScape.ContentManagement.Services
 
             return pageAssets;
         }
-
- 
     }
 }

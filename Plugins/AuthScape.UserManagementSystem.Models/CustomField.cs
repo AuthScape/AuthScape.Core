@@ -40,10 +40,12 @@ namespace AuthScape.UserManagementSystem.Models
     public enum CustomFieldType
     {
         TextField = 1,
-        RichTextField = 2,
+        MultiLineTextField = 2,
         Number = 3,
         Date = 4,
-        Boolean = 5
+        Boolean = 5,
+        Image = 6,
+        Dropdown = 7
     }
 
     public enum CustomFieldPlatformType
