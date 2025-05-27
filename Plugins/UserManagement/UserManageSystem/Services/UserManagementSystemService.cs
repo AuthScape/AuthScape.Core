@@ -593,8 +593,10 @@ namespace AuthScape.UserManageSystem.Services
                 Size = c.GridSize,
                 CustomFieldType = c.FieldType,
                 TabId = c.TabId,
-                Value = ""
-            }).ToListAsync();
+                Value = "",
+                Properties = c.Properties
+
+                }).ToListAsync();
 
             foreach (var field in userCustomFields)
             {
@@ -616,6 +618,7 @@ namespace AuthScape.UserManageSystem.Services
                 Roles = manageUserRole,
                 Permissions = manageUserPermissions,
                 CustomFields = userCustomFields,
+                PhoneNumber = user.PhoneNumber,
 
                 Company = user.Company != null ? new Company() {
                     Id = user.Company.Id,
@@ -1466,7 +1469,8 @@ namespace AuthScape.UserManageSystem.Services
                     CustomFieldType = c.FieldType,
                     TabId = c.TabId,
                     Size = c.GridSize,
-                    Value = ""
+                    Value = "",
+                    Properties = c.Properties
                 }).ToListAsync();
 
             foreach (var field in customFields)
