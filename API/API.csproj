@@ -82,6 +82,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="cache\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
