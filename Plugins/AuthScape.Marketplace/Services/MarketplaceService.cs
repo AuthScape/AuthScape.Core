@@ -1,12 +1,13 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
-using AuthScape.PrivateLabel.Models;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using CoreBackpack.Time;
-using CsvHelper;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using Lucene.Net.Store.Azure;
 using Lucene.Net.Util;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +15,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Services.Context;
 using Services.Database;
-using System;
-using System.Globalization;
 using System.Reflection;
-using static AuthScape.Marketplace.Services.MarketplaceService;
 
 namespace AuthScape.Marketplace.Services
 {
@@ -25,6 +23,7 @@ namespace AuthScape.Marketplace.Services
     {
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
         Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null);
+        Task GenerateMLModel<T>(List<T> documents, int platformId = 0, long? privateLabelCompanyId = null, string? cachePath = null) where T : new();
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -42,7 +41,10 @@ namespace AuthScape.Marketplace.Services
 
         public async Task<SearchResult2> SearchProducts(SearchParams searchParams)
         {
-            var containerLocation = appSettings.LuceneSearch.Container;
+            searchParams.Container = appSettings.LuceneSearch.Container;
+            searchParams.StorageConnectionString = appSettings.LuceneSearch.StorageConnectionString;
+
+            var containerLocation = searchParams.Container;
             if (searchParams.OemCompanyId != null)
             {
                 containerLocation += "/" + searchParams.OemCompanyId;
@@ -54,134 +56,195 @@ namespace AuthScape.Marketplace.Services
 
             containerLocation += "/" + searchParams.PlatformId;
 
-            AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, containerLocation);
-            using var reader = DirectoryReader.Open(azureDirectory);
-            var searcher = new IndexSearcher(reader);
 
-            var booleanQuery = new BooleanQuery();
-            var hasFilters = false;
-
-            // Filters
-            if (searchParams.SearchParamFilters != null && searchParams.SearchParamFilters.Any())
+            string cachePath = "";
+            // 1. Define persistent cache directory
+            if (searchParams.OemCompanyId != null)
             {
-                // Group filters by their category
-                var groupedFilters = searchParams.SearchParamFilters.GroupBy(f => f.Category);
-
-                foreach (var group in groupedFilters)
-                {
-                    // Create a subquery for each category with OR between options
-                    var categoryQuery = new BooleanQuery();
-                    foreach (var filter in group)
-                    {
-                        if (!String.IsNullOrWhiteSpace(filter.Subcategory))
-                        {
-                            //categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Subcategory)), Occur.SHOULD);
-
-                            var childCategory = await databaseContext.ProductCardCategories
-                                .AsNoTracking()
-                                .Where(z => z.ParentName == filter.Category && z.PlatformId == searchParams.PlatformId)
-                                .FirstOrDefaultAsync();
-
-                            if (childCategory != null)
-                            {
-                                categoryQuery.Add(new TermQuery(new Term(childCategory.Name, filter.Option)), Occur.SHOULD);
-                            }
-                        }
-                        else
-                        {
-                            categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
-                        }
-                    }
-
-                    // Add the category subquery as a MUST clause to the main query (AND between categories)
-                    booleanQuery.Add(categoryQuery, Occur.MUST);
-                    hasFilters = true;
-                }
-            }
-
-            ScoreDoc[] showAllPossibleHits = searcher.Search(new MatchAllDocsQuery(), int.MaxValue).ScoreDocs;
-
-            ScoreDoc[] filteredOutHits;
-            if (!hasFilters)
-            {
-                filteredOutHits = showAllPossibleHits;
+                cachePath = Path.Combine(
+                    Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
+                    "cache", "LuceneCache", searchParams.OemCompanyId.Value.ToString(), searchParams.PlatformId.ToString()
+                );
             }
             else
             {
-                filteredOutHits = searcher.Search(booleanQuery, int.MaxValue).ScoreDocs;
+                cachePath = Path.Combine(
+                    Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
+                    "cache", "LuceneCache", "0", searchParams.PlatformId.ToString()
+                );
             }
 
-            var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
-            var hits = filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
 
-            var listOfReferenceIds = new List<string>();
-
-            var records = new List<List<ProductResult>>();
-            foreach (var hit in hits)
+            if (!System.IO.Directory.Exists(cachePath))
             {
-                var doc = searcher.Doc(hit.Doc);
-                var record = new List<ProductResult>();
-                foreach (var field in doc.Fields)
-                {
-                    record.Add(new ProductResult { Name = field.Name, Value = doc.Get(field.Name) });
+                System.IO.Directory.CreateDirectory(cachePath);
+            }
 
-                    if (field.Name == "ReferenceId")
+            using (var cacheDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
+            {
+                using (AzureDirectory azureDirectory = new AzureDirectory(searchParams.StorageConnectionString, containerLocation, cacheDirectory))
+                {
+
+                    using (var reader = DirectoryReader.Open(azureDirectory))
                     {
-                        listOfReferenceIds.Add(doc.Get(field.Name));
+                        var searcher = new IndexSearcher(reader);
+
+                        var booleanQuery = new BooleanQuery();
+                        var hasFilters = false;
+
+                        // Filters
+                        if (searchParams.SearchParamFilters != null && searchParams.SearchParamFilters.Any())
+                        {
+                            // Group filters by their category
+                            var groupedFilters = searchParams.SearchParamFilters.GroupBy(f => f.Category);
+
+                            foreach (var group in groupedFilters)
+                            {
+                                // Create a subquery for each category with OR between options
+                                var categoryQuery = new BooleanQuery();
+                                foreach (var filter in group)
+                                {
+                                    if (!String.IsNullOrWhiteSpace(filter.Subcategory))
+                                    {
+                                        //categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Subcategory)), Occur.SHOULD);
+
+                                        var childCategory = await databaseContext.ProductCardCategories
+                                            .AsNoTracking()
+                                            .Where(z => z.ParentName == filter.Category && z.PlatformId == searchParams.PlatformId)
+                                            .FirstOrDefaultAsync();
+
+                                        if (childCategory != null)
+                                        {
+                                            categoryQuery.Add(new TermQuery(new Term(childCategory.Name, filter.Option)), Occur.SHOULD);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                                    }
+                                }
+
+                                // Add the category subquery as a MUST clause to the main query (AND between categories)
+                                booleanQuery.Add(categoryQuery, Occur.MUST);
+                                hasFilters = true;
+                            }
+                        }
+
+
+                        Sort sortCriteria = new Sort(new SortField("Score", SortFieldType.INT64, true));
+
+
+                        ScoreDoc[] showAllPossibleHits = searcher.Search(new MatchAllDocsQuery(), int.MaxValue, sortCriteria).ScoreDocs;
+
+                        ScoreDoc[] filteredOutHits;
+                        if (!hasFilters)
+                        {
+                            filteredOutHits = showAllPossibleHits;
+                        }
+                        else
+                        {
+                            filteredOutHits = searcher.Search(booleanQuery, int.MaxValue, sortCriteria).ScoreDocs;
+                        }
+
+                        var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
+                        var hits = filteredOutHits.Skip(start).Take(searchParams.PageSize).ToList();
+
+                        var listOfReferenceIds = new List<string>();
+
+                        var records = new List<List<ProductResult>>();
+                        foreach (var hit in hits)
+                        {
+                            var doc = searcher.Doc(hit.Doc);
+                            var record = new List<ProductResult>();
+                            foreach (var field in doc.Fields)
+                            {
+                                var isArray = await databaseContext.ProductCardCategories
+                                    .AsNoTracking()
+                                    .Where(z => z.Name == field.Name && z.CompanyId == searchParams.OemCompanyId && z.PlatformId == searchParams.PlatformId)
+                                    .Select(z => z.IsArray)
+                                    .FirstOrDefaultAsync();
+                                if (field.Name == "Assets")
+                                {
+
+                                }
+                                if (isArray)
+                                {
+                                    var catValues = doc.GetValues(field.Name);
+                                    foreach (var catValue in catValues)
+                                    {
+                                        if (!record.Where(z => z.Name == field.Name && z.Value == catValue).Any())
+                                        {
+                                            record.Add(new ProductResult { Name = field.Name, Value = catValue });
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    var catValue = doc.Get(field.Name);
+
+                                    record.Add(new ProductResult { Name = field.Name, Value = catValue });
+
+                                    if (field.Name == "Id")
+                                    {
+                                        listOfReferenceIds.Add(doc.Get(field.Name));
+                                    }
+                                }
+
+                            }
+                            records.Add(record);
+                        }
+
+                        var filters = await GetAvailableFilters(searchParams, searcher, filteredOutHits, showAllPossibleHits, booleanQuery, searchParams.PlatformId, searchParams.OemCompanyId);
+
+                        int totalPages = (int)Math.Ceiling((double)filteredOutHits.Length / searchParams.PageSize);
+
+
+                        var cateoryFilter = new List<FilterTracking>();
+                        foreach (var filter in filters)
+                        {
+                            foreach (var option in filter.Options.Where(c => c.IsChecked))
+                            {
+                                cateoryFilter.Add(new FilterTracking()
+                                {
+                                    Category = filter.Category,
+                                    Subcategory = "", // need to fix this...
+                                    Option = option.Name
+                                });
+                            }
+                        }
+
+
+                        // track the impressions
+                        var impressionTracking = new AnalyticsMarketplaceImpressionsClicks()
+                        {
+                            Platform = searchParams.PlatformId,
+
+                            JSONProductList = JsonConvert.SerializeObject(listOfReferenceIds),
+                            ProductOrServiceClicked = null,
+                            JSONFilterSelected = JsonConvert.SerializeObject(cateoryFilter),
+                            UserId = searchParams.UserId,
+                            OemCompanyId = searchParams.OemCompanyId,
+                            Created = SystemTime.Now
+                        };
+                        await databaseContext.AnalyticsMarketplaceImpressionsClicks.AddRangeAsync(impressionTracking);
+                        await databaseContext.SaveChangesAsync();
+
+
+                        return new SearchResult2
+                        {
+                            Products = records,
+                            Filters = filters,
+                            PageNumber = searchParams.PageNumber,
+                            PageSize = totalPages,
+                            Total = filteredOutHits.Length,
+                            TrackingId = impressionTracking.Id
+                        };
                     }
                 }
-                records.Add(record);
             }
-
-            var filters = await GetAvailableFilters(searchParams, searcher, filteredOutHits, showAllPossibleHits, booleanQuery, searchParams.PlatformId, searchParams.OemCompanyId);
-
-            int totalPages = (int)Math.Ceiling((double)filteredOutHits.Length / searchParams.PageSize);
-
-
-            var cateoryFilter = new List<FilterTracking>();
-            foreach (var filter in filters)
-            {
-                foreach (var option in filter.Options.Where(c => c.IsChecked))
-                {
-                    cateoryFilter.Add(new FilterTracking()
-                    {
-                        Category = filter.Category,
-                        Subcategory = "", // need to fix this...
-                        Option = option.Name
-                    });
-                }
-            }
-
-
-            // track the impressions
-            var impressionTracking = new AnalyticsMarketplaceImpressionsClicks()
-            {
-                Platform = searchParams.PlatformId,
-
-                JSONProductList = JsonConvert.SerializeObject(listOfReferenceIds),
-                ProductOrServiceClicked = null,
-                JSONFilterSelected = JsonConvert.SerializeObject(cateoryFilter),
-                UserId = searchParams.UserId,
-                OemCompanyId = searchParams.OemCompanyId,
-                Created = SystemTime.Now
-            };
-            await databaseContext.AnalyticsMarketplaceImpressionsClicks.AddRangeAsync(impressionTracking);
-            await databaseContext.SaveChangesAsync();
-
-
-            return new SearchResult2
-            {
-                Products = records,
-                Filters = filters,
-                PageNumber = searchParams.PageNumber,
-                PageSize = totalPages,
-                Total = filteredOutHits.Length,
-                TrackingId = impressionTracking.Id
-            };
         }
 
-
-        async Task<HashSet<CategoryFilters>> GetAvailableFilters(
+        async Task<IEnumerable<CategoryFilters>> GetAvailableFilters(
             SearchParams searchParams,
             IndexSearcher searcher,
             ScoreDoc[] filteredOutHits,
@@ -200,7 +263,7 @@ namespace AuthScape.Marketplace.Services
                 var doc = searcher.Doc(hit.Doc);
                 foreach (var field in doc.Fields)
                 {
-                    if (field.Name == "Id" || field.Name == "Name" || field.Name == "ReferenceId") continue;
+                    if (field.Name == "Id" || field.Name == "Name" || field.Name == "ReferenceId" || field.Name == "Score") continue;
                     allCategories.Add(field.Name);
                 }
             }
@@ -256,9 +319,9 @@ namespace AuthScape.Marketplace.Services
                             {
                                 var doc2 = searcher.Doc(docHit.Doc);
                                 // Assuming the field "Category" holds the subcategory value
-                                var subCat = doc2.Get("Category");
+                                var subCat = doc2.Get(parentCategory.Name);
                                 // And "ParentCategory" holds the name of the parent option for the subcategory
-                                var parentCat = doc2.Get("ParentCategory");
+                                var parentCat = doc2.Get(parentCategory.ParentName);
 
                                 if (!string.IsNullOrWhiteSpace(subCat) &&
                                     !string.IsNullOrWhiteSpace(parentCat) &&
@@ -333,25 +396,20 @@ namespace AuthScape.Marketplace.Services
                                 Name = z.Key,
                                 Count = z.Value,
                                 IsChecked = false
-                            }) : null
-                        })
+                            }).OrderBy(z => z.Name) : null
+                        }).OrderBy(z => z.Name)
                     };
 
                     categoryOptions.Add(categoryFilter);
                 }
             }
 
-            return categoryOptions;
+            return categoryOptions.OrderBy(z => z.Category);
         }
 
-
-
-
-
-
         public async Task<Query> BuildOtherFiltersQuery(
-    List<SearchParamFilter> otherFilters,
-    DatabaseContext databaseContext, int platformId) // Add database context
+            List<SearchParamFilter> otherFilters,
+            DatabaseContext databaseContext, int platformId) // Add database context
         {
             if (!otherFilters.Any())
                 return new MatchAllDocsQuery();
@@ -396,44 +454,6 @@ namespace AuthScape.Marketplace.Services
             return booleanQuery;
         }
 
-
-        private void AssignToProperty<T>(object item, string propertyName, object propertyValue) where T : new()
-        {
-            // Use reflection to set the property value
-            PropertyInfo propertyInfo = typeof(T).GetProperty(propertyName);
-            if (propertyInfo != null && propertyInfo.CanWrite)
-            {
-                if (propertyInfo.PropertyType == typeof(string))
-                {
-                    propertyInfo.SetValue(item, propertyValue);
-                }
-                else if (propertyInfo.PropertyType == typeof(int))
-                {
-                    propertyInfo.SetValue(item, int.Parse(propertyValue.ToString()));
-                }
-                else if (propertyInfo.PropertyType == typeof(long))
-                {
-                    propertyInfo.SetValue(item, long.Parse(propertyValue.ToString()));
-                }
-                else if (propertyInfo.PropertyType == typeof(decimal))
-                {
-                    propertyInfo.SetValue(item, decimal.Parse(propertyValue.ToString()));
-                }
-                else if (propertyInfo.PropertyType == typeof(bool))
-                {
-                    propertyInfo.SetValue(item, bool.Parse(propertyValue.ToString()));
-                }
-                else if (propertyInfo.PropertyType == typeof(DateTime))
-                {
-                    propertyInfo.SetValue(item, DateTime.Parse(propertyValue.ToString()));
-                }
-                else
-                {
-                    // not supported!
-                }
-            }
-        }
-
         public async Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null)
         {
             var analytics = await databaseContext.AnalyticsMarketplaceImpressionsClicks
@@ -444,6 +464,226 @@ namespace AuthScape.Marketplace.Services
             {
                 analytics.ProductOrServiceClicked = productOrServiceId;
                 await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task GenerateMLModel<T>(List<T> documents, int platformId = 1, long? privateLabelCompanyId = null, string? cachePath = null) where T : new()
+        {
+            var containerLocation = appSettings.LuceneSearch.Container;
+            if (privateLabelCompanyId != null)
+            {
+                containerLocation += "/" + privateLabelCompanyId;
+            }
+            else
+            {
+                containerLocation += "/" + "0";
+            }
+
+            containerLocation += "/" + platformId;
+
+
+            var _document = documents.FirstOrDefault();
+            if (_document == null)
+            {
+                return;
+            }
+
+            #region Clear the Product Card Categories
+
+            var productCardCategoies = databaseContext.ProductCardCategories
+                .Where(z => z.CompanyId == privateLabelCompanyId && z.PlatformId == platformId);
+
+            databaseContext.ProductCardCategories.RemoveRange(productCardCategoies);
+            await databaseContext.SaveChangesAsync();
+
+            #endregion
+
+            var properties = _document.GetType().GetProperties();
+            foreach (var field in properties)
+            {
+                bool isArray = false;
+                if (field.PropertyType == typeof(IEnumerable<string>) || field.PropertyType == typeof(List<string>))
+                {
+                    isArray = true;
+                }
+
+                // we need to figure out the parent still....
+                var category = (MarketplaceIndex)System.Attribute.GetCustomAttribute(field, typeof(MarketplaceIndex));
+
+                await databaseContext.ProductCardCategories.AddAsync(new AuthScape.Marketplace.Models.ProductCardCategory()
+                {
+                    Name = category.CategoryName != null ? category.CategoryName : field.Name,
+                    CompanyId = privateLabelCompanyId,
+                    PlatformId = platformId,
+                    ParentName = category != null ? category.ParentCategory : null,
+                    IsArray = isArray,
+                    ProductCardCategoryType = category.ProductCardCategoryType,
+                });
+            }
+            await databaseContext.SaveChangesAsync();
+
+
+            // 1. Configure AzureDirectory with proper lock handling
+            using (AzureDirectory azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, containerLocation, null))
+            {
+                // 2. Ensure index is unlocked (critical for Azure blob storage)
+                if (IndexWriter.IsLocked(azureDirectory))
+                {
+                    IndexWriter.Unlock(azureDirectory);
+                }
+
+
+                //azureDirectory.UseSimpleFSDirectory = true; // Disable MMap
+                //var directory = FSDirectory.Open("path_to_index");
+                var analyzer = new StandardAnalyzer(luceneVersion);
+                var config = new IndexWriterConfig(luceneVersion, analyzer)
+                {
+                    OpenMode = OpenMode.CREATE,
+                };
+                using (var writer = new IndexWriter(azureDirectory, config))
+                {
+                    var luceneDocuments = new List<Lucene.Net.Documents.Document>();
+                    foreach (var space in documents)
+                    {
+                        var doc = new Lucene.Net.Documents.Document();
+
+                        foreach (var field in properties)
+                        {
+                            bool isArray = false;
+                            if (field.PropertyType == typeof(IEnumerable<string>) || field.PropertyType == typeof(List<string>))
+                            {
+                                isArray = true;
+                            }
+
+                            var value = field.GetValue(space);
+                            if (value == null)
+                            {
+                                continue;
+                            }
+
+                            if (isArray) // list array
+                            {
+                                foreach (var property in (List<string>)value)
+                                {
+                                    AddField(field, property, doc);
+                                }
+                            }
+                            else // single value
+                            {
+                                AddField(field, field.GetValue(space), doc);
+                            }
+                        }
+
+                        writer.AddDocument(doc);
+                    }
+
+                    writer.Commit();
+                    writer.WaitForMerges();
+                }
+            }
+
+            ClearLocalCache(platformId, privateLabelCompanyId, cachePath);
+        }
+
+        private void ClearLocalCache(int platformId = 0, long? privateLabelCompanyId = null, string? cachePath = null)
+        {
+            string _cachePath = "";
+            // 1. Define persistent cache directory
+            if (privateLabelCompanyId != null)
+            {
+                _cachePath = Path.Combine(
+                    Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
+                    "cache", "LuceneCache", privateLabelCompanyId.Value.ToString(), platformId.ToString()
+                );
+            }
+            else
+            {
+                _cachePath = Path.Combine(
+                    Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
+                    "cache", "LuceneCache", "0", platformId.ToString()
+                );
+            }
+
+
+            if (!String.IsNullOrWhiteSpace(cachePath))
+            {
+                _cachePath = cachePath + _cachePath;
+            }
+
+
+            // now that we have the cashed path, I need to remove the files...
+            if (System.IO.Directory.Exists(_cachePath))
+            {
+                foreach (string file in System.IO.Directory.GetFiles(_cachePath))
+                {
+                    File.Delete(file);
+                }
+
+                foreach (string dir in System.IO.Directory.GetDirectories(_cachePath))
+                {
+                    System.IO.Directory.Delete(dir, true);
+                }
+            }
+        }
+
+        private void AddField(PropertyInfo field, object value, Lucene.Net.Documents.Document doc)
+        {
+            var typeOfField = (MarketplaceIndex)System.Attribute.GetCustomAttribute(field, typeof(MarketplaceIndex));
+
+
+            var category = (MarketplaceIndex)System.Attribute.GetCustomAttribute(field, typeof(MarketplaceIndex));
+            var fieldName = category.CategoryName != null ? category.CategoryName : field.Name;
+
+
+            switch (typeOfField.ProductCardCategoryType)
+            {
+                case ProductCardCategoryType.None:
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.BinaryField:
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.Int64Field:
+                    doc.Fields.Add(new Int64Field(fieldName, Convert.ToInt64(value), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.Int32Field:
+                    doc.Fields.Add(new Int32Field(fieldName, Convert.ToInt32(value), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.StoredField:
+                    break;
+                case ProductCardCategoryType.StringField:
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.SingleField:
+                    doc.Fields.Add(new SingleField(fieldName, float.Parse(value.ToString()), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.TextField:
+                    doc.Fields.Add(new TextField(fieldName, value.ToString(), Field.Store.YES));
+                    break;
+                case ProductCardCategoryType.DoubleField:
+                    doc.Fields.Add(new DoubleField(fieldName, Double.Parse(value.ToString()), Field.Store.YES));
+                    break;
+                //case ProductCardCategoryType.SortedSetDocValuesField:
+                //    break;
+                //case ProductCardCategoryType.SortedDocValuesField:
+                //    break;
+                default:
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
+                    break;
+            }
+        }
+
+        private async Task RemoveAllFilesInFolder(string containerName, string folderName)
+        {
+            BlobServiceClient blobServiceClient = new BlobServiceClient(appSettings.LuceneSearch.StorageConnectionString);
+            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: folderName))
+            {
+                BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
+                await blobClient.DeleteIfExistsAsync();
+                Console.WriteLine($"Deleted: {blobItem.Name}");
+
             }
         }
     }
