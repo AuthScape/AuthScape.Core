@@ -3,15 +3,15 @@ using AuthScape.Models.Fonts;
 using AuthScape.Models.Storage;
 using AuthScape.PrivateLabel.Models;
 using AuthScape.PrivateLabel.Models.Azure;
-using AuthScape.Services;
 using AuthScape.PrivateLabel.Services;
+using AuthScape.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Validation.AspNetCore;
-using Microsoft.Extensions.Options;
-using Services.Database;
-using Services.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using OpenIddict.Validation.AspNetCore;
+using Services.Context;
+using Services.Database;
 
 namespace AuthScape.PrivateLabel.Controllers
 {
@@ -81,7 +81,7 @@ namespace AuthScape.PrivateLabel.Controllers
                     googleFont.Id = index;
                     googleFont.value = item.family;
                     googleFont.label = item.family;
-                    
+
                     googleFonts.Add(googleFont);
 
                     index++;
@@ -147,20 +147,20 @@ namespace AuthScape.PrivateLabel.Controllers
 
 
         [HttpPost]
-		[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-		public async Task<IActionResult> UploadAppIcon([FromForm] UploadFileStorage appIconFile)
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UploadAppIcon([FromForm] UploadFileStorage appIconFile)
         {
             await privateLabelService.UploadAppIcon(appIconFile.file, appIconFile.domain);
-			return Ok();
+            return Ok();
         }
 
-		[HttpPost]
-		[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-		public async Task<IActionResult> UploadCustomFont([FromForm] UploadFileStorage appIconFile)
-		{
-			await privateLabelService.UploadCustomFont(appIconFile.file, appIconFile.domain);
-			return Ok();
-		}
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UploadCustomFont([FromForm] UploadFileStorage appIconFile)
+        {
+            await privateLabelService.UploadCustomFont(appIconFile.file, appIconFile.domain);
+            return Ok();
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetCompanyIdFromDomain(string domain)
@@ -254,7 +254,7 @@ namespace AuthScape.PrivateLabel.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetManifestFile (string domain)
+        public async Task<IActionResult> GetManifestFile(string domain)
         {
             return Ok(await privateLabelService.GetManifestFile(domain));
         }

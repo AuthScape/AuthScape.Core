@@ -1,7 +1,5 @@
-﻿using AuthScape.Models.Invite;
-using AuthScape.Models.Users;
+﻿using AuthScape.Models.Users;
 using AuthScape.Services;
-using CoreBackpack.Time;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -12,7 +10,6 @@ using Models.Invite;
 using Services;
 using Services.Context;
 using Services.Database;
-using System.Web;
 
 namespace AuthScape.IDP.Controllers
 {
@@ -44,7 +41,7 @@ namespace AuthScape.IDP.Controllers
         /// <returns></returns>
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> InviteUsers([FromBody]InviteRequested requested)
+        public async Task<IActionResult> InviteUsers([FromBody] InviteRequested requested)
         {
             if (requested.Requests == null)
             {
@@ -77,7 +74,7 @@ namespace AuthScape.IDP.Controllers
                             }
                         }
                     }
-                    catch(Exception exp)
+                    catch (Exception exp)
                     {
                         return BadRequest(exp.Message + " - " + (exp.InnerException != null ? exp.InnerException.Message : ""));
                     }
@@ -155,9 +152,9 @@ namespace AuthScape.IDP.Controllers
             var dbUser = await _applicationDbContext.Users.Where(u => u.Id == inviteViewModel.Id).FirstOrDefaultAsync();
             if (dbUser != null)
             {
-                if (String.IsNullOrWhiteSpace(inviteViewModel.FirstName) || 
-                    String.IsNullOrWhiteSpace(inviteViewModel.LastName) || 
-                    String.IsNullOrWhiteSpace(inviteViewModel.Password) || 
+                if (String.IsNullOrWhiteSpace(inviteViewModel.FirstName) ||
+                    String.IsNullOrWhiteSpace(inviteViewModel.LastName) ||
+                    String.IsNullOrWhiteSpace(inviteViewModel.Password) ||
                     String.IsNullOrWhiteSpace(inviteViewModel.ConfirmPassword))
                 {
                     inviteViewModel.ErrorMessage = "Please provide information for all fields.";

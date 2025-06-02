@@ -17,10 +17,10 @@ namespace IDP.ViewModels.Account
 
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
-        
+
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
-        
+
         public string TimeZone { get; set; }
 
         public string Company { get; set; }

@@ -1,11 +1,7 @@
-﻿using CoreBackpack;
+﻿using AuthScape.Models.Users;
+using CoreBackpack;
 using Microsoft.EntityFrameworkCore;
-using AuthScape.Models.Users;
 using Services.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Services
 {

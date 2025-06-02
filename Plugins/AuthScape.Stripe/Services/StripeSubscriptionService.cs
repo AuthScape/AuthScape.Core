@@ -2,11 +2,6 @@
 using Services.Context;
 using Services.Database;
 using Stripe;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AuthScape.StripePayment.Services
 {

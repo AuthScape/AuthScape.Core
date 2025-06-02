@@ -1,5 +1,4 @@
-﻿using AuthScape.Models.Invite;
-using AuthScape.Models.Users;
+﻿using AuthScape.Models.Users;
 using CoreBackpack.Time;
 using Microsoft.EntityFrameworkCore;
 using Models.Invite;
@@ -82,7 +81,7 @@ namespace Services
 
         public async Task OnInvitePageLoading(InviteViewModel inviteViewModel, AppUser dbUser)
         {
-            
+
         }
     }
 }

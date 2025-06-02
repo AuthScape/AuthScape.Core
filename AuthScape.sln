@@ -168,6 +168,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ConsoleApps", "ConsoleApps"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImportSampleData", "ConsoleApps\ImportSampleData\ImportSampleData.csproj", "{660A29A9-6671-4A62-90E7-4615B1629E76}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Services", "Plugins\AuthScape.Marketplace.Services\AuthScape.Marketplace.Services.csproj", "{5A24654C-5475-420A-8919-1903BFA778D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -382,6 +384,10 @@ Global
 		{660A29A9-6671-4A62-90E7-4615B1629E76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{660A29A9-6671-4A62-90E7-4615B1629E76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{660A29A9-6671-4A62-90E7-4615B1629E76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A24654C-5475-420A-8919-1903BFA778D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A24654C-5475-420A-8919-1903BFA778D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -453,6 +459,7 @@ Global
 		{3834C447-DB09-4305-9BA2-8E56A393C7E1} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{4E2F2971-B2A1-4488-8CAA-40EB0FB5DD5A} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{660A29A9-6671-4A62-90E7-4615B1629E76} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{5A24654C-5475-420A-8919-1903BFA778D2} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11328C71-22BA-46C6-9F11-1C391681FE61}

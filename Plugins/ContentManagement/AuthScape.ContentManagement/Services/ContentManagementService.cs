@@ -1,18 +1,14 @@
 ﻿using AuthScape.ContentManagement.Models;
-using AuthScape.DocumentReader.Controllers;
 using AuthScape.Models;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
-using AuthScape.UserManagementSystem.Models;
 using CoreBackpack;
 using CoreBackpack.Services;
-using CoreBackpack.Time;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Services.Context;
 using Services.Database;
-using System.Text;
 
 namespace AuthScape.ContentManagement.Services
 {
@@ -23,7 +19,7 @@ namespace AuthScape.ContentManagement.Services
         Task<List<PageType>> GetPageTypes();
         Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null);
         Task<Page> GetPage(Guid pageId);
-        Task<Guid> CreateNewPage(string title, long pageTypeId,long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
+        Task<Guid> CreateNewPage(string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
         Task UpdatePageContent(Guid pageId, string data);
         Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
         Task<Guid> CreateNewAsset(string title, IFormFile file, string description, long? PrivateLabelCompanyId = null);
@@ -88,9 +84,9 @@ namespace AuthScape.ContentManagement.Services
 
             var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.Id != pageId && p.PageRootId == pageRootId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
-            
+
             var page = await databaseContext.Pages.Where(p => p.Id == pageId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
-          
+
             if (page == null) { throw new Exception("Page does not exist"); }
 
             page.Title = title;
@@ -128,12 +124,13 @@ namespace AuthScape.ContentManagement.Services
             var slugExisted = await databaseContext.Pages.Where(p => p.Slug == slug && p.PageRootId == pageRootId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
             if (slugExisted != null) { throw new Exception("Same Slug already existed"); }
 
-            var page = new Page          
-            {   Title = title,
-                CompanyId = PrivateLabelCompanyId, 
+            var page = new Page
+            {
+                Title = title,
+                CompanyId = PrivateLabelCompanyId,
                 Description = description,
-                Slug = slug, 
-                Created = DateTimeOffset.Now, 
+                Slug = slug,
+                Created = DateTimeOffset.Now,
                 LastUpdated = DateTimeOffset.Now,
                 PageTypeId = pageTypeId,
                 PageRootId = pageRootId,
@@ -281,7 +278,7 @@ namespace AuthScape.ContentManagement.Services
 
             var pageQuery = databaseContext.Pages
                 .AsNoTracking()
-                .Include(pt => pt.PageType) 
+                .Include(pt => pt.PageType)
                 .Include(pt => pt.PageRoot)
                 .Where(pq =>
                     pq.CompanyId == privateLabelCompanyId &&
@@ -434,10 +431,10 @@ namespace AuthScape.ContentManagement.Services
                     Id = p.Id,
                     Title = p.Title,
                     FileName = p.FileName,
-                    Description = p.Description,    
+                    Description = p.Description,
                     Url = p.Url,
                     CompanyId = p.CompanyId,
-                    Created = p.Created,    
+                    Created = p.Created,
                     LastUpdated = p.LastUpdated,
                 })
                 .ToPagedResultAsync(offset - 1, length);

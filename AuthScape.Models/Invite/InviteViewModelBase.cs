@@ -8,7 +8,7 @@ namespace AuthScape.Models.Invite
         public string ResetToken { get; set; }
 
         public string? WebsiteUrlRedirect { get; set; }
-        
+
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? Email { get; set; }

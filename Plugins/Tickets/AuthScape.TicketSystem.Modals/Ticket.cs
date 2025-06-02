@@ -1,11 +1,9 @@
-﻿using AuthScape.TicketSystem.Modals;
-
-namespace AuthScape.TicketSystem.Modals
+﻿namespace AuthScape.TicketSystem.Modals
 {
     public class Ticket
     {
         public long Id { get; set; }
-        
+
         public long? CreatedById { get; set; }
 
         public string FirstName { get; set; }

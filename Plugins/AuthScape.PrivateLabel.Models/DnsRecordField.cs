@@ -5,7 +5,7 @@
         public Guid DnsRecordId { get; set; }
         public Guid PrivateLabelFieldId { get; set; }
         public string CSSValue { get; set; }
-        
+
         public PrivateLabelField PrivateLabelField { get; set; }
         public DnsRecord DnsRecord { get; set; }
     }
@@ -26,4 +26,4 @@
         Color = 1,
         TextField = 2
     }
-} 
+}

@@ -12,7 +12,6 @@ using Models.Email;
 using Services;
 using Services.Context;
 using Services.Database;
-using StrongGrid.Resources;
 
 namespace AuthScape.TicketSystem.Services
 {
@@ -119,7 +118,7 @@ namespace AuthScape.TicketSystem.Services
         public async Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20)
         {
             var user = await userManagementService.GetSignedInUser();
-            
+
 
             return await databaseContext.TicketMessages
                 .AsNoTracking()
@@ -137,7 +136,7 @@ namespace AuthScape.TicketSystem.Services
         {
             var ticketMessage = new TicketMessage()
             {
-                Name = name, 
+                Name = name,
                 Created = SystemTime.Now,
                 TicketId = ticketId,
                 Message = message,
@@ -147,7 +146,7 @@ namespace AuthScape.TicketSystem.Services
 
             await databaseContext.TicketMessages.AddAsync(ticketMessage);
             await databaseContext.SaveChangesAsync();
-            
+
             if (!isNote)
             {
                 var ticket = await databaseContext.Tickets
@@ -305,20 +304,21 @@ namespace AuthScape.TicketSystem.Services
                 //}
                 //else
                 //{
-                    var usr = await databaseContext.Users.AsNoTracking().Where(u => u.Id == participant.UserId).Select(s => new TicketAutoComplete()
-                    {
-                        Id = s.Id,
-                        Label = s.FirstName + " " + s.LastName + " (" + s.UserName + ")"
-                    }).FirstOrDefaultAsync();
+                var usr = await databaseContext.Users.AsNoTracking().Where(u => u.Id == participant.UserId).Select(s => new TicketAutoComplete()
+                {
+                    Id = s.Id,
+                    Label = s.FirstName + " " + s.LastName + " (" + s.UserName + ")"
+                }).FirstOrDefaultAsync();
 
-                    if (usr != null)
-                    {
-                        listParticipants.Add(usr);
-                    }
+                if (usr != null)
+                {
+                    listParticipants.Add(usr);
+                }
                 //}
             }
 
-            return new TicketViewModel() {
+            return new TicketViewModel()
+            {
                 Created = created.ToShortDateString() + " " + created.ToShortTimeString(),
                 LastUpdated = lastUpdated.ToShortDateString() + " " + lastUpdated.ToShortTimeString(),
                 Id = ticket.Id,
@@ -342,7 +342,8 @@ namespace AuthScape.TicketSystem.Services
                     Label = createdBy.FirstName + " " + createdBy.LastName + " (" + createdBy.UserName + ")",
                 } : null,
                 Participants = listParticipants,
-                Attachments = ticket.TicketAttachments.Select(t => new TicketAttachment() {
+                Attachments = ticket.TicketAttachments.Select(t => new TicketAttachment()
+                {
                     FileName = t.FileName,
                     Name = t.Name,
                     URL = t.URL,
@@ -428,7 +429,7 @@ namespace AuthScape.TicketSystem.Services
         {
             databaseContext.TicketStatuses.Add(new TicketStatus()
             {
-                Name= name,
+                Name = name,
             });
             await databaseContext.SaveChangesAsync();
         }
@@ -500,7 +501,7 @@ namespace AuthScape.TicketSystem.Services
         {
             databaseContext.TicketParticipants.RemoveRange(databaseContext.TicketParticipants.Where(t => t.TicketId == ticketId));
             await databaseContext.SaveChangesAsync();
-            
+
             foreach (var participant in Participants.GroupBy(g => g.Id))
             {
                 await databaseContext.TicketParticipants.AddAsync(new TicketParticipant()

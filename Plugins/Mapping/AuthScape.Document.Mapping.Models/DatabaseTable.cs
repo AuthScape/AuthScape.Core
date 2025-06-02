@@ -1,7 +1,4 @@
-﻿
-using System.Reflection;
-
-namespace AuthScape.Document.Mapping.Models
+﻿namespace AuthScape.Document.Mapping.Models
 {
     public class DatabaseTable
     {

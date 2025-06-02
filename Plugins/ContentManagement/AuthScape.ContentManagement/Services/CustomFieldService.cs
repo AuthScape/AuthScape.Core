@@ -160,7 +160,7 @@ namespace AuthScape.ContentManagement.Services
                 {
                     return DateTime.Parse(date);
                 }
-                catch(Exception) { }
+                catch (Exception) { }
             }
 
             return null;

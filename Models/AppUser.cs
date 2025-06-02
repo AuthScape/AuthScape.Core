@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
-using AuthScape.Models.PaymentGateway;
+﻿using AuthScape.Models.PaymentGateway;
+using AuthScape.UserManageSystem.Models;
+using Microsoft.AspNetCore.Identity;
+using Models.Authentication;
 using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
-using AuthScape.UserManageSystem.Models;
-using Models.Authentication;
 
 namespace AuthScape.Models.Users
 {

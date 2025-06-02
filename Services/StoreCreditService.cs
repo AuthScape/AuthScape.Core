@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using AuthScape.Models.PaymentGateway;
+﻿using AuthScape.Models.PaymentGateway;
+using Microsoft.EntityFrameworkCore;
 using Services.Context;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Services
 {
@@ -57,7 +55,7 @@ namespace Services
                     UserId = usr.Id
                 });
             }
-            
+
             await context.SaveChangesAsync();
         }
 

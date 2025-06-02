@@ -1,5 +1,4 @@
 ﻿using AuthScape.Kanban.Services;
-using AuthScape.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models.Kanban;

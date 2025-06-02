@@ -1,11 +1,9 @@
-﻿using AuthScape.Models.Invite;
-using AuthScape.Models.Users;
+﻿using AuthScape.Models.Users;
 using CoreBackpack.Time;
 using IDP.ViewModels.Account;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Models.Invite;
 using Models.Users;
 using Newtonsoft.Json;
 using Services.Context;
@@ -92,10 +90,10 @@ namespace AuthScape.Services
                     {
                         signedInUser.Roles = JsonConvert.DeserializeObject<List<QueryRole>>(roles.Value);
                     }
-                    
+
                     return signedInUser;
 
-                    
+
 
                     //var userRoles = databaseContext.UserRoles
                     //    .Where(u => u.UserId == userId);

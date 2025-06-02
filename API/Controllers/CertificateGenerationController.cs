@@ -1,16 +1,12 @@
-﻿using CsvHelper.Configuration.Attributes;
-using Microsoft.AspNetCore.Http;
+﻿using AuthScape.Models.Certificates;
 using Microsoft.AspNetCore.Mvc;
-using System.IO.Compression;
-using System.IO;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 using System;
-using System.Threading.Tasks;
-using Microsoft.IdentityModel.Tokens;
-using AuthScape.Models.Certificates;
 using System.Collections.Generic;
-using DocumentFormat.OpenXml.Wordprocessing;
+using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {

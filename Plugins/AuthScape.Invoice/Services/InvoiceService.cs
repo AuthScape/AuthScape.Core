@@ -1,17 +1,17 @@
-﻿using AuthScape.Models.Exceptions;
+﻿using AuthScape.Invoice.Models;
+using AuthScape.Models.Exceptions;
 using AuthScape.Models.Users;
+using AuthScape.Plugins.Invoices.Models;
+using AuthScape.Services;
+using AuthScape.StripePayment.Services;
 using CoreBackpack;
 using CoreBackpack.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using AuthScape.Plugins.Invoices.Models;
+using Models.Email;
 using Services.Context;
 using Services.Database;
 using System.Text;
-using AuthScape.StripePayment.Services;
-using AuthScape.Services;
-using Models.Email;
-using AuthScape.Invoice.Models;
 
 namespace Services
 {
@@ -112,31 +112,31 @@ namespace Services
             var signedInUser = await userManagementService.GetSignedInUser();
             //if (signedInUser.Role == Roles.Admin)
             //{
-                var location = await databaseContext.Locations.Include(l => l.Company).Where(l => l.Id == locationId).FirstOrDefaultAsync();
-                if (location == null)
-                {
-                    throw new BadRequestException("Missing location");
-                }
+            var location = await databaseContext.Locations.Include(l => l.Company).Where(l => l.Id == locationId).FirstOrDefaultAsync();
+            if (location == null)
+            {
+                throw new BadRequestException("Missing location");
+            }
 
-                var user = await databaseContext.Users.Where(u => u.LocationId == location.Id).FirstOrDefaultAsync();
+            var user = await databaseContext.Users.Where(u => u.LocationId == location.Id).FirstOrDefaultAsync();
 
-                var invoice = new Invoice()
-                {
-                    InvoiceState = InvoiceState.Active,
-                    Created = SystemTime.Now,
-                    CompanyName = location.Company.Title,
-                    AmountDue = 0,
-                    BalanceDue = 0,
-                    AmountPaid = 0,
-                    LocationId = locationId,
-                    InvoiceToUserId = user != null ? user.Id : null,
-                    CompanyId = location.CompanyId,
-                    Secret = Guid.NewGuid()
-                };
-                await databaseContext.Invoices.AddAsync(invoice);
-                await databaseContext.SaveChangesAsync();
+            var invoice = new Invoice()
+            {
+                InvoiceState = InvoiceState.Active,
+                Created = SystemTime.Now,
+                CompanyName = location.Company.Title,
+                AmountDue = 0,
+                BalanceDue = 0,
+                AmountPaid = 0,
+                LocationId = locationId,
+                InvoiceToUserId = user != null ? user.Id : null,
+                CompanyId = location.CompanyId,
+                Secret = Guid.NewGuid()
+            };
+            await databaseContext.Invoices.AddAsync(invoice);
+            await databaseContext.SaveChangesAsync();
 
-                return new Tuple<long, Guid>(invoice.Id, invoice.Secret);
+            return new Tuple<long, Guid>(invoice.Id, invoice.Secret);
             //}
             //else
             //{
@@ -147,7 +147,7 @@ namespace Services
         public async Task<PagedList<Invoice>> GetInvoices(int offset = 0, int length = 10, long? companyId = null, long? locationId = null, InvoiceState invoiceState = InvoiceState.Active)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
-            
+
             var invoices = databaseContext.Invoices
                 .Include(i => i.Company)
                 .Include(i => i.Location)
@@ -440,13 +440,13 @@ namespace Services
 
         public async Task SendInvoice(long invoiceId)
         {
-            
+
 
             var invoice = await databaseContext.Invoices.Where(i => i.Id == invoiceId).FirstOrDefaultAsync();
             if (invoice != null)
             {
                 string paymentLink = appSettings.LoginRedirectUrl + "/portal/invoice/detail?invoiceId=" + invoice.Id + "&secret=" + invoice.Secret;
-                
+
                 if (invoice.CompanyId != null && invoice.LocationId != null)
                 {
                     await notificationService.SendInvoice(invoice.CompanyId.Value, invoice.LocationId.Value, new InvoiceEmail()
@@ -514,7 +514,7 @@ namespace Services
             //}
             //else
             //{
-                locations = locations.Where(l => l.CompanyId == companyId);
+            locations = locations.Where(l => l.CompanyId == companyId);
             //}
 
             var dataLocation = await locations
@@ -590,7 +590,7 @@ namespace Services
                     Name = i.InvoiceLineItemName.Name,
                     Description = i.Description,
                     Qty = i.Qty,
-                    Price= i.Price,
+                    Price = i.Price,
                     Total = i.Total,
                     PaidDate = i.PaidDateTime
                 })

@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Services.Context;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AuthScape.Services
@@ -18,7 +16,7 @@ namespace AuthScape.Services
     public class RoleService : IRoleService
     {
         readonly DatabaseContext context;
-        public RoleService(DatabaseContext context) 
+        public RoleService(DatabaseContext context)
         {
             this.context = context;
         }

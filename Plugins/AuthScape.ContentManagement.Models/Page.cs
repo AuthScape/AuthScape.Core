@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.ContentManagement.Models
 {
@@ -16,7 +14,7 @@ namespace AuthScape.ContentManagement.Models
         public long? PageRootId { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset LastUpdated { get; set; }
-        public int? Recursion {  get; set; }
+        public int? Recursion { get; set; }
         public PageType PageType { get; set; }
         public int? Order { get; set; }
         public PageRoot PageRoot { get; set; }
@@ -26,7 +24,7 @@ namespace AuthScape.ContentManagement.Models
         public string TypeTitle { get; set; }
 
         [NotMapped]
-        public string RootUrl{ get; set; }
+        public string RootUrl { get; set; }
     }
     public class PageType
     {

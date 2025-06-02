@@ -7,15 +7,8 @@ using CsvHelper.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.Extensions.Azure;
-using Newtonsoft.Json;
 using OpenIddict.Validation.AspNetCore;
-using System.Dynamic;
 using System.Globalization;
-using System.Security.Claims;
-using System.Text;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AuthScape.UserManageSystem.Controllers
 {
@@ -25,7 +18,7 @@ namespace AuthScape.UserManageSystem.Controllers
     public class UserManagementController : ControllerBase
     {
         readonly IUserManagementSystemService userManagementSystemService;
-        public UserManagementController(IUserManagementSystemService userManagementSystemService) 
+        public UserManagementController(IUserManagementSystemService userManagementSystemService)
         {
             this.userManagementSystemService = userManagementSystemService;
         }
@@ -241,7 +234,7 @@ namespace AuthScape.UserManageSystem.Controllers
                     // add the properties
                     var headerProperties = csv.HeaderRecord
                         .Where(h => h != "FirstName" && h != "LastName" && h != "Email" && h != "Password" && h != "PhoneNumber" &&
-                        h != "CompanyId" && h != "LocationId" && h!= "Roles" && h!= "Permissions").ToList();
+                        h != "CompanyId" && h != "LocationId" && h != "Roles" && h != "Permissions").ToList();
 
                     foreach (var headerProperty in headerProperties)
                     {
@@ -249,7 +242,7 @@ namespace AuthScape.UserManageSystem.Controllers
                         {
                             record.Properties.Add(headerProperty, csv.GetField<string>(headerProperty));
                         }
-                        catch(Exception) { }
+                        catch (Exception) { }
                     }
 
                     uploadFields.Add(record);

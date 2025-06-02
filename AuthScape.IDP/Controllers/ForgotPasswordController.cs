@@ -1,7 +1,6 @@
 ﻿using AuthScape.IDP.ViewModels;
 using AuthScape.IDP.ViewModels.ForgotPasword;
 using AuthScape.Models.Users;
-using IDP.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;

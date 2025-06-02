@@ -1,23 +1,20 @@
 ﻿using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Mapping.Services;
+using AuthScape.Models.Storage;
+using AuthScape.Models.Users;
 using AuthScape.Plugins.Invoices.Models;
 using CoreBackpack.Time;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Validation.AspNetCore;
-using Services.Context;
-using System.Threading.Tasks;
-using System;
 using Microsoft.AspNetCore.Authorization;
-using AuthScape.Models.Storage;
-using System.Linq;
-using AuthScape.Models.Users;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using StrongGrid.Resources;
+using OpenIddict.Validation.AspNetCore;
 using Services;
-using Stripe;
+using Services.Context;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {
@@ -180,7 +177,7 @@ namespace API.Controllers
     public class InvoiceUpload // this will be the format we use for all PDF documents
     {
         public string projectNumber { get; set; }
-        public string poDate { get;set; }
+        public string poDate { get; set; }
         public string poNumber { get; set; }
         public string contact { get; set; }
         public string businessName { get; set; }

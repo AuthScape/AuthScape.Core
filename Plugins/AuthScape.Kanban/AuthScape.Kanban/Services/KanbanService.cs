@@ -77,7 +77,7 @@ namespace AuthScape.Kanban.Services
                 var cards = databaseContext.KanbanCards
                     .Where(c => c.KanbanColumnId == collaborator.FromColumnId)
                     .AsSingleQuery();
-                
+
 
                 if (identifier != null)
                 {
@@ -189,7 +189,7 @@ namespace AuthScape.Kanban.Services
         public async Task AssignCardsBasedOnOrder(Guid CardId, Guid ColumnId, List<Guid> cards)
         {
             var queryCard = await databaseContext.KanbanCards.Where(c => c.Id == CardId).FirstOrDefaultAsync();
-            if (queryCard != null) 
+            if (queryCard != null)
             {
                 queryCard.KanbanColumnId = ColumnId;
                 await databaseContext.SaveChangesAsync();

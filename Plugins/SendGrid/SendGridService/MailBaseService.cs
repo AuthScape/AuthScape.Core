@@ -1,17 +1,14 @@
 ﻿using AuthScape.Models.Users;
 using AuthScape.SendGrid.Models;
-using Microsoft.Extensions.Options;
-using SendGrid.Helpers.Mail;
-using SendGrid;
-using Services.Database;
-using System.Text.RegularExpressions;
-using System.Net;
-using Services.Context;
-using Newtonsoft.Json.Linq;
-using SendGrid.Helpers.Mail.Model;
-using System.Net.Http.Headers;
-using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using SendGrid;
+using SendGrid.Helpers.Mail;
+using Services.Context;
+using Services.Database;
+using System.Net;
+using System.Text.RegularExpressions;
 
 namespace AuthScape.SendGrid
 {
@@ -134,7 +131,7 @@ namespace AuthScape.SendGrid
             {
                 msg.Subject = email.Subject;
             }
-                
+
             if (headers != null)
             {
                 foreach (var header in headers)
@@ -253,8 +250,8 @@ namespace AuthScape.SendGrid
             msg.Subject = subject;
             msg.PlainTextContent = plainTextContent;
             msg.HtmlContent = htmlContent;
-            
-            
+
+
             var personalizations = new List<Personalization>();
 
             personalizations.Add(new Personalization()
@@ -309,8 +306,8 @@ namespace AuthScape.SendGrid
                     await databaseContext.SaveChangesAsync();
                 }
             }
-            
-            
+
+
             return new SendGridResponse()
             {
                 StatusCode = httpStatusCode,

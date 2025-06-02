@@ -1,15 +1,8 @@
 ﻿using AuthScape.Analytics.Models;
-using AuthScape.Services.Azure.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Services;
 using Services.Context;
-using Stripe.BillingPortal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AuthScape.Analytics.Services
 {
@@ -42,8 +35,8 @@ namespace AuthScape.Analytics.Services
         readonly DatabaseContext databaseContext;
         readonly IUserService userService;
         readonly IHttpContextAccessor httpContextAccessor;
-        public AnalyticsService(DatabaseContext databaseContext, IUserService userService, IHttpContextAccessor httpContextAccessor) 
-        { 
+        public AnalyticsService(DatabaseContext databaseContext, IUserService userService, IHttpContextAccessor httpContextAccessor)
+        {
             this.databaseContext = databaseContext;
             this.userService = userService;
             this.httpContextAccessor = httpContextAccessor;
@@ -151,12 +144,12 @@ namespace AuthScape.Analytics.Services
         }
         public async Task<IEnumerable<AnalyticsEvent>> GetEventsByCategory(string category)
         {
-           
+
             var events = await databaseContext.AnalyticsEvents.AsNoTracking()
                 .Where(e => e.Category == category).ToListAsync();
 
             return events;
-            
+
         }
 
         public async Task TrackConversion(AnalyticsConversion analyticsConversion)
@@ -210,14 +203,14 @@ namespace AuthScape.Analytics.Services
         {
 
             var sessions = await databaseContext.AnalyticsSessions.Where(s => s.UserId == userId).ToListAsync();
-            
+
             var totalDuration = sessions.Sum(s => (s.Ended - s.Started).Value.TotalMinutes);
             var sessionCount = sessions.Count;
 
-            return new AnalyticsUserEngagement 
-            { 
-                TotalDuration = totalDuration, 
-                SessionCount = sessionCount 
+            return new AnalyticsUserEngagement
+            {
+                TotalDuration = totalDuration,
+                SessionCount = sessionCount
             };
         }
 

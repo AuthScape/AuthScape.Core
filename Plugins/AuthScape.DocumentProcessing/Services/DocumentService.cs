@@ -1,5 +1,4 @@
 ﻿using AuthScape.Document.Models;
-using AuthScape.Models.Exceptions;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
 using CoreBackpack.Azure;
@@ -9,8 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Services.Context;
 using Services.Database;
-using System.IO;
-using System.Reflection.Metadata;
 
 namespace AuthScape.DocumentProcessing.Services
 {
@@ -32,7 +29,7 @@ namespace AuthScape.DocumentProcessing.Services
     }
 
     public class DocumentService : AzureBlobStorageBase, IDocumentService
-	{
+    {
         readonly AppSettings appSettings;
         readonly DatabaseContext databaseContext;
         readonly IBlobStorage blobStorage;
@@ -67,7 +64,7 @@ namespace AuthScape.DocumentProcessing.Services
 
 
             // remove all the files from blob
-            foreach ( var document in files) 
+            foreach (var document in files)
             {
                 await blobStorage.DeleteBlob(appSettings.Storage.AzureConnectionString, appSettings.DocumentProcessing.StorageContainer, document.Id + document.Extention);
             }
@@ -205,8 +202,8 @@ namespace AuthScape.DocumentProcessing.Services
             var memoryStream = new MemoryStream();
             await blobStorage.DownloadPrivateBlob(appSettings.Storage.AzureConnectionString, appSettings.DocumentProcessing.StorageContainer, document.Id + document.Extention, memoryStream);
 
-			return memoryStream.ToArray();
-		}
+            return memoryStream.ToArray();
+        }
 
         public async Task<List<DocumentItem>> GetDocuments(long? documentFieldCategoryId = null)
         {
@@ -252,15 +249,15 @@ namespace AuthScape.DocumentProcessing.Services
             #endregion
 
             var documents = await documentFolders.Select(d => new DocumentAndFile()
-             {
-                 Id = d.Id,
-                 Name = d.Name,
-                 Type = "folder",
-                 LastUpdated = d.LastUpdated.Convert(signedInUser.locale).ToLongDateString(),
-                 IsLocked = d.IsLocked,
-                 SegmentId = d.SegmentId,
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Type = "folder",
+                LastUpdated = d.LastUpdated.Convert(signedInUser.locale).ToLongDateString(),
+                IsLocked = d.IsLocked,
+                SegmentId = d.SegmentId,
 
-             }).ToListAsync();
+            }).ToListAsync();
 
             foreach (var item in documents)
             {
@@ -275,7 +272,7 @@ namespace AuthScape.DocumentProcessing.Services
             #region Filter For Files
             if (ViewDocumentType == ViewDocumentType.Company)
             {
-                documentFile = documentFile.Where(d => d.CompanyId ==  signedInUser.CompanyId);
+                documentFile = documentFile.Where(d => d.CompanyId == signedInUser.CompanyId);
             }
             else if (ViewDocumentType == ViewDocumentType.User)
             {
@@ -288,17 +285,17 @@ namespace AuthScape.DocumentProcessing.Services
             #endregion
 
             var files = await documentFile.Select(d => new DocumentAndFile()
-                 {
-                     Id = d.Id,
-                     Name = d.FileName,
-                     Type = "file",
-                     Uri = d.URI,
-                     SegmentId = d.SegmentId,
-                     DocumentFileExtentionType =
+            {
+                Id = d.Id,
+                Name = d.FileName,
+                Type = "file",
+                Uri = d.URI,
+                SegmentId = d.SegmentId,
+                DocumentFileExtentionType =
                         ((d.Extention.ToLower() == ".jpg" || d.Extention.ToLower() == ".jepg" || d.Extention.ToLower() == ".png") ?
                         DocumentFileExtentionType.Photo : DocumentFileExtentionType.None),
-                     LastUpdated = d.LastUpdated.Convert(signedInUser.locale).ToLongDateString()
-                 }).ToListAsync();
+                LastUpdated = d.LastUpdated.Convert(signedInUser.locale).ToLongDateString()
+            }).ToListAsync();
 
             documents.AddRange(files);
 
@@ -310,7 +307,7 @@ namespace AuthScape.DocumentProcessing.Services
                 DocumentSegments = documentSegments
             };
         }
-    
+
         public async Task CreateFolder(string folderName, Guid? parentFolderId = null, ViewDocumentType ViewDocumentType = ViewDocumentType.User, long? fieldId1 = null, long? fieldId2 = null, long? fieldId3 = null)
         {
             var signedInUser = await userManagementService.GetSignedInUser();

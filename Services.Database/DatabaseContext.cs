@@ -1,28 +1,28 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using AuthScape.Models.Stylesheets;
-using AuthScape.Models.Users;
+﻿using AuthScape.Analytics.Models;
+using AuthScape.ContentManagement.Models;
+using AuthScape.Document.Mapping.Models;
+using AuthScape.Document.Models;
+using AuthScape.Marketplace.Models;
+using AuthScape.Models.Authentication;
+using AuthScape.Models.Logging;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
 using AuthScape.Models.PaymentGateway.Plans;
-using OpenIddict.EntityFrameworkCore.Models;
-using AuthScape.Models.Authentication;
-using AuthScape.Models.Logging;
-using AuthScape.Document.Mapping.Models;
-using AuthScape.Document.Models;
-using AuthScape.TicketSystem.Modals;
-using Models.Users;
-using AuthScape.Plugins.Invoices.Models;
+using AuthScape.Models.Stylesheets;
+using AuthScape.Models.Users;
 using AuthScape.NodeService.Models;
-using AuthScape.Analytics.Models;
-using Models.Kanban;
-using Models;
+using AuthScape.Plugins.Invoices.Models;
 using AuthScape.PrivateLabel.Models;
+using AuthScape.TicketSystem.Modals;
 using AuthScape.UserManagementSystem.Models;
 using AuthScape.UserManageSystem.Models;
-using AuthScape.Marketplace.Models;
-using AuthScape.ContentManagement.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Models;
 using Models.Authentication;
+using Models.Kanban;
+using Models.Users;
+using OpenIddict.EntityFrameworkCore.Models;
 
 namespace Services.Context
 {
@@ -38,7 +38,7 @@ namespace Services.Context
         }
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
-        
+
         public DbSet<UserLocations> UserLocations { get; set; }
 
         public DbSet<Page> Pages { get; set; }
@@ -361,7 +361,7 @@ namespace Services.Context
 
             builder.Entity<AnalyticsSession>(entity =>
             {
-               
+
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
@@ -390,7 +390,7 @@ namespace Services.Context
             {
 
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()"); 
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
                 entity.HasOne(e => e.Session)
                    .WithMany(s => s.Events)
                    .HasForeignKey(s => s.SessionId)
@@ -566,7 +566,7 @@ namespace Services.Context
 
             builder.Entity<LocationCustomField>(entity =>
             {
-                entity.HasKey(e => new { e.LocationId,  e.CustomFieldId });
+                entity.HasKey(e => new { e.LocationId, e.CustomFieldId });
 
                 entity.HasOne(e => e.CustomField)
                     .WithMany(m => m.LocationCustomFields)
@@ -575,7 +575,7 @@ namespace Services.Context
             });
 
 
-            
+
 
 
 

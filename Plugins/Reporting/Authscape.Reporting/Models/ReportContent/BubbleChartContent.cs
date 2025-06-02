@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Authscape.Reporting.Models.ReportContent
+﻿namespace Authscape.Reporting.Models.ReportContent
 {
     public class BubbleChartContent : BaseReportContent
     {
@@ -29,7 +27,7 @@ namespace Authscape.Reporting.Models.ReportContent
         public string Id { get; set; }
         public decimal X { get; set; }
         public decimal Y { get; set; }
-        public string Name { get; set; } 
+        public string Name { get; set; }
         public decimal Size { get; set; }
     }
 }

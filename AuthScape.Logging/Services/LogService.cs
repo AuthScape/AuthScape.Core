@@ -1,13 +1,13 @@
-﻿using Services.Context;
+﻿using AuthScape.Models.Logging;
 using Microsoft.AspNetCore.Http;
-using System.Reflection;
-using Services.Database;
 using Microsoft.Extensions.Options;
-using AuthScape.Models.Logging;
+using Services.Context;
+using Services.Database;
+using System.Reflection;
 
 namespace AuthScape.Logging.Services
 {
-	public interface ILogService
+    public interface ILogService
     {
         Task Trace(string? message = null, Exception? exception = null);
         Task Debug(string? message = null, Exception? exception = null);
@@ -22,7 +22,7 @@ namespace AuthScape.Logging.Services
         readonly DatabaseContext databaseContext;
         readonly IHttpContextAccessor httpContextAccessor;
         readonly AppSettings appSettings;
-        public LogService(DatabaseContext databaseContext, IHttpContextAccessor httpContextAccessor, IOptions<AppSettings> appSettings) 
+        public LogService(DatabaseContext databaseContext, IHttpContextAccessor httpContextAccessor, IOptions<AppSettings> appSettings)
         {
             this.databaseContext = databaseContext;
             this.httpContextAccessor = httpContextAccessor;

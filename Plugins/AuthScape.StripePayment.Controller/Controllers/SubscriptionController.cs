@@ -89,8 +89,8 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 },
                 //PaymentSettings = paymentSettings,
                 PaymentBehavior = "default_incomplete",
-                
-                
+
+
                 TrialPeriodDays = 12,
                 TrialSettings = new SubscriptionTrialSettingsOptions
                 {

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Authscape.Reporting.Models.ReportContent
+﻿namespace Authscape.Reporting.Models.ReportContent
 {
     public class ScatterChartContent : BaseReportContent
     {

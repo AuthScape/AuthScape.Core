@@ -24,6 +24,7 @@ namespace AuthScape.Marketplace.Services
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
         Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null);
         Task GenerateMLModel<T>(List<T> documents, int platformId = 0, long? privateLabelCompanyId = null, string? cachePath = null) where T : new();
+        Task RemoveAllFilesInFolder(string containerName, string folderName);
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -673,7 +674,7 @@ namespace AuthScape.Marketplace.Services
             }
         }
 
-        private async Task RemoveAllFilesInFolder(string containerName, string folderName)
+        public async Task RemoveAllFilesInFolder(string containerName, string folderName)
         {
             BlobServiceClient blobServiceClient = new BlobServiceClient(appSettings.LuceneSearch.StorageConnectionString);
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);

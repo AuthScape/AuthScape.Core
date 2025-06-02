@@ -1,6 +1,5 @@
 ﻿using AuthScape.StripePayment.Models;
 using AuthScape.StripePayment.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -28,7 +27,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateInvoice()
         {
-            var customerId = await stripePayService.CreateCustomer("John Doe", "johndoe@gmail.com", "", 
+            var customerId = await stripePayService.CreateCustomer("John Doe", "johndoe@gmail.com", "",
                 "3025 Carrington Mill Boulevard Suite 200", "Morrisville", "NC", "27560");
 
             var invoiceId = await stripePayService.CreateInvoice(customerId, true);

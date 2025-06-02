@@ -7,7 +7,7 @@ namespace Reports
     [ReportName("927D99A4-71AD-4BEF-A12C-BFE8428D0ACB")]
     public class AreaChartReport : ReportEntity, IReport
     {
-        public AreaChartReport() : base () { }
+        public AreaChartReport() : base() { }
 
         public override async Task<Widget> OnRequest(string payLoad)
         {

@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AuthScape.Spreadsheet.Models.Hubs;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using AuthScape.Spreadsheet.Models.Hubs;
-using System.Text;
-using Newtonsoft.Json;
-using System.Net.Http.Headers;
-using Services.Database;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Services.Database;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace AuthScape.Spreadsheet.Controller.Controllers
 {
@@ -60,7 +60,7 @@ namespace AuthScape.Spreadsheet.Controller.Controllers
                         return File(imageBytes, "image/png");
                     }
                 }
-                
+
             }
             else if (param.Url != null)
             {

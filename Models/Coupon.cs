@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace AuthScape.Models.PaymentGateway.Coupons
+﻿namespace AuthScape.Models.PaymentGateway.Coupons
 {
     public class Coupon
     {

@@ -1,20 +1,20 @@
-﻿using Authsome.Models;
-using Authsome;
-using Services.Database;
-using Microsoft.Extensions.Options;
-using AuthScape.Services;
-using Services.Context;
-using Microsoft.EntityFrameworkCore;
-using NUglify;
-using System.Text;
-using Microsoft.AspNetCore.Http;
-using AuthScape.Services.Azure.Storage;
-using Scryber.OpenType;
-using CoreBackpack.Services;
-using AuthScape.PrivateLabel.Models;
-using AuthScape.Document.Models;
-using Newtonsoft.Json;
+﻿using AuthScape.Document.Models;
 using AuthScape.Models.Exceptions;
+using AuthScape.PrivateLabel.Models;
+using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
+using Authsome;
+using Authsome.Models;
+using CoreBackpack.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using NUglify;
+using Scryber.OpenType;
+using Services.Context;
+using Services.Database;
+using System.Text;
 
 namespace AuthScape.PrivateLabel.Services
 {
@@ -45,8 +45,8 @@ namespace AuthScape.PrivateLabel.Services
         readonly IUserManagementService userManagementService;
         readonly DatabaseContext databaseContext;
         readonly IAzureBlobStorage azureBlobStorage;
-		readonly IImageService imageService;
-		public PrivateLabelService(IOptions<AppSettings> appSettings, IAuthsomeService authsomeService, IUserManagementService userManagementService, IAzureBlobStorage azureBlobStorage, DatabaseContext databaseContext, IImageService imageService)
+        readonly IImageService imageService;
+        public PrivateLabelService(IOptions<AppSettings> appSettings, IAuthsomeService authsomeService, IUserManagementService userManagementService, IAzureBlobStorage azureBlobStorage, DatabaseContext databaseContext, IImageService imageService)
         {
             this.appSettings = appSettings.Value;
             this.authsomeService = authsomeService;
@@ -54,7 +54,7 @@ namespace AuthScape.PrivateLabel.Services
             this.databaseContext = databaseContext;
             this.azureBlobStorage = azureBlobStorage;
             this.imageService = imageService;
-		}
+        }
 
         public async Task<HttpResponseWrapper<GoogleFonts>> GetGoogleFontAPI()
         {
@@ -106,7 +106,7 @@ namespace AuthScape.PrivateLabel.Services
 
             dnsRecord.FontFamily = fontFamily;
             dnsRecord.FontUrl = null;
-			await databaseContext.SaveChangesAsync();
+            await databaseContext.SaveChangesAsync();
 
             await MinifyCSSFile(dnsRecord.Id);
         }
@@ -194,22 +194,22 @@ namespace AuthScape.PrivateLabel.Services
                     }
                     else if (dnsRecord.FontUrl.ToLower().Contains(".ttf"))
                     {
-						builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"truetype\"); }");
-					}
-					else if (dnsRecord.FontUrl.ToLower().Contains(".woff"))
-					{
-						builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"woff\"); }");
-					}
-					else if (dnsRecord.FontUrl.ToLower().Contains(".woff2"))
-					{
-						builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"woff2\"); }");
-					}
-				}
+                        builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"truetype\"); }");
+                    }
+                    else if (dnsRecord.FontUrl.ToLower().Contains(".woff"))
+                    {
+                        builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"woff\"); }");
+                    }
+                    else if (dnsRecord.FontUrl.ToLower().Contains(".woff2"))
+                    {
+                        builder.AppendLine("@font-face { font-family: " + dnsRecord.FontFamily + "; src: url(\"" + dnsRecord.FontUrl + "\") format(\"woff2\"); }");
+                    }
+                }
                 else
                 {
-					builder.AppendLine("@import url('https://fonts.googleapis.com/css?family=" + dnsRecord.FontFamily + "&display=swap');");
-				}
-                
+                    builder.AppendLine("@import url('https://fonts.googleapis.com/css?family=" + dnsRecord.FontFamily + "&display=swap');");
+                }
+
                 builder.AppendLine("body{font-family:\"" + dnsRecord.FontFamily + "\" !important;}.MuiTypography-root{font-family:\"" + dnsRecord.FontFamily + "\" !important;}button{font-family:\"" + dnsRecord.FontFamily + "\" !important;}\"");
                 builder.AppendLine(dnsRecord.PrettyCSS);
 
@@ -227,8 +227,8 @@ namespace AuthScape.PrivateLabel.Services
             }
         }
 
-		public async Task UploadAppIcon(IFormFile file, string domain)
-		{
+        public async Task UploadAppIcon(IFormFile file, string domain)
+        {
             var signedInUser = await userManagementService.GetSignedInUser();
 
             var dnsRecord = await databaseContext.DnsRecords
@@ -237,20 +237,20 @@ namespace AuthScape.PrivateLabel.Services
 
             if (dnsRecord != null)
             {
-				var appIcons = "privatelabel";
-				if (!String.IsNullOrWhiteSpace(appSettings.PrivateLabel.AppIconContainer))
+                var appIcons = "privatelabel";
+                if (!String.IsNullOrWhiteSpace(appSettings.PrivateLabel.AppIconContainer))
                 {
                     appIcons = appSettings.PrivateLabel.AppIconContainer;
-				}
-                
+                }
+
                 if (appSettings.Stage == AuthScape.Models.Stage.Development)
                 {
-					appIcons += "-development";
-				}
+                    appIcons += "-development";
+                }
                 else if (appSettings.Stage == AuthScape.Models.Stage.Staging)
                 {
                     appIcons += "-staging";
-				}
+                }
 
                 var appIconsUrl = await azureBlobStorage.StoreAppIcons(file, appIcons, dnsRecord.Id.ToString());
 
@@ -260,57 +260,57 @@ namespace AuthScape.PrivateLabel.Services
                 dnsRecord.FavIcon = appIconsUrl.Icon32x32Uri;
 
                 await databaseContext.SaveChangesAsync();
-			}
+            }
         }
 
-		public async Task UploadCustomFont(IFormFile file, string domain)
-		{
-			var signedInUser = await userManagementService.GetSignedInUser();
+        public async Task UploadCustomFont(IFormFile file, string domain)
+        {
+            var signedInUser = await userManagementService.GetSignedInUser();
 
-			var dnsRecord = await databaseContext.DnsRecords
-				.Where(d => d.Domain.ToLower() == domain.ToLower())
-				.FirstOrDefaultAsync();
+            var dnsRecord = await databaseContext.DnsRecords
+                .Where(d => d.Domain.ToLower() == domain.ToLower())
+                .FirstOrDefaultAsync();
 
-			if (dnsRecord != null)
-			{
-				var appIcons = "privatelabel";
-				if (!String.IsNullOrWhiteSpace(appSettings.PrivateLabel.AppIconContainer))
-				{
-					appIcons = appSettings.PrivateLabel.AppIconContainer;
-				}
+            if (dnsRecord != null)
+            {
+                var appIcons = "privatelabel";
+                if (!String.IsNullOrWhiteSpace(appSettings.PrivateLabel.AppIconContainer))
+                {
+                    appIcons = appSettings.PrivateLabel.AppIconContainer;
+                }
 
-				if (appSettings.Stage == AuthScape.Models.Stage.Development)
-				{
-					appIcons += "-development";
-				}
-				else if (appSettings.Stage == AuthScape.Models.Stage.Staging)
-				{
-					appIcons += "-staging";
-				}
+                if (appSettings.Stage == AuthScape.Models.Stage.Development)
+                {
+                    appIcons += "-development";
+                }
+                else if (appSettings.Stage == AuthScape.Models.Stage.Staging)
+                {
+                    appIcons += "-staging";
+                }
 
-				var filesName = await azureBlobStorage.UploadFile(file, appIcons, dnsRecord.Id.ToString().Replace("-", "") + "-" + Guid.NewGuid().ToString().Replace("-", ""));
+                var filesName = await azureBlobStorage.UploadFile(file, appIcons, dnsRecord.Id.ToString().Replace("-", "") + "-" + Guid.NewGuid().ToString().Replace("-", ""));
 
-				dnsRecord.FontUrl = appSettings.Storage.BaseUri + "/" + appIcons + "/" + filesName;
+                dnsRecord.FontUrl = appSettings.Storage.BaseUri + "/" + appIcons + "/" + filesName;
 
-				using (var reader = new  TypefaceReader())
-				{
-					var remoteUri = new Uri(dnsRecord.FontUrl);
-					var font = await reader.GetFontsAsync(remoteUri);
+                using (var reader = new TypefaceReader())
+                {
+                    var remoteUri = new Uri(dnsRecord.FontUrl);
+                    var font = await reader.GetFontsAsync(remoteUri);
                     var firstFont = font.FirstOrDefault();
                     if (firstFont != null)
                     {
-						dnsRecord.FontFamily = firstFont.FamilyName;
-					}
-				}
+                        dnsRecord.FontFamily = firstFont.FamilyName;
+                    }
+                }
 
-				await databaseContext.SaveChangesAsync();
+                await databaseContext.SaveChangesAsync();
 
-				await MinifyCSSFile(dnsRecord.Id);
-			}
-		}
+                await MinifyCSSFile(dnsRecord.Id);
+            }
+        }
 
 
-		public async Task<List<PrivateLabelDNSFields>> GetDNSFields(string domain, long? companyId = null)
+        public async Task<List<PrivateLabelDNSFields>> GetDNSFields(string domain, long? companyId = null)
         {
             var dnsFields = new List<PrivateLabelDNSFields>();
 
@@ -381,7 +381,7 @@ namespace AuthScape.PrivateLabel.Services
                 await databaseContext.PrivateLabelSelectedFields.AddAsync(new PrivateLabelSelectedFields()
                 {
                     DnsRecordId = id,
-                    PrivateLabelFieldId = fieldId, 
+                    PrivateLabelFieldId = fieldId,
                     CSSValue = value
                 });
             }
@@ -395,7 +395,8 @@ namespace AuthScape.PrivateLabel.Services
             var dnsRecord = await databaseContext.DnsRecords
                 .Where(d => d.Domain.ToLower() == domain.ToLower())
                 .AsNoTracking()
-                .Select(s => new IdFromDomainResponse() {
+                .Select(s => new IdFromDomainResponse()
+                {
                     CompanyId = s.CompanyId,
                     DemoCompanyId = s.DemoCompanyId,
                     FavIcon = s.FavIcon,
@@ -495,7 +496,7 @@ namespace AuthScape.PrivateLabel.Services
             if (company != null)
             {
                 var icons = new List<Icons>();
-                
+
                 //icons.Add(new Icons()
                 //{
                 //    src = company.Logo512X512,

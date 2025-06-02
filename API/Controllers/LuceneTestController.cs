@@ -1,10 +1,8 @@
 ﻿using AuthScape.LuceneSearch;
 using AuthScape.LuceneSearch.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {
@@ -46,7 +44,7 @@ namespace API.Controllers
             field.StoreField = true;
 
             doc.Add(new LuceneField("name", "value", FieldType.StringField, true));
-            
+
             docs.Add(doc);
 
 

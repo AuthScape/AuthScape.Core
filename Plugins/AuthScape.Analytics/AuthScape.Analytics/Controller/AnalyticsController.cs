@@ -1,7 +1,6 @@
 ﻿using AuthScape.Analytics.Models;
 using AuthScape.Analytics.Services;
 using Microsoft.AspNetCore.Mvc;
-using Services.Context;
 
 namespace AuthScape.Analytics.Controller
 {

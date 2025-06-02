@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AuthScape.Analytics.Models
+﻿namespace AuthScape.Analytics.Models
 {
     public class AnalyticsPageView
     {

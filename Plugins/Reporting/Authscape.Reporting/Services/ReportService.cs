@@ -6,8 +6,6 @@ using Authscape.Reporting.Models.Timeline;
 using AuthScape.Models.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Services.Context;
 using Services.Database;
 using System.Reflection;
 
@@ -267,7 +265,7 @@ namespace Authscape.Reporting.Services
                 columnData.Add(new TimelineHeader("string", "timeline"));
                 columnData.Add(new TimelineHeader("date", "Start"));
                 columnData.Add(new TimelineHeader("date", "End"));
-                
+
                 instance.Columns = columnData;
 
 

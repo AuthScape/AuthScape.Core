@@ -39,7 +39,7 @@ namespace AuthScape.Services.Azure.Storage
         /// <param name="cacheControl"></param>
         /// <returns></returns>
         Task<AppIcons> StoreAppIcons(IFormFile file, string containerName, string Id, string cacheControl = "max-age=31536000");
-	}
+    }
 
     public class AzureBlobStorage : AzureBlobStorageBase, IAzureBlobStorage
     {
@@ -47,7 +47,7 @@ namespace AuthScape.Services.Azure.Storage
         readonly IImageService imageService;
         readonly AppSettings appSettings;
 
-		public AzureBlobStorage(IBlobStorage blobStorage, IImageService imageService, IOptions<AppSettings> appSettings) : base(blobStorage, imageService, appSettings)
+        public AzureBlobStorage(IBlobStorage blobStorage, IImageService imageService, IOptions<AppSettings> appSettings) : base(blobStorage, imageService, appSettings)
         {
             this.blobStorage = blobStorage;
             this.imageService = imageService;
@@ -75,30 +75,31 @@ namespace AuthScape.Services.Azure.Storage
 
         public async Task<AppIcons> StoreAppIcons(IFormFile file, string containerName, string Id, string cacheControl = "max-age=31536000")
         {
-			var imageSeperator = Guid.NewGuid().ToString();
+            var imageSeperator = Guid.NewGuid().ToString();
 
 
             // default
-			await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + ".jpg"), file.OpenReadStream(), true, cacheControl, "image/*");
+            await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + ".jpg"), file.OpenReadStream(), true, cacheControl, "image/*");
 
 
             // 16x16
-			var stream16 = imageService.ConvertPhoto(file, ImageMagick.MagickFormat.Jpg, new CoreBackpack.Models.ImageSize()
+            var stream16 = imageService.ConvertPhoto(file, ImageMagick.MagickFormat.Jpg, new CoreBackpack.Models.ImageSize()
             {
-                width = 16, height = 16
+                width = 16,
+                height = 16
             });
-			stream16.Seek(0, SeekOrigin.Begin);
-			await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-16x16.jpg"), stream16, true, cacheControl, "image/*");
+            stream16.Seek(0, SeekOrigin.Begin);
+            await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-16x16.jpg"), stream16, true, cacheControl, "image/*");
 
 
             // 32x32
-			var stream32 = imageService.ConvertPhoto(file, ImageMagick.MagickFormat.Jpg, new CoreBackpack.Models.ImageSize()
-			{
-				width = 32,
-				height = 32
-			});
-			stream32.Seek(0, SeekOrigin.Begin);
-			await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-32x32.jpg"), stream32, true, cacheControl, "image/*");
+            var stream32 = imageService.ConvertPhoto(file, ImageMagick.MagickFormat.Jpg, new CoreBackpack.Models.ImageSize()
+            {
+                width = 32,
+                height = 32
+            });
+            stream32.Seek(0, SeekOrigin.Begin);
+            await blobStorage.UploadBlob(appSettings.Storage.AzureConnectionString, containerName, (Id + "-" + imageSeperator + "-32x32.jpg"), stream32, true, cacheControl, "image/*");
 
 
             // 32x32
@@ -118,7 +119,7 @@ namespace AuthScape.Services.Azure.Storage
                 AppIcon32x32Uri = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + "-32x32.jpg"),
                 Icon32x32Uri = appSettings.Storage.BaseUri + "/" + containerName + "/" + (Id + "-" + imageSeperator + "-32x32.ico"),
             };
-		}
+        }
 
-	}
+    }
 }

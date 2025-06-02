@@ -1,5 +1,4 @@
 ﻿using AuthScape.Models.Users;
-using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.Models.PaymentGateway
@@ -32,7 +31,7 @@ namespace AuthScape.Models.PaymentGateway
         public string? Funding { get; set; }
         public WalletType WalletType { get; set; }
         public DateTimeOffset? Archived { get; set; }
-        
+
         public string? PaymentMethodId { get; set; }
         public string? Brand { get; set; }
 

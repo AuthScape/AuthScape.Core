@@ -1,14 +1,10 @@
 ﻿using AuthScape.AzureCloudService.Models;
 using AuthScape.AzureOpenAI.Models;
-using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Identity.Client;
 using OpenAI.Chat;
 using System.ClientModel;
-using System.Text.Json;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthScape.AzureCloudService
 {
@@ -44,7 +40,7 @@ namespace AuthScape.AzureCloudService
                 }
             }
 
-            
+
             return chatClient.CompleteChatStreamingAsync(messages, new ChatCompletionOptions()
             {
 

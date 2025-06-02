@@ -1,18 +1,10 @@
 ﻿using AuthScape.AzureCloudService;
 using AuthScape.AzureOpenAI.Models;
-using CsvHelper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client;
-using OpenAI;
-using OpenAI.Chat;
-using Org.BouncyCastle.Asn1.Crmf;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace API.Controllers
 {

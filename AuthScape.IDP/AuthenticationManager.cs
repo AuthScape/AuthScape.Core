@@ -1,30 +1,30 @@
-﻿using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿using AuthScape.IDP.Services;
+using AuthScape.Models.Users;
+using AuthScape.Services;
+using IDP.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Services;
 using Services.Context;
-using Services.Database;
-using Microsoft.AspNetCore.Builder;
-using AuthScape.Models.Users;
-using Microsoft.AspNetCore.Identity;
-using static OpenIddict.Abstractions.OpenIddictConstants;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography.X509Certificates;
-using IDP.Services;
-using Microsoft.AspNetCore.Authentication;
-using Services.Tracking;
-using AuthScape.Services;
 using Services.Cores;
-using AuthScape.IDP.Services;
+using Services.Database;
+using Services.Tracking;
+using System.Security.Cryptography.X509Certificates;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AuthScape.IDP
 {
     public class AuthenticationManager
     {
-        public void RegisterConfigureServices(IConfiguration Configuration, IServiceCollection services, IWebHostEnvironment _currentEnvironment, Action<AppSettings> databaseConnection, Action<AuthenticationBuilder> authBuilder, 
+        public void RegisterConfigureServices(IConfiguration Configuration, IServiceCollection services, IWebHostEnvironment _currentEnvironment, Action<AppSettings> databaseConnection, Action<AuthenticationBuilder> authBuilder,
             string symmetricSecurityKey, string certificateThumbprint)
         {
             var appSettings = Configuration.GetSection("AppSettings");
@@ -39,7 +39,7 @@ namespace AuthScape.IDP
             });
 
 
-            
+
 
             // Configure Identity to use the same JWT claims as OpenIddict instead
             // of the legacy WS-Federation claims it uses by default (ClaimTypes),
@@ -179,7 +179,7 @@ namespace AuthScape.IDP
 
             services.AddTransient<ICorsPolicyProvider, CorsPolicyManager>();
 
-            
+
             #region Experimental MultiFactor Authentication
             services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, AdditionalUserClaimsPrincipalFactory>();
             services.AddAuthorization(options => options.AddPolicy("TwoFactorEnabled", x => x.RequireClaim("amr", "mfa")));

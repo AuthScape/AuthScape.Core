@@ -2,19 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 using AuthScape.Models.Users;
 using CoreBackpack.Time;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +15,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Services.Context;
 using Services.Database;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace mvcTest.Areas.Identity.Pages.Account
 {
@@ -146,7 +145,7 @@ namespace mvcTest.Areas.Identity.Pages.Account
             {
                 redirectUri = returnUrl;
             }
-            
+
             // if there is still nothing we have a backup plan
             if (String.IsNullOrWhiteSpace(redirectUri))
             {

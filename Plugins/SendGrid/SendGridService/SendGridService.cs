@@ -1,18 +1,17 @@
-﻿using AuthScape.Models.Users;
-using Microsoft.Extensions.Options;
+﻿using AuthScape.Analytics.Models;
+using AuthScape.Models.Exceptions;
+using AuthScape.Models.Users;
 using AuthScape.SendGrid.Models;
-using Services.Database;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SendGrid;
-using AuthScape.Models.Exceptions;
-using System.Text.RegularExpressions;
-using System.Net.Http.Headers;
-using StrongGrid;
-using Microsoft.AspNetCore.Http;
 using Services.Context;
-using AuthScape.Analytics.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using Services.Database;
+using StrongGrid;
+using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 
 namespace AuthScape.SendGrid
 {
