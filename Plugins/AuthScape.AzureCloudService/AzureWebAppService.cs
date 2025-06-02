@@ -1,9 +1,9 @@
 ﻿using AuthScape.AzureCloudService.Models;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Services.Database;
 using System.Net.Http.Headers;
 using System.Text;
-using Services.Database;
-using Microsoft.Extensions.Options;
 
 namespace AuthScape.AzureCloudService
 {
@@ -18,7 +18,7 @@ namespace AuthScape.AzureCloudService
     public class AzureWebAppService : AzureBaseService, IAzureWebAppService
     {
         readonly AppSettings appSettings;
-        public AzureWebAppService(IOptions<AppSettings> appSettings) 
+        public AzureWebAppService(IOptions<AppSettings> appSettings)
         {
             this.appSettings = appSettings.Value;
         }
@@ -103,7 +103,7 @@ namespace AuthScape.AzureCloudService
                 return errorMessage;
             }
 
-            
+
         }
 
 

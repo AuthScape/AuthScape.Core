@@ -73,7 +73,7 @@ namespace AuthScape.Flows.Services
 
             var type = (NodeType)Enum.Parse(typeof(NodeType), param.NodeType);
 
-            switch(type)
+            switch (type)
             {
                 case NodeType.startNode:
                     newNode.Type = "startNode";
@@ -143,7 +143,7 @@ namespace AuthScape.Flows.Services
                 var edges = await databaseContext.FlowEdges.Where(f => f.FlowSource == nodeId || f.FlowTarget == nodeId).ToListAsync();
                 databaseContext.FlowEdges.RemoveRange(edges);
                 databaseContext.FlowNodes.Remove(node);
-                
+
                 await databaseContext.SaveChangesAsync();
             }
         }
@@ -373,7 +373,7 @@ namespace AuthScape.Flows.Services
                 .Where(d => d.Id == data.nodeId)
                 .FirstOrDefaultAsync();
 
-            if (node != null) 
+            if (node != null)
             {
                 node.Data = data.Data;
                 await databaseContext.SaveChangesAsync();

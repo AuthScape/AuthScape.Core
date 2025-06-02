@@ -34,7 +34,7 @@ namespace Services.Database
     public class OpenAI
     {
         public string APIKey { get; set; }
-	}
+    }
 
     public class Mapping
     {
@@ -54,9 +54,9 @@ namespace Services.Database
         public string AzureConnectionString { get; set; }
         public string BaseUri { get; set; }
         public string UserProfileContainer { get; set; }
-	}
+    }
 
-	public class DocumentProcessing
+    public class DocumentProcessing
     {
         public string BaseURL { get; set; }
         public string StorageContainer { get; set; }
@@ -73,7 +73,7 @@ namespace Services.Database
     }
 
     public class PrivateLabelSettings
-	{
+    {
         public string GoogleFontsAPIKey { get; set; }
         public string AppIconContainer { get; set; }
 

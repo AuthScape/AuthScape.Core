@@ -1,7 +1,7 @@
-﻿using CoreBackpack.Pagination;
+﻿using AuthScape.Models.Users;
+using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using AuthScape.Models.Users;
 using OpenIddict.Validation.AspNetCore;
 using Services;
 using System.Linq;

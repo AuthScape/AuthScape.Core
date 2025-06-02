@@ -1,10 +1,10 @@
 ﻿using Authscape.IdentityServer.Models;
+using CoreBackpack.Mail;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
 using Services.Context;
 using static OpenIddict.Abstractions.OpenIddictConstants;
-using CoreBackpack.Mail;
 
 namespace Authscape.IdentityServer.Services
 {
@@ -92,7 +92,7 @@ namespace Authscape.IdentityServer.Services
             // This is the last time you can get your secret
             return identityCreateApplication.ClientSecret;
         }
-    
+
         public async Task SetupDevelopmentEnvironment()
         {
             await CreateDevelopmentApplicationsAsync();

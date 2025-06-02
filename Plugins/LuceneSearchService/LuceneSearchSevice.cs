@@ -1,14 +1,14 @@
-﻿using Lucene.Net.Analysis;
+﻿using AuthScape.LuceneSearch.Models;
+using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
+using Lucene.Net.QueryParsers.Classic;
+using Lucene.Net.Search;
 using Lucene.Net.Store.Azure;
 using Lucene.Net.Util;
-using AuthScape.LuceneSearch.Models;
-using Services.Database;
 using Microsoft.Extensions.Options;
-using Lucene.Net.Search;
-using Lucene.Net.QueryParsers.Classic;
+using Services.Database;
 
 namespace AuthScape.LuceneSearch
 {
@@ -49,7 +49,7 @@ namespace AuthScape.LuceneSearch
                 var fields = document.GetFields();
                 foreach (var field in fields)
                 {
-                    switch(field.FieldType)
+                    switch (field.FieldType)
                     {
                         case Models.FieldType.DescriptionOrBody:
                             doc.Add(new TextField(field.Name, (string)field.Value, field.StoreField ? Field.Store.YES : Field.Store.NO));
@@ -83,7 +83,7 @@ namespace AuthScape.LuceneSearch
                             break;
                     }
                 }
-                
+
                 writer.AddDocument(doc);
             }
 
@@ -114,7 +114,7 @@ namespace AuthScape.LuceneSearch
             results.TotalResults = topDocs.TotalHits;
             results.Searcher = searcher;
 
-            
+
 
             return results;
         }

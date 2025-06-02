@@ -1,18 +1,10 @@
-﻿using CoreBackpack.Pagination;
+﻿using AuthScape.Invoice.Models;
+using AuthScape.Plugins.Invoices.Models;
+using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using AuthScape.Plugins.Invoices.Models;
 using OpenIddict.Validation.AspNetCore;
 using Services;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using AuthScape.Models.Storage;
-using AuthScape.Invoice.Models;
-using AuthScape.Models.Companies;
-using Stripe.Terminal;
-using DocumentFormat.OpenXml.InkML;
-using CsvHelper.Configuration.Attributes;
 
 namespace AuthScape.Controllers
 {

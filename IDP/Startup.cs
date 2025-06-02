@@ -1,24 +1,24 @@
+using AuthScape.IDP;
+using AuthScape.Models.Users;
+using AuthScape.SendGrid;
+using AuthScape.StripePayment.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using AuthScape.IDP;
-using AuthScape.SendGrid;
-using Services;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
+using Services;
 using Services.Context;
 using System;
-using AuthScape.Models.Users;
-using Microsoft.AspNetCore.Identity;
-using AuthScape.StripePayment.Services;
 
 namespace IDP
 {
     public class Startup
     {
         public Startup(IConfiguration configuration, IWebHostEnvironment env)
-        { 
+        {
             Configuration = configuration;
             _currentEnvironment = env;
             authenticationManager = new AuthenticationManager();
@@ -47,7 +47,7 @@ namespace IDP
                         options.UseSqlServer(_appsettings.DatabaseContext,
                             sqlServerOptionsAction: sqlOptions =>
                             {
-                            // will attempt to reconnect the connection
+                                // will attempt to reconnect the connection
                                 sqlOptions.EnableRetryOnFailure(
                                 maxRetryCount: 10,
                                 maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -89,7 +89,7 @@ namespace IDP
                         options.UseSqlServer(_appsettings.DatabaseContext,
                             sqlServerOptionsAction: sqlOptions =>
                             {
-                            // will attempt to reconnect the connection
+                                // will attempt to reconnect the connection
                                 sqlOptions.EnableRetryOnFailure(
                                 maxRetryCount: 10,
                                 maxRetryDelay: TimeSpan.FromSeconds(30),

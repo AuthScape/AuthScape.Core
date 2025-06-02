@@ -1,13 +1,13 @@
 ﻿using AuthScape.Models.PaymentGateway;
+using AuthScape.Models.PaymentGateway.Stripe;
+using AuthScape.Models.Users;
+using AuthScape.StripePayment.Models;
 using CoreBackpack.cMath;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Services.Context;
 using Services.Database;
 using Stripe;
-using AuthScape.Models.PaymentGateway.Stripe;
-using AuthScape.StripePayment.Models;
-using AuthScape.Models.Users;
 
 namespace AuthScape.StripePayment.Services
 {
@@ -60,11 +60,11 @@ namespace AuthScape.StripePayment.Services
         Task SetPaymentMethod(string invoiceId, string paymentMethod);
 
         Task<ShippingRate> AddShippingRate(string displayName, decimal amount, TaxBehavior taxBehavior, string? taxCode = null);
-		Task AddShippingRateToInvoice(string stripeInvoice, string shippingRateId);
+        Task AddShippingRateToInvoice(string stripeInvoice, string shippingRateId);
         Task AddShippingToInvoice(string stripeInvoice, string displayName, decimal amount, TaxBehavior taxBehavior, string? taxCode = null, string currency = "usd");
         Task AddShippingAddress(string StripeInvoice, string RecipientName, string phoneNumber, string address, string city, string state, string postalCode, string country = "us");
         Task RemoveShippingQuote(string StripeInvoice);
-	}
+    }
 
     public class StripePayService : IStripePayService
     {
@@ -205,7 +205,7 @@ namespace AuthScape.StripePayment.Services
             {
                 if (paymentRequest.PaymentMethodType == PaymentMethodType.User)
                 {
-                    var walletItem =  await context.Wallets
+                    var walletItem = await context.Wallets
                         .Where(w => w.UserId == currentUser.Id)
                         .FirstOrDefaultAsync();
 
@@ -237,12 +237,12 @@ namespace AuthScape.StripePayment.Services
                         var location = await context.Locations.Where(l => l.Id == currentUser.LocationId).FirstOrDefaultAsync();
                         if (location != null)
                         {
-                            stripeCustomerId = await CreateCustomer(location.Title, currentUser.Email, "", 
-                                (!String.IsNullOrWhiteSpace(location.Address) ? location.Address : ""), 
-                                (!String.IsNullOrWhiteSpace(location.City) ? location.City : ""), 
-                                (!String.IsNullOrWhiteSpace(location.State) ? location.State : ""), 
+                            stripeCustomerId = await CreateCustomer(location.Title, currentUser.Email, "",
+                                (!String.IsNullOrWhiteSpace(location.Address) ? location.Address : ""),
+                                (!String.IsNullOrWhiteSpace(location.City) ? location.City : ""),
+                                (!String.IsNullOrWhiteSpace(location.State) ? location.State : ""),
                                 (!String.IsNullOrWhiteSpace(location.ZipCode) ? location.ZipCode : ""));
-                            
+
                             var newWallet = new Wallet()
                             {
                                 LocationId = currentUser.LocationId,
@@ -531,7 +531,7 @@ namespace AuthScape.StripePayment.Services
                 DisplayName = displayName,
                 Type = "fixed_amount",
                 TaxBehavior = taxBehavior.ToString(),
-				FixedAmount = new ShippingRateFixedAmountOptions
+                FixedAmount = new ShippingRateFixedAmountOptions
                 {
                     Amount = MoneyExtender.ConvertToCents(amount),
                     Currency = "usd",
@@ -540,8 +540,8 @@ namespace AuthScape.StripePayment.Services
 
             if (taxCode != null)
             {
-				options.TaxCode = taxCode;
-			}
+                options.TaxCode = taxCode;
+            }
 
             var service = new ShippingRateService();
             return await service.CreateAsync(options);
@@ -575,22 +575,22 @@ namespace AuthScape.StripePayment.Services
 
         public async Task AddShippingRateToInvoice(string stripeInvoice, string shippingRateId)
         {
-			var invoiceService = new InvoiceService();
+            var invoiceService = new InvoiceService();
             await invoiceService.UpdateAsync(stripeInvoice, new InvoiceUpdateOptions()
             {
                 ShippingCost = new InvoiceShippingCostOptions()
                 {
                     ShippingRate = shippingRateId
-				}
+                }
             });
-		}
+        }
 
         public async Task AddShippingAddress(string StripeInvoice, string RecipientName, string phoneNumber, string address, string city, string state, string postalCode, string country = "us")
         {
-			var invoiceService = new InvoiceService();
-			await invoiceService.UpdateAsync(StripeInvoice, new InvoiceUpdateOptions()
-			{
-				ShippingDetails = new InvoiceShippingDetailsOptions()
+            var invoiceService = new InvoiceService();
+            await invoiceService.UpdateAsync(StripeInvoice, new InvoiceUpdateOptions()
+            {
+                ShippingDetails = new InvoiceShippingDetailsOptions()
                 {
                     Name = RecipientName,
                     Phone = phoneNumber,
@@ -601,58 +601,58 @@ namespace AuthScape.StripePayment.Services
                         State = state,
                         PostalCode = postalCode,
                         Country = country
-					}
-				}
-			});
-		}
+                    }
+                }
+            });
+        }
 
         public async Task RemoveShippingQuote(string StripeInvoice)
         {
-			var invoiceService = new InvoiceService();
-			await invoiceService.UpdateAsync(StripeInvoice, new InvoiceUpdateOptions()
-			{
-				ShippingCost = new InvoiceShippingCostOptions()
-				{
-					ShippingRateData = new InvoiceShippingCostShippingRateDataOptions()
-					{
-						FixedAmount = new InvoiceShippingCostShippingRateDataFixedAmountOptions()
-						{
-							Amount = MoneyExtender.ConvertToCents(0),
-						},
-						DisplayName = "none",
-						TaxBehavior = TaxBehavior.exclusive.ToString(),
-						Type = "fixed_amount"
-					}
-				}
-			});
-		}
+            var invoiceService = new InvoiceService();
+            await invoiceService.UpdateAsync(StripeInvoice, new InvoiceUpdateOptions()
+            {
+                ShippingCost = new InvoiceShippingCostOptions()
+                {
+                    ShippingRateData = new InvoiceShippingCostShippingRateDataOptions()
+                    {
+                        FixedAmount = new InvoiceShippingCostShippingRateDataFixedAmountOptions()
+                        {
+                            Amount = MoneyExtender.ConvertToCents(0),
+                        },
+                        DisplayName = "none",
+                        TaxBehavior = TaxBehavior.exclusive.ToString(),
+                        Type = "fixed_amount"
+                    }
+                }
+            });
+        }
 
-		public async Task AddShippingToInvoice(string stripeInvoice, string displayName, decimal amount, TaxBehavior taxBehavior, string? taxCode = null, string currency = "usd")
-		{
-			var invoiceService = new InvoiceService();
-			await invoiceService.UpdateAsync(stripeInvoice, new InvoiceUpdateOptions()
-			{
-				ShippingCost = new InvoiceShippingCostOptions()
-				{
-					ShippingRateData = new InvoiceShippingCostShippingRateDataOptions()
+        public async Task AddShippingToInvoice(string stripeInvoice, string displayName, decimal amount, TaxBehavior taxBehavior, string? taxCode = null, string currency = "usd")
+        {
+            var invoiceService = new InvoiceService();
+            await invoiceService.UpdateAsync(stripeInvoice, new InvoiceUpdateOptions()
+            {
+                ShippingCost = new InvoiceShippingCostOptions()
+                {
+                    ShippingRateData = new InvoiceShippingCostShippingRateDataOptions()
                     {
                         FixedAmount = new InvoiceShippingCostShippingRateDataFixedAmountOptions()
                         {
                             Currency = currency,
                             Amount = MoneyExtender.ConvertToCents(amount),
-						},
+                        },
                         DisplayName = displayName,
                         TaxBehavior = taxBehavior.ToString(),
                         TaxCode = taxCode,
                         Type = "fixed_amount"
-					}
-				}
-			});
-		}
+                    }
+                }
+            });
+        }
 
 
 
-		public async Task<string> CreateInvoice(string customerId, bool AutomaticTax, long DaysUntilDue = 1826)
+        public async Task<string> CreateInvoice(string customerId, bool AutomaticTax, long DaysUntilDue = 1826)
         {
             // create the invoice
             var invoiceOptions = new InvoiceCreateOptions
@@ -688,13 +688,13 @@ namespace AuthScape.StripePayment.Services
             return invoiceItem.Id;
         }
 
-		//public async Task UpdateCustomerOnInvoice(string invoiceId, string name, string email)
-		//{
-		//    var invoiceService = new InvoiceService();
-		//    var updatedInvoice = invoiceService.Update(invoiceId, invoiceOptions);
-		//}
+        //public async Task UpdateCustomerOnInvoice(string invoiceId, string name, string email)
+        //{
+        //    var invoiceService = new InvoiceService();
+        //    var updatedInvoice = invoiceService.Update(invoiceId, invoiceOptions);
+        //}
 
-		public async Task<InvoiceItem> CreateItemForInvoice(string customerId, string invoiceId, string productName, decimal amount, int qty, TaxBehavior taxBehavior, string? taxCode = null)
+        public async Task<InvoiceItem> CreateItemForInvoice(string customerId, string invoiceId, string productName, decimal amount, int qty, TaxBehavior taxBehavior, string? taxCode = null)
         {
             // need to make sure we don't duplicat this product... assign it to the product table
             var priceOptions = new PriceCreateOptions
@@ -826,7 +826,7 @@ namespace AuthScape.StripePayment.Services
             //        }
 
             return new InvoiceResponse();
-            
+
         }
 
         public async Task DeleteDraftInvoice(string invoiceId)
@@ -844,7 +844,7 @@ namespace AuthScape.StripePayment.Services
         public async Task PayInvoice(string invoiceId, string paymentMethod, decimal? amount = null)
         {
             var invoiceService = new InvoiceService();
-            
+
             //await service.UpdateAsync(invoiceId, new InvoiceUpdateOptions()
             //{
             //    DefaultPaymentMethod = paymentMethod
@@ -893,7 +893,7 @@ namespace AuthScape.StripePayment.Services
                     PaymentMethod = paymentMethod
                 });
             }
-            
+
         }
 
         /// <summary>
@@ -975,7 +975,10 @@ namespace AuthScape.StripePayment.Services
                 throw new AuthScape.Models.Exceptions.BadRequestException("No company assigned to account.");
             }
 
-            var options = new AccountCreateOptions { Type = "express", Email = signedInUser.Email
+            var options = new AccountCreateOptions
+            {
+                Type = "express",
+                Email = signedInUser.Email
             };
             var service = new Stripe.AccountService();
             var accountResponse = await service.CreateAsync(options);
@@ -1094,7 +1097,7 @@ namespace AuthScape.StripePayment.Services
         {
             var options = new TaxCodeListOptions();
 
-            if (limit !=  null)
+            if (limit != null)
             {
                 options.Limit = limit.Value;
             }
@@ -1110,7 +1113,7 @@ namespace AuthScape.StripePayment.Services
             }
 
             var service = new TaxCodeService();
-            
+
             StripeList<TaxCode> taxCodes = await service.ListAsync(options);
 
             return taxCodes.Select(s => new StripeTaxCode()
@@ -1126,9 +1129,10 @@ namespace AuthScape.StripePayment.Services
             var service = new InvoiceService();
             await service.UpdateAsync(
               invoiceId,
-              new InvoiceUpdateOptions() { 
-                DefaultPaymentMethod = paymentMethod
-            });
+              new InvoiceUpdateOptions()
+              {
+                  DefaultPaymentMethod = paymentMethod
+              });
         }
     }
 

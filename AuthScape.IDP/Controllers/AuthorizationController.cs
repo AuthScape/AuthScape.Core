@@ -1,23 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Security.Claims;
-using System.Threading.Tasks;
+﻿using AuthScape.Models.Users;
 using IDP.Helpers;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using AuthScape.Models.Users;
+using Microsoft.EntityFrameworkCore;
+using Models.Users;
+using Newtonsoft.Json;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
-using static OpenIddict.Abstractions.OpenIddictConstants;
-using Models;
 using Services.Context;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using Models.Users;
+using System.Security.Claims;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace IDP.Controllers
 {
@@ -42,7 +36,7 @@ namespace IDP.Controllers
 
         //[Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]
         [HttpGet("~/connect/authorize")]
-        public async Task<IActionResult> Authorize() 
+        public async Task<IActionResult> Authorize()
         {
             var request = HttpContext.GetOpenIddictServerRequest() ??
                 throw new InvalidOperationException("The request cannot be retrieved.");
@@ -240,7 +234,7 @@ namespace IDP.Controllers
                 // Returning a SignInResult will ask OpenIddict to issue the appropriate access/ identity tokens.
                 return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             }
-            
+
             // use for react and applications
             else if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
             {

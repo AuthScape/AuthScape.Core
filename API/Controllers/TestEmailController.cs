@@ -59,7 +59,7 @@ namespace API.Controllers
 
 
 
-    [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetEmails()
         {
             return Ok(await _readMailService.ReadMail());

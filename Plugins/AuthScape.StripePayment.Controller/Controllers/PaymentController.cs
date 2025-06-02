@@ -6,8 +6,6 @@ using AuthScape.StripePayment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
-using System;
-using System.Threading.Tasks;
 
 namespace AuthScape.StripePayment.Controller.Controllers
 {

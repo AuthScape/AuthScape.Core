@@ -1,7 +1,5 @@
-﻿using AuthScape.SendGrid;
-using AuthScape.TicketSystem.Modals;
+﻿using AuthScape.TicketSystem.Modals;
 using Models.Email;
-using Stripe;
 
 namespace Services
 {

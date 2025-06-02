@@ -1,6 +1,5 @@
 ﻿using AuthScape.Models.Users;
 using CoreBackpack;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Services.Context;
 

@@ -4,15 +4,11 @@ using AuthScape.Models.Exceptions;
 using AuthScape.Services;
 using ClosedXML.Excel;
 using CsvHelper;
-using DocumentFormat.OpenXml.Presentation;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Services;
 using Services.Context;
 using System.Globalization;
 using System.Reflection;
-using System.Reflection.Metadata;
 
 namespace AuthScape.Document.Mapping.Services
 {

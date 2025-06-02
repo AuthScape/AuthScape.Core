@@ -34,8 +34,8 @@ namespace IDP.Services
                         ClientId = "postman",
                         ClientSecret = "postman-secret",
                         DisplayName = "Postman",
-                        RedirectUris = { 
-                            new Uri("http://localhost:3000/signin-oidc") 
+                        RedirectUris = {
+                            new Uri("http://localhost:3000/signin-oidc")
                         },
                         PostLogoutRedirectUris =
                         {

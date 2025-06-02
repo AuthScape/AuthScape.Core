@@ -1,7 +1,6 @@
 ﻿using AuthScape.AzureCloudService.Models.DocumentIntelligence;
 using Azure;
 using Azure.AI.DocumentIntelligence;
-using Azure.Storage.Blobs;
 
 namespace AuthScape.AzureCloudService
 {

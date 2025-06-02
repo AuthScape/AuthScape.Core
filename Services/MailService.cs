@@ -2,8 +2,6 @@
 using AuthScape.Models.Webhooks;
 using AuthScape.SendGrid;
 using Microsoft.EntityFrameworkCore;
-using Models.Email;
-using Models.Invite;
 using Services.Context;
 
 namespace Services
@@ -47,10 +45,10 @@ namespace Services
             // send the email using sendgrid, however the user can change it to whatever they want...
 
         }
-    
+
         public async Task InboundWebhook(SendGridWebhookContent sendGridWebhookContent)
         {
-            
+
         }
     }
 }

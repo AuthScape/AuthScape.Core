@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace AuthScape.UserManagementSystem.Models
+﻿namespace AuthScape.UserManagementSystem.Models
 {
     public class CustomField
     {
@@ -18,7 +16,7 @@ namespace AuthScape.UserManagementSystem.Models
         public ICollection<LocationCustomField> LocationCustomFields { get; set; }
 
         public long? CompanyId { get; set; }
-        
+
         public CustomFieldTab CustomFieldTab { get; set; }
 
         public bool IsColumnOnDatagrid { get; set; }

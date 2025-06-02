@@ -1,14 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using AuthScape.Models.Users;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using AuthScape.Models.Users;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace IDP.Controllers
@@ -65,7 +61,7 @@ namespace IDP.Controllers
                 claims[Claims.Role] = await _userManager.GetRolesAsync(user);
             }
 
-            
+
 
             // Note: the complete list of standard claims supported by the OpenID Connect specification
             // can be found here: http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims

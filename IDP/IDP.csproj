@@ -22,21 +22,21 @@
     <PackageReference Include="CoreBackpack" Version="1.0.40" />
     <PackageReference Include="Fido2" Version="3.0.1" />
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="9.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.71.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.72.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-    <PackageReference Include="OpenIddict" Version="6.2.1" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="6.2.1" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="6.2.1" />
+    <PackageReference Include="OpenIddict" Version="6.3.0" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="6.3.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="6.3.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 

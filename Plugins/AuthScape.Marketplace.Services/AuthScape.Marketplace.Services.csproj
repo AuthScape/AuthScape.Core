@@ -4,26 +4,27 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>AuthScape.LuceneSearch</PackageId>
-    <Title>AuthScape.LuceneSearch</Title>
-    <Version>1.2.344</Version>
-    <Company>ZuechB</Company>
-    <Product>AuthScape.LuceneSearch</Product>
-    <Authors>ZuechB</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.Marketplace.Services</PackageId>
+    <Title>AuthScape.Marketplace.Services</Title>
+    <Version>1.2.344</Version>
+    <Authors>ZuechB</Authors>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.Marketplace.Services</Product>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CoreBackpack" Version="1.0.40" />
     <PackageReference Include="Lucene.Net" Version="4.8.0-beta00017" />
     <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
     <PackageReference Include="Lucene.Net.Facet" Version="4.8.0-beta00017" />
-    <PackageReference Include="Lucene.Net.Queries" Version="4.8.0-beta00017" />
     <PackageReference Include="Lucene.Net.QueryParser" Version="4.8.0-beta00017" />
     <PackageReference Include="Lucene.Net.Store.Azure" Version="4.8.5-beta019" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
+    <ProjectReference Include="..\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
   </ItemGroup>
 
 </Project>

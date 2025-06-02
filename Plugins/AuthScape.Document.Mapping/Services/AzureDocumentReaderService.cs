@@ -1,8 +1,6 @@
 ﻿using AuthScape.Document.Mapping.Models;
 using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
-using Microsoft.Identity.Client;
 using Newtonsoft.Json;
 
 namespace AuthScape.Document.Mapping.Services
@@ -96,7 +94,7 @@ namespace AuthScape.Document.Mapping.Services
                                 {
                                     var columnKey = column.Key;
 
-                                    switch(column.Value.FieldType)
+                                    switch (column.Value.FieldType)
                                     {
                                         case DocumentFieldType.String:
                                             newDictionary.Add(columnKey, column.Value.Value.AsString());
@@ -143,9 +141,9 @@ namespace AuthScape.Document.Mapping.Services
                                             TimeSpan _resultTime = column.Value.Value.AsTime();
                                             newDictionary.Add(columnKey, _resultTime.ToString());
                                             break;
-                                        //case DocumentFieldType.Unknown:
+                                            //case DocumentFieldType.Unknown:
 
-                                        //    break;
+                                            //    break;
                                     }
                                 }
 

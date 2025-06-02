@@ -50,8 +50,8 @@ namespace AuthScape.TicketSystem.Controllers
                 await mailService.InboundWebhook(new Models.Webhooks.SendGridWebhookContent()
                 {
                     ToEmail = inboundMail.To.Select(t => new SendGridEmailToEmail() { Email = t.Email, Name = t.Name }).ToArray(),
-                    Attachments = inboundMail.Attachments.Select(t => new SendGridEmailAttachment() 
-                    {  
+                    Attachments = inboundMail.Attachments.Select(t => new SendGridEmailAttachment()
+                    {
                         Id = t.Id,
                         ContentId = t.ContentId,
                         ContentType = t.ContentType,

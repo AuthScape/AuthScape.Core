@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace AuthScape.AzureCloudService.Models.DocumentIntelligence
+﻿namespace AuthScape.AzureCloudService.Models.DocumentIntelligence
 {
     public class DocumentBuildParam
     {

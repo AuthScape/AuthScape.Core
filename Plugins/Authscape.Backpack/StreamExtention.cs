@@ -1,6 +1,4 @@
-﻿using System.Net.Mail;
-
-namespace AuthScape.Backpack
+﻿namespace AuthScape.Backpack
 {
     public class StreamExtention
     {

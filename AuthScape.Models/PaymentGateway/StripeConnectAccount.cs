@@ -8,7 +8,7 @@
         public string? ProductDescription { get; set; }
         public string? SupportAddress { get; set; }
         public string? SupportCity { get; set; }
-        public string? SupportZipCode { get; set;}
+        public string? SupportZipCode { get; set; }
         public string? SupportState { get; set; }
         public string? SupportEmail { get; set; }
         public string? SupportPhone { get; set; }

@@ -87,11 +87,12 @@ namespace AuthScape.DocumentProcessing.Controllers
 
     public class AnalysisDocumentParam
     {
-        public Guid DocumentId {get; set;}
+        public Guid DocumentId { get; set; }
         public long DocumentFieldCategoryId { get; set; }
     }
 
-    public class NewFolderParam {
+    public class NewFolderParam
+    {
 
         public string FolderName { get; set; }
         public Guid? ParentFolderId { get; set; }

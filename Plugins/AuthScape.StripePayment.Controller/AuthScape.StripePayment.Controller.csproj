@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.StripePayment.Controller</PackageId>
     <Title>AuthScape.StripePayment.Controller</Title>
-    <Version>1.2.330</Version>
+    <Version>1.2.344</Version>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
     <Product>AuthScape.StripePayment.Controller</Product>
@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
-    <PackageReference Include="Stripe.net" Version="48.1.0" />
+    <PackageReference Include="Stripe.net" Version="48.2.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 

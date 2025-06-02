@@ -1,5 +1,4 @@
 ﻿using Authscape.Models.Reporting;
-using Authscape.Reporting.Models.Timeline;
 using Microsoft.EntityFrameworkCore;
 
 namespace Authscape.Reporting.Models

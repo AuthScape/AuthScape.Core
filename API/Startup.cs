@@ -1,40 +1,40 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using AuthScape.Controllers;
-using Services;
-using AuthScape.SendGrid;
-using Microsoft.Extensions.Hosting;
-using Services.Context;
-using Microsoft.EntityFrameworkCore;
-using System;
-using AuthScape.StripePayment.Services;
-using AuthScape.TicketSystem.Services;
-using AuthScape.ContentManagement.Services;
 using Authscape.IdentityServer.Services;
-using Authsome;
-using AuthScape.DocumentProcessing.Services;
-using CoreBackpack.Azure;
-using CoreBackpack.Services;
-using AuthScape.Services.Azure.Storage;
-using AuthScape.Logging.Services;
 using Authscape.Reporting.Services;
-using AuthScape.Document.Mapping.Services;
-using AuthScape.OpenAI;
-using AuthScape.Services;
-using AuthScape.Flows.Services;
-using AuthScape.Spreadsheet;
-using AuthScape.Spreadsheet.Models.Hubs;
 using AuthScape.Analytics.Services;
-using AuthScape.Kanban.Services;
-using AuthScape.UserManageSystem.Services;
-using AuthScape.Models.Users;
-using Microsoft.AspNetCore.Identity;
 using AuthScape.AzureCloudService;
+using AuthScape.ContentManagement.Services;
+using AuthScape.Controllers;
+using AuthScape.Document.Mapping.Services;
+using AuthScape.DocumentProcessing.Services;
+using AuthScape.Flows.Services;
+using AuthScape.Kanban.Services;
+using AuthScape.Logging.Services;
+using AuthScape.Marketplace.Services;
+using AuthScape.Models.Users;
+using AuthScape.OpenAI;
 using AuthScape.PrivateLabel.Services;
 using AuthScape.ReadMail;
-using AuthScape.Marketplace.Services;
+using AuthScape.SendGrid;
+using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
+using AuthScape.Spreadsheet;
+using AuthScape.Spreadsheet.Models.Hubs;
+using AuthScape.StripePayment.Services;
+using AuthScape.TicketSystem.Services;
+using AuthScape.UserManageSystem.Services;
+using Authsome;
+using CoreBackpack.Azure;
+using CoreBackpack.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Services;
+using Services.Context;
+using System;
 
 namespace API
 {
@@ -109,7 +109,7 @@ namespace API
                 services.AddScoped<IInvoiceService, InvoiceService>();
                 services.AddScoped<IMappingService, MappingService>();
                 services.AddScoped<IFileMappingService, FileMappingService>();
-                
+
 
                 services.AddScoped<IReportService, ReportService>();
 
@@ -120,7 +120,7 @@ namespace API
                 services.AddScoped<IUserManagementSystemService, UserManagementSystemService>();
                 services.AddScoped<ICustomFieldService, CustomFieldService>();
 
-                
+
 
                 services.AddScoped<IStripeConnectService, StripeConnectService>();
 
@@ -150,7 +150,7 @@ namespace API
                 services.AddScoped<IMarketplaceService, MarketplaceService>();
 
 
-                
+
 
 
 

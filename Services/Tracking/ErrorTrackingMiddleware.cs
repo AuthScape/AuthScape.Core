@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using AuthScape.Models.Exceptions;
+﻿using AuthScape.Models.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net;
 
@@ -50,7 +50,7 @@ namespace Services.Tracking
                 //SentrySdk.CaptureException(ex);
             }
 
-            var result = JsonConvert.SerializeObject(new 
+            var result = JsonConvert.SerializeObject(new
             {
                 error = ex.Message
             });

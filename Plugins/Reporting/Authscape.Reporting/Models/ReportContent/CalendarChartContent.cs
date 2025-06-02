@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Authscape.Reporting.Models.ReportContent
+﻿namespace Authscape.Reporting.Models.ReportContent
 {
     public class CalendarChartContent : BaseReportContent
     {
@@ -12,6 +9,6 @@ namespace Authscape.Reporting.Models.ReportContent
     public class CalendarDataPoint
     {
         public DateTime Date { get; set; }
-        public int Size { get; set; } 
+        public int Size { get; set; }
     }
 }

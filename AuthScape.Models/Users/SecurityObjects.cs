@@ -14,7 +14,7 @@ namespace AuthScape.Models.Users
 
     public partial class Role : IdentityRole<long>
     {
-        
+
     }
 
     public partial class UserRole : IdentityUserRole<long> { }

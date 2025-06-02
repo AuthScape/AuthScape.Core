@@ -1,12 +1,5 @@
-﻿using AuthScape.Models.Authentication;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Services.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AuthScape.Services
 {
@@ -39,7 +32,7 @@ namespace AuthScape.Services
             //    }
             //    else if (thirdPartyAuth.ThirdPartyAuthenticationType == ThirdPartyAuthenticationType.Microsoft)
             //    {
-                    
+
             //    }
             //    else if (thirdPartyAuth.ThirdPartyAuthenticationType == ThirdPartyAuthenticationType.Github)
             //    {
@@ -265,7 +258,7 @@ namespace AuthScape.Services
             //}
 
 
-            
+
 
 
             //    .AddGoogle((googleOOptions) =>

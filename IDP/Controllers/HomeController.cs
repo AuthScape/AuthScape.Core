@@ -1,22 +1,20 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
-using Services.Context;
-using System.Linq;
-using Newtonsoft.Json;
-using AuthScape.Models.Users;
-using Fido2NetLib.Objects;
+﻿using AuthScape.Models.Users;
 using Fido2NetLib;
+using Fido2NetLib.Objects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using Models.Authentication;
-using StrongGrid.Resources;
-using Services.Database;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
+using Models.Authentication;
+using Newtonsoft.Json;
+using Services.Context;
+using Services.Database;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace IDP.Controllers
 {

@@ -1,5 +1,5 @@
-﻿using MailKit.Net.Imap;
-using MailKit;
+﻿using MailKit;
+using MailKit.Net.Imap;
 using Microsoft.Identity.Client;
 using System.Security.Cryptography;
 using System.Text;
@@ -29,7 +29,7 @@ namespace AuthScape.ReadMail
                 .CreateWithApplicationOptions(options)
                 .Build();
 
-                    string[] scopes;
+            string[] scopes;
 
             if (protocol.Equals("IMAP", StringComparison.OrdinalIgnoreCase))
             {
@@ -125,7 +125,7 @@ namespace AuthScape.ReadMail
 
             return emails;
         }
-        
+
 
         public async Task<string> GetImapServerFromAutoconfig(string domain)
         {

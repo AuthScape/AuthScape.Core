@@ -1,29 +1,29 @@
-﻿using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿using AuthScape.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.OpenApi.Models;
 using Services;
 using Services.Context;
-using System;
-using Services.Database;
-using Microsoft.AspNetCore.Builder;
-using Services.Tracking;
-using AuthScape.Services;
 using Services.Cores;
-using Microsoft.AspNetCore.Routing;
+using Services.Database;
+using Services.Tracking;
+using System;
 
 namespace AuthScape.Controllers
 {
     public class AuthenticationManager
     {
-        public void RegisterConfigureServices(IConfiguration Configuration, IWebHostEnvironment _currentEnvironment, IServiceCollection services, 
+        public void RegisterConfigureServices(IConfiguration Configuration, IWebHostEnvironment _currentEnvironment, IServiceCollection services,
             Action<OpenIddictBuilder> Builder, Action<IServiceCollection> scope, Action<AppSettings, IWebHostEnvironment, IServiceCollection> dbContextSetup)
         {
             // to be able to access the app settings for each stage
@@ -48,7 +48,7 @@ namespace AuthScape.Controllers
 
             dbContextSetup(_appsettings, _currentEnvironment, services);
 
-            
+
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();

@@ -1,6 +1,5 @@
 ﻿using AuthScape.AzureCloudService;
 using AuthScape.AzureCloudService.Models.DocumentIntelligence;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 

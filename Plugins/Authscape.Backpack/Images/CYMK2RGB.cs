@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AuthScape.Backpack.Models;
 using System.Drawing;
 using System.Drawing.Imaging;
-using AuthScape.Backpack.Models;
 
 namespace AuthScape.Backpack.Images
 {

@@ -19,6 +19,6 @@ namespace API.Controllers
         {
             await logService.Info(messsage);
             return Ok();
-        }   
+        }
     }
 }

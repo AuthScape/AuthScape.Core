@@ -1,11 +1,9 @@
-﻿using AuthScape.ContentManagement.Models;
-using AuthScape.ContentManagement.Services;
+﻿using AuthScape.ContentManagement.Services;
 using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AuthScape.DocumentReader.Controllers
 {
@@ -19,7 +17,7 @@ namespace AuthScape.DocumentReader.Controllers
         {
             _contentManagementService = contentManagementService;
         }
-        
+
         [HttpPost]
         public async Task<IActionResult> GetPages([FromBody] DataGridParam dataGridParam)
         {
@@ -168,5 +166,5 @@ namespace AuthScape.DocumentReader.Controllers
         public Guid PageId { get; set; }
         public string Content { get; set; }
     }
- 
+
 }

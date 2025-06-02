@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace IDP.Helpers
+﻿namespace IDP.Helpers
 {
     public static class AsyncEnumerableExtensions
     {

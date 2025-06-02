@@ -2,15 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using AuthScape.Models.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace mvcTest.Areas.Identity.Pages.Account.Manage
 {
@@ -27,7 +25,7 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
             _signInManager = signInManager;
         }
 
-        
+
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -107,9 +105,9 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
-			//photo.
+            //photo.
 
-			var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+            var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)
             {
                 var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);

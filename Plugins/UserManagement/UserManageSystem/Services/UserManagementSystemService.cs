@@ -7,8 +7,6 @@ using AuthScape.UserManageSystem.Controllers;
 using AuthScape.UserManageSystem.Models;
 using CoreBackpack;
 using CoreBackpack.Time;
-using CoreBackpack.URL;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,7 +15,6 @@ using Newtonsoft.Json;
 using Services.Context;
 using Services.Database;
 using System.Text;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AuthScape.UserManageSystem.Services
 {
@@ -260,14 +257,15 @@ namespace AuthScape.UserManageSystem.Services
                 .Include(c => c.Users)
                 .Include(c => c.Locations)
                 .Where(c => c.IsDeactivated == !IsActive)
-                .Select(c => new CompanyDataGrid() {
+                .Select(c => new CompanyDataGrid()
+                {
                     Id = c.Id,
                     Logo = c.Logo,
                     Title = c.Title,
                     IsActive = !c.IsDeactivated,
                     NumberOfLocations = c.Locations.Count(),
                     NumberOfUsers = c.Users.Count(),
-            });
+                });
 
 
             if (!String.IsNullOrWhiteSpace(searchByName))
@@ -292,7 +290,7 @@ namespace AuthScape.UserManageSystem.Services
                 .Include(u => u.Company)
                 .AsQueryable()
                 .Where(z => z.IsActive == IsActive);
-                
+
             if (searchByCompanyId != null)
             {
                 usersQuery = usersQuery.Where(u => u.CompanyId == searchByCompanyId.Value);
@@ -307,8 +305,8 @@ namespace AuthScape.UserManageSystem.Services
             if (!String.IsNullOrWhiteSpace(searchByName))
             {
                 searchByName = searchByName.ToLower();
-                usersQuery = usersQuery.Where(u => 
-                    u.UserName.ToLower().Contains(searchByName) || 
+                usersQuery = usersQuery.Where(u =>
+                    u.UserName.ToLower().Contains(searchByName) ||
                     (u.FirstName + " " + u.LastName).ToLower().Contains(searchByName));
             }
 
@@ -558,7 +556,7 @@ namespace AuthScape.UserManageSystem.Services
             // get selected roles
             var manageUserRole = new List<string>();
             var userRoles = await databaseContext.UserRoles.Where(u => u.UserId == user.Id).ToListAsync();
-            foreach (var userRole in userRoles) 
+            foreach (var userRole in userRoles)
             {
                 var role = await databaseContext.Roles.Where(r => r.Id == userRole.RoleId).FirstOrDefaultAsync();
                 if (role != null)
@@ -586,21 +584,21 @@ namespace AuthScape.UserManageSystem.Services
             userCustomFields = await databaseContext.CustomFields.AsNoTracking()
                 .Where(c => c.CustomFieldPlatformType == CustomFieldPlatformType.Users)
                 .Select(c => new CustomFieldResult()
-            {
-                CustomFieldId = c.Id,
-                Name = c.Name,
-                IsRequired = c.IsRequired,
-                Size = c.GridSize,
-                CustomFieldType = c.FieldType,
-                TabId = c.TabId,
-                Value = "",
-                Properties = c.Properties
+                {
+                    CustomFieldId = c.Id,
+                    Name = c.Name,
+                    IsRequired = c.IsRequired,
+                    Size = c.GridSize,
+                    CustomFieldType = c.FieldType,
+                    TabId = c.TabId,
+                    Value = "",
+                    Properties = c.Properties
 
                 }).ToListAsync();
 
             foreach (var field in userCustomFields)
             {
-                field.Value = 
+                field.Value =
                 await databaseContext.UserCustomFields
                     .Where(c => c.UserId == userId && c.CustomFieldId == field.CustomFieldId).Select(s => s.Value)
                     .AsNoTracking()
@@ -620,7 +618,8 @@ namespace AuthScape.UserManageSystem.Services
                 CustomFields = userCustomFields,
                 PhoneNumber = user.PhoneNumber,
 
-                Company = user.Company != null ? new Company() {
+                Company = user.Company != null ? new Company()
+                {
                     Id = user.Company.Id,
                     Title = user.Company.Title,
                 } : null,
@@ -839,7 +838,7 @@ namespace AuthScape.UserManageSystem.Services
             newUser.EmailConfirmed = true;
             newUser.IsActive = true;
             newUser.Created = DateTimeOffset.Now;
-            
+
 
             newUser.CompanyId = companyId;
             newUser.LocationId = locationId;
@@ -1146,7 +1145,7 @@ namespace AuthScape.UserManageSystem.Services
             await databaseContext.SaveChangesAsync();
 
             return newTab.Id;
-        } 
+        }
 
         public async Task<CustomField?> GetCustomField(Guid id)
         {
@@ -1171,7 +1170,7 @@ namespace AuthScape.UserManageSystem.Services
                 if (customField.CustomFieldPlatformType == CustomFieldPlatformType.Users)
                 {
                     var userCustomFieldValues = await databaseContext.UserCustomFields.Where(f => f.CustomFieldId == customField.Id).ToListAsync();
-                    
+
                     if (userCustomFieldValues != null)
                     {
                         databaseContext.UserCustomFields.RemoveRange(userCustomFieldValues);
@@ -1207,10 +1206,10 @@ namespace AuthScape.UserManageSystem.Services
                 var customFieldValues = await databaseContext.CustomFields.Where(f => f.TabId == id).ToListAsync();
                 if (customFieldValues != null)
                 {
-                    for (int i = 0; i < customFieldValues.Count; i++) 
+                    for (int i = 0; i < customFieldValues.Count; i++)
                         customFieldValues[i].TabId = null;
                 }
-               
+
                 databaseContext.CustomFieldsTab.Remove(customTab);
                 await databaseContext.SaveChangesAsync();
             }
@@ -1265,7 +1264,7 @@ namespace AuthScape.UserManageSystem.Services
                 var location = await databaseContext.Locations
                     .Where(z => z.Id == locationToAdd.Id)
                     .FirstOrDefaultAsync();
-                
+
                 if (location != null)
                 {
                     location.CompanyId = param.Id;
