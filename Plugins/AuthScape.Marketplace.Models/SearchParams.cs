@@ -14,6 +14,8 @@
 
         public List<CategoryFilters>? CategoryFilters { get; set; }
 
+        public string? TextSearch { get; set; }
+
 
         public string? Container { get; set; }
         public string? StorageConnectionString { get; set; }

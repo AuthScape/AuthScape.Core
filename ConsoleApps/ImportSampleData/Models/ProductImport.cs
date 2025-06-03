@@ -24,9 +24,9 @@ namespace ImportSampleData.Models
     {
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string Index { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        [MarketplaceIndex(ProductCardCategoryType.TextField)]
         public string Name { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        [MarketplaceIndex(ProductCardCategoryType.TextField)]
         public string Description { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string Brand { get; set; }

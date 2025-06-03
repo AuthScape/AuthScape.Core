@@ -1,4 +1,5 @@
-﻿using AuthScape.ContentManagement.Services;
+﻿using AuthScape.ContentManagement.Models;
+using AuthScape.ContentManagement.Services;
 using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -64,9 +65,23 @@ namespace AuthScape.DocumentReader.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPageWithSlug(string slug)
+        public async Task<IActionResult> GetPageWithSlug(GetPageWithSlugParam param)
         {
-            var page = await _contentManagementService.GetPageWithSlug(slug);
+            var page = await _contentManagementService.GetPageWithSlug(param.Slugs, param.Host);
+            return Ok(page);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPageImageAssets(long? oemCompanyId)
+        {
+            var page = await _contentManagementService.GetPageImageAssets(oemCompanyId);
+            return Ok(page);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetHomePage()
+        {
+            var page = await _contentManagementService.GetHomepage();
             return Ok(page);
         }
 
