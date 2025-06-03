@@ -26,8 +26,10 @@ namespace AuthScape.ContentManagement.Services
         Task UpdateAsset(Guid? assetId, string title, string description, long? PrivateLabelCompanyId = null);
         Task RemovePage(Guid pageId);
         Task RemoveAsset(Guid assetId);
-        Task<Page> GetPageWithSlug(string slug);
+        Task<AuthScape.ContentManagement.Models.Page?> GetPageWithSlug(List<string>? slugs, string? Host = null);
         Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId);
+        Task<List<PageImageAsset>> GetPageImageAssets(long? oemCompanyId);
+        Task<Page?> GetHomepage();
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -57,6 +59,43 @@ namespace AuthScape.ContentManagement.Services
                     break;
             }
             return container;
+        }
+
+        public async Task<List<PageImageAsset>> GetPageImageAssets(long? oemCompanyId)
+        {
+            return await databaseContext.PageImageAssets
+                .AsNoTracking()
+                .Where(pia => pia.CompanyId == oemCompanyId)
+                .ToListAsync();
+        }
+
+        public async Task<Page?> GetHomepage()
+        {
+            var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
+
+            if (homepagePageType == null) { return null; }
+
+            var homepage = await databaseContext.Pages.Where(p => p.PageTypeId == homepagePageType.Id).Select(p => new Page
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Slug = p.Slug,
+                Content = p.Content,
+                CompanyId = p.CompanyId,
+                Description = p.Description,
+                Created = p.Created,
+                LastUpdated = p.LastUpdated,
+                PageTypeId = p.PageTypeId,
+                Recursion = p.Recursion,
+                TypeTitle = p.PageType.Title,
+            }).FirstOrDefaultAsync();
+
+            //if (homepage == null)
+            //{
+            //    throw new Exception("Homepage does not exist");
+            //}
+
+            return homepage;
         }
 
         public async Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null)
@@ -362,33 +401,83 @@ namespace AuthScape.ContentManagement.Services
             await databaseContext.SaveChangesAsync();
         }
 
-        public async Task<Page> GetPageWithSlug(string slug)
+        public async Task<AuthScape.ContentManagement.Models.Page?> GetPageWithSlug(List<string>? slugs, string? Host = null)
         {
-            var page = await databaseContext.Pages
-                .AsNoTracking()
-                .Include(p => p.PageType)
-                .Where(pq => pq.Slug == slug)
-                .Select(p => new Page
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Slug = p.Slug,
-                    Content = p.Content,
-                    CompanyId = p.CompanyId,
-                    Description = p.Description,
-                    Created = p.Created,
-                    LastUpdated = p.LastUpdated,
-                    PageTypeId = p.PageTypeId,
-                    Recursion = p.Recursion,
-                    TypeTitle = p.PageType.Title,
-                }).FirstOrDefaultAsync();
-
-            if (page == null)
+            if (Host.Contains("localhost"))
             {
-                throw new Exception("Page does not exist");
+                Host = "http://" + Host;
+            }
+            else
+            {
+                Host = "https://" + Host;
             }
 
-            return page;
+            //var slug = String.Join("/", slugs);
+            var privateLabelCompanyId = await databaseContext.DnsRecords
+                .AsNoTracking()
+                .Where(d => d.Domain.ToLower() == Host.ToLower())
+                .Select(z => z.CompanyId)
+                .FirstOrDefaultAsync();
+
+            var page = databaseContext.Pages
+                .AsNoTracking()
+                .Include(p => p.PageType)
+                .Where(z => z.Recursion == null && z.CompanyId == privateLabelCompanyId);
+
+            if (slugs != null)
+            {
+                if (slugs.Count() == 1)
+                {
+                    // this is only on the slug
+                    var pageSlug = slugs.FirstOrDefault();
+
+                    page = page.Where(z => z.Slug == pageSlug);
+                }
+                else
+                {
+                    // this has a root
+                    var pageSlug = slugs.LastOrDefault();
+
+                    var rootPageSlug = slugs.FirstOrDefault();
+
+                    var rootPage = await databaseContext.PageRoots
+                        .AsNoTracking()
+                        .Where(z => z.CompanyId == privateLabelCompanyId && z.RootUrl == rootPageSlug)
+                        .FirstOrDefaultAsync();
+
+                    if (rootPage != null)
+                    {
+                        page = page.Where(z => z.PageRootId == rootPage.Id && z.Slug == pageSlug);
+                    }
+                }
+            }
+            else
+            {
+                page = page.Where(z => z.PageType.IsHomepage);
+            }
+
+            var _page = await page.Select(p => new AuthScape.ContentManagement.Models.Page
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Slug = p.Slug,
+                Content = p.Content,
+                CompanyId = p.CompanyId,
+                Description = p.Description,
+                Created = p.Created,
+                LastUpdated = p.LastUpdated,
+                PageTypeId = p.PageTypeId,
+                Recursion = p.Recursion,
+                TypeTitle = p.PageType.Title,
+
+            }).FirstOrDefaultAsync();
+
+            //if (_page == null)
+            //{
+            //    throw new BadRequestException("Page does not exist");
+            //}
+
+            return _page;
         }
 
         public async Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null)
