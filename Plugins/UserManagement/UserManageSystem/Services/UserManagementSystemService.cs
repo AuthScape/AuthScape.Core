@@ -1476,7 +1476,7 @@ namespace AuthScape.UserManageSystem.Services
             {
                 field.Value =
                     await databaseContext.LocationCustomFields
-                        .Where(c => c.CustomFieldId == field.CustomFieldId).Select(s => s.Value)
+                        .Where(c => c.CustomFieldId == field.CustomFieldId && c.LocationId == locationId).Select(s => s.Value)
                         .AsNoTracking()
                         .FirstOrDefaultAsync();
             }

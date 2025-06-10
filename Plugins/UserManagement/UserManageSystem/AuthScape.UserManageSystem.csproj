@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.2.344</Version>
+    <Version>1.2.346</Version>
     <PackageId>AuthScape.UserManageSystem</PackageId>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
