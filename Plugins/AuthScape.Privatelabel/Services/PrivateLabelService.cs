@@ -402,6 +402,7 @@ namespace AuthScape.PrivateLabel.Services
                     FavIcon = s.FavIcon,
                     GoogleAnalytics4Code = s.GoogleAnaltyics, // Google Analytics 4 Code
                     MicrosoftClarityCode = s.MicrosoftClarity, // Microsoft Clarity Code
+                    HubspotTrackingCode = s.HubspotTracking, // Hubspot Tracking Code
                     CanonicalBaseUrl = s.CanonicalBaseUrl,
                     RedirectTrafficToCanonical = s.RedirectTrafficToCanonical
                     //CompanyName = s.Company.Title
@@ -432,7 +433,8 @@ namespace AuthScape.PrivateLabel.Services
                     .Select(z => new ThirdPartyAnalytics()
                     {
                         GoogleAnalytics = z.GoogleAnaltyics,
-                        MicrosoftClairty = z.MicrosoftClarity
+                        MicrosoftClairty = z.MicrosoftClarity,
+                        HubspotTracking = z.HubspotTracking
                     })
                     .FirstOrDefaultAsync();
             }

@@ -26,6 +26,7 @@
 
         public string? GoogleAnaltyics { get; set; }
         public string? MicrosoftClarity { get; set; }
+        public string? HubspotTracking { get; set; }
 
         public string? MinifiedCSSFile { get; set; }
 

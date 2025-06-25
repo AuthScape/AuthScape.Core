@@ -8,6 +8,7 @@
         public string FavIcon { get; set; }
         public string? GoogleAnalytics4Code { get; set; }
         public string? MicrosoftClarityCode { get; set; }
+        public string? HubspotTrackingCode { get; set; }
         public string? CanonicalBaseUrl { get; set; }
         public bool RedirectTrafficToCanonical { get; set; }
     }

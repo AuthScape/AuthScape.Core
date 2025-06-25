@@ -4,5 +4,6 @@
     {
         public string? GoogleAnalytics { get; set; }
         public string? MicrosoftClairty { get; set; }
+        public string? HubspotTracking { get; set; }
     }
 }
