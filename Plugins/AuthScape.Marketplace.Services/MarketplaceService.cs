@@ -606,10 +606,10 @@ namespace AuthScape.Marketplace.Services
             switch (typeOfField.ProductCardCategoryType)
             {
                 case ProductCardCategoryType.None:
-                    doc.Fields.Add(new StringField(fieldName, value.ToString().ToLower(), Field.Store.YES));
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
                     break;
                 case ProductCardCategoryType.BinaryField:
-                    doc.Fields.Add(new StringField(fieldName, value.ToString().ToLower(), Field.Store.YES));
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
                     break;
                 case ProductCardCategoryType.Int64Field:
                     doc.Fields.Add(new Int64Field(fieldName, Convert.ToInt64(value), Field.Store.YES));
@@ -620,13 +620,13 @@ namespace AuthScape.Marketplace.Services
                 case ProductCardCategoryType.StoredField:
                     break;
                 case ProductCardCategoryType.StringField:
-                    doc.Fields.Add(new StringField(fieldName, value.ToString().ToLower(), Field.Store.YES));
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
                     break;
                 case ProductCardCategoryType.SingleField:
                     doc.Fields.Add(new SingleField(fieldName, float.Parse(value.ToString()), Field.Store.YES));
                     break;
                 case ProductCardCategoryType.TextField:
-                    doc.Fields.Add(new TextField(fieldName, value.ToString().ToLower(), Field.Store.YES));
+                    doc.Fields.Add(new TextField(fieldName, value.ToString(), Field.Store.YES));
                     break;
                 case ProductCardCategoryType.DoubleField:
                     doc.Fields.Add(new DoubleField(fieldName, Double.Parse(value.ToString()), Field.Store.YES));
@@ -636,7 +636,7 @@ namespace AuthScape.Marketplace.Services
                 //case ProductCardCategoryType.SortedDocValuesField:
                 //    break;
                 default:
-                    doc.Fields.Add(new StringField(fieldName, value.ToString().ToLower(), Field.Store.YES));
+                    doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
                     break;
             }
         }
