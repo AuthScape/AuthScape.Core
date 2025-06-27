@@ -696,25 +696,14 @@ namespace AuthScape.StripePayment.Services
 
         public async Task<InvoiceItem> CreateItemForInvoice(string customerId, string invoiceId, string productName, decimal amount, int qty, TaxBehavior taxBehavior, string? taxCode = null)
         {
-            // need to make sure we don't duplicat this product... assign it to the product table
-            var priceOptions = new PriceCreateOptions
-            {
-                UnitAmount = MoneyExtender.ConvertToCents(amount),
-                Currency = "usd",
-                TaxBehavior = taxBehavior.ToString(),
-                ProductData = new PriceProductDataOptions { Name = productName },
-            };
-            var pricingService = new PriceService();
-            var priceObj = await pricingService.CreateAsync(priceOptions);
-
-
-            // Create an Invoice Item with the Price, and Customer you want to charge
             var invoiceItemOptions = new InvoiceItemCreateOptions
             {
                 Customer = customerId,
-                //Price = priceObj.Id,
                 Invoice = invoiceId,
-                Quantity = qty,
+                Amount = MoneyExtender.ConvertToCents(amount * qty), // total amount = unit price × quantity
+                Currency = "usd",
+                Description = productName,
+                TaxBehavior = taxBehavior.ToString()
             };
 
             var invoiceItemService = new InvoiceItemService();
@@ -800,34 +789,36 @@ namespace AuthScape.StripePayment.Services
             var invoiceService = new InvoiceService();
             var overallInvoice = await invoiceService.GetAsync(invoiceId);
 
-            //        if (overallInvoice.TotalTaxes != null)
-            //        {
-            //            var taxVal = MoneyExtender.ConvertToDollars(overallInvoice.TotalTaxes) / MoneyExtender.ConvertToDollars(overallInvoice.Subtotal);
-            //            var percent = Math.Round(taxVal * 100, 3, MidpointRounding.AwayFromZero);
+            // 🔥 Sum all tax amounts from the new list
+            long totalTaxCents = overallInvoice.TotalTaxes?.Sum(t => t.Amount) ?? 0;
 
-            //return new InvoiceResponse()
-            //            {
-            //                PercentTax = percent.ToString() + "%",
-            //                ShippingAmount = overallInvoice.AmountShipping > 0 ? MoneyExtender.ConvertToDollars(overallInvoice.AmountShipping) : null,
-            //                Tax = overallInvoice.TotalTaxes != null ? MoneyExtender.ConvertToDollars(overallInvoice.TotalTaxes) : 0.00m,
-            //                Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
-            //                Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
-            //            };
-            //        }
-            //        else
-            //        {
-            //            return new InvoiceResponse()
-            //            {
-            //                PercentTax = null,
-            //                Tax = 0.00m,
-            //                Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
-            //                Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
-            //            };
-            //        }
+            if (totalTaxCents > 0)
+            {
+                decimal taxInDollars = MoneyExtender.ConvertToDollars(totalTaxCents);
+                decimal subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal);
+                decimal taxRate = subtotal != 0 ? Math.Round((taxInDollars / subtotal) * 100, 3, MidpointRounding.AwayFromZero) : 0;
 
-            return new InvoiceResponse();
-
+                return new InvoiceResponse()
+                {
+                    PercentTax = $"{taxRate}%",
+                    ShippingAmount = overallInvoice.AmountShipping > 0 ? MoneyExtender.ConvertToDollars(overallInvoice.AmountShipping) : null,
+                    Tax = taxInDollars,
+                    Subtotal = subtotal,
+                    Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
+                };
+            }
+            else
+            {
+                return new InvoiceResponse()
+                {
+                    PercentTax = null,
+                    Tax = 0.00m,
+                    Subtotal = MoneyExtender.ConvertToDollars(overallInvoice.Subtotal),
+                    Total = MoneyExtender.ConvertToDollars(overallInvoice.Total)
+                };
+            }
         }
+
 
         public async Task DeleteDraftInvoice(string invoiceId)
         {

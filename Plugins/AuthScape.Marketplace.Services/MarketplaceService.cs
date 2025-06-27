@@ -2,7 +2,9 @@
 using AuthScape.Marketplace.Models.Attributes;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using CoreBackpack.Azure;
 using CoreBackpack.Time;
+using CoreBackpack.URL;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
@@ -18,6 +20,7 @@ using Services.Context;
 using Services.Database;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text;
 
 namespace AuthScape.Marketplace.Services
 {
@@ -34,9 +37,11 @@ namespace AuthScape.Marketplace.Services
         readonly AppSettings appSettings;
         readonly DatabaseContext databaseContext;
         readonly LuceneVersion luceneVersion;
-        public MarketplaceService(DatabaseContext databaseContext, IOptions<AppSettings> appSettings)
+        readonly IBlobStorage blobStorage;
+        public MarketplaceService(DatabaseContext databaseContext, IOptions<AppSettings> appSettings, IBlobStorage blobStorage)
         {
             this.databaseContext = databaseContext;
+            this.blobStorage = blobStorage;
 
             this.appSettings = appSettings.Value;
             luceneVersion = LuceneVersion.LUCENE_48;
@@ -54,6 +59,10 @@ namespace AuthScape.Marketplace.Services
             var containerLocation = searchParams.Container;
             containerLocation += "/" + (searchParams.OemCompanyId?.ToString() ?? "0");
             containerLocation += "/" + searchParams.PlatformId;
+
+            var versionInformation = await GetVersionFile(containerLocation);
+
+            containerLocation += "/" + versionInformation.ToString();
 
             string cachePath = Path.Combine(
                 Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
@@ -435,6 +444,35 @@ namespace AuthScape.Marketplace.Services
             }
         }
 
+        // gets the file version from blob storage
+        private async Task<int> GetVersionFile(string containerPath)
+        {
+            using HttpClient client = new HttpClient();
+            string content = await client.GetStringAsync(containerPath + "/ver.txt");
+            if (!String.IsNullOrWhiteSpace(content))
+            {
+                return int.Parse(content);
+            }
+
+            return 0;
+        }
+
+        // Uploads the version file to blob storage
+        private async Task UploadVersionFile(string container, int newVersionNumber)
+        {
+            // Define your version string
+            string versionText = newVersionNumber.ToString();
+
+            // Convert to byte array (simulate file content)
+            byte[] byteArray = Encoding.UTF8.GetBytes(versionText);
+
+            // Create memory stream from the byte array
+            using var memoryStream = new MemoryStream(byteArray);
+
+            // now we need to update the version file so it has the new version in it
+            await blobStorage.UploadBlob(appSettings.LuceneSearch.StorageConnectionString, container, "ver.txt", memoryStream, true);
+        }
+
         public async Task GenerateMLModel<T>(List<T> documents, int platformId = 1, long? privateLabelCompanyId = null, string? cachePath = null) where T : new()
         {
             var containerLocation = appSettings.LuceneSearch.Container;
@@ -449,6 +487,16 @@ namespace AuthScape.Marketplace.Services
 
             containerLocation += "/" + platformId;
 
+            var versionContainerLocation = containerLocation;
+
+            // we need to know what version we are currently working on. Look in this storage folder for ver.txt
+            int versionNumber = await GetVersionFile(versionContainerLocation);
+
+            // increase the version number
+            versionNumber++;
+
+            // add the version number to it, so now we have folders with the version within it
+            containerLocation += "/" + versionNumber;
 
             var _document = documents.FirstOrDefault();
             if (_document == null)
@@ -551,6 +599,8 @@ namespace AuthScape.Marketplace.Services
             }
 
             ClearLocalCache(platformId, privateLabelCompanyId, cachePath);
+
+            await UploadVersionFile(versionContainerLocation, versionNumber);
         }
 
         private void ClearLocalCache(int platformId = 0, long? privateLabelCompanyId = null, string? cachePath = null)
