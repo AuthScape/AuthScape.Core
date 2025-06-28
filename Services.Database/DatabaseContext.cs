@@ -8,6 +8,7 @@ using AuthScape.Models.Logging;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
 using AuthScape.Models.PaymentGateway.Plans;
+using AuthScape.Models.Settings;
 using AuthScape.Models.Stylesheets;
 using AuthScape.Models.Users;
 using AuthScape.NodeService.Models;
@@ -49,6 +50,7 @@ namespace Services.Context
         public DbSet<Company> Companies { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<Fido2Credential> Fido2Credentials { get; set; }
+        public DbSet<Settings> Settings { get; set; }
 
         #region Marketplace
 
@@ -219,6 +221,11 @@ namespace Services.Context
             ContentManagementSetup.OnModelCreating(builder);
 
 
+            builder.Entity<Settings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            });
 
             builder.Entity<ThirdPartyAuthentication>(entity =>
             {
@@ -366,6 +373,8 @@ namespace Services.Context
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
 
             });
+
+            
 
 
             builder.Entity<AnalyticsMailTracking>(entity =>

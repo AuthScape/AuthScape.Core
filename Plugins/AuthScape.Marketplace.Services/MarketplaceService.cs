@@ -1,5 +1,6 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
+using AuthScape.Models.Exceptions;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using CoreBackpack.Azure;
@@ -28,7 +29,7 @@ namespace AuthScape.Marketplace.Services
     {
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
         Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null);
-        Task GenerateMLModel<T>(List<T> documents, int platformId = 0, long? privateLabelCompanyId = null, string? cachePath = null) where T : new();
+        Task GenerateMLModel<T>(List<T> documents, int platformId = 1, long? privateLabelCompanyId = null, string? cachePath = null) where T : new();
         Task RemoveAllFilesInFolder(string containerName, string folderName);
     }
 
@@ -61,7 +62,6 @@ namespace AuthScape.Marketplace.Services
             containerLocation += "/" + searchParams.PlatformId;
 
             var versionInformation = await GetVersionFile(containerLocation);
-
             containerLocation += "/" + versionInformation.ToString();
 
             string cachePath = Path.Combine(
@@ -445,32 +445,46 @@ namespace AuthScape.Marketplace.Services
         }
 
         // gets the file version from blob storage
-        private async Task<int> GetVersionFile(string containerPath)
+        private async Task<long> GetVersionFile(string containerPath)
         {
-            using HttpClient client = new HttpClient();
-            string content = await client.GetStringAsync(containerPath + "/ver.txt");
-            if (!String.IsNullOrWhiteSpace(content))
+            long _version = 0;
+            var settings = await databaseContext.Settings.Where(z => z.Name == containerPath).FirstOrDefaultAsync();
+            if (settings != null)
             {
-                return int.Parse(content);
+                _version = Convert.ToInt64(settings.Value);
+            }
+            else
+            {
+                await databaseContext.Settings.AddAsync(new AuthScape.Models.Settings.Settings()
+                {
+                    Name = containerPath,
+                    Value = _version.ToString()
+                });
             }
 
-            return 0;
+            await databaseContext.SaveChangesAsync();
+
+            return _version;
         }
 
         // Uploads the version file to blob storage
-        private async Task UploadVersionFile(string container, int newVersionNumber)
+        private async Task UploadVersionFile(string containerPath, long newVersionNumber)
         {
-            // Define your version string
-            string versionText = newVersionNumber.ToString();
+            var settings = await databaseContext.Settings.Where(z => z.Name == containerPath).FirstOrDefaultAsync();
+            if (settings != null)
+            {
+                settings.Value = newVersionNumber.ToString();
+            }
+            else
+            {
+                await databaseContext.Settings.AddAsync(new AuthScape.Models.Settings.Settings()
+                {
+                    Name = containerPath,
+                    Value = newVersionNumber.ToString()
+                });
+            }
 
-            // Convert to byte array (simulate file content)
-            byte[] byteArray = Encoding.UTF8.GetBytes(versionText);
-
-            // Create memory stream from the byte array
-            using var memoryStream = new MemoryStream(byteArray);
-
-            // now we need to update the version file so it has the new version in it
-            await blobStorage.UploadBlob(appSettings.LuceneSearch.StorageConnectionString, container, "ver.txt", memoryStream, true);
+            await databaseContext.SaveChangesAsync();
         }
 
         public async Task GenerateMLModel<T>(List<T> documents, int platformId = 1, long? privateLabelCompanyId = null, string? cachePath = null) where T : new()
@@ -490,7 +504,7 @@ namespace AuthScape.Marketplace.Services
             var versionContainerLocation = containerLocation;
 
             // we need to know what version we are currently working on. Look in this storage folder for ver.txt
-            int versionNumber = await GetVersionFile(versionContainerLocation);
+            var versionNumber = await GetVersionFile(versionContainerLocation);
 
             // increase the version number
             versionNumber++;
