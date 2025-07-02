@@ -64,10 +64,13 @@ namespace AuthScape.Marketplace.Services
             var versionInformation = await GetVersionFile(containerLocation);
             containerLocation += "/" + versionInformation.ToString();
 
+
+            // fix this to support versioning
             string cachePath = Path.Combine(
                 Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
-                "cache", "LuceneCache", (searchParams.OemCompanyId?.ToString() ?? "0"), searchParams.PlatformId.ToString()
+                "cache", "LuceneCache", (searchParams.OemCompanyId?.ToString() ?? "0"), searchParams.PlatformId.ToString(), versionInformation.ToString()
             );
+
 
             if (!System.IO.Directory.Exists(cachePath))
                 System.IO.Directory.CreateDirectory(cachePath);
