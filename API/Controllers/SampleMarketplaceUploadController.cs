@@ -74,6 +74,7 @@ namespace API.Controllers
                     Size = productCsvItem.Size,
                     Stock = productCsvItem.Stock,
                     Score = 0,
+                    CardSize = 6
                 });
 
                 if (index == total)
