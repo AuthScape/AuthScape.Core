@@ -1,5 +1,6 @@
 ﻿using AuthScape.Marketplace.Models;
 using AuthScape.Marketplace.Models.Attributes;
+using AuthScape.Models;
 using AuthScape.Models.Exceptions;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -81,69 +82,99 @@ namespace AuthScape.Marketplace.Services
             {
                 var searcher = new IndexSearcher(reader);
                 var analyzer = new StandardAnalyzer(Lucene.Net.Util.LuceneVersion.LUCENE_48);
-                var booleanQuery = new BooleanQuery();
+                var BooleanFilterQuery = new BooleanQuery();
                 var hasFilters = false;
+                var sortCriteria = new Sort(new SortField("Score", SortFieldType.INT64, true));
+
+
+                var allCats = await databaseContext.ProductCardCategories
+                    .AsNoTracking()
+                    .Where(c => c.PlatformId == searchParams.PlatformId
+                             && c.CompanyId == searchParams.OemCompanyId)
+                    .ToListAsync();
+
 
                 // 🔍 Add text search (if present)
-                if (!string.IsNullOrWhiteSpace(searchParams.TextSearch))
-                {
-                    var textTerms = searchParams.TextSearch
-                        .ToLowerInvariant()
-                        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                //if (!string.IsNullOrWhiteSpace(searchParams.TextSearch))
+                //{
+                //    var textTerms = searchParams.TextSearch
+                //        .ToLowerInvariant()
+                //        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    var fields = new[] { "Name" }; // Adjust based on your indexed fields
+                //    var fields = new[] { "Name" }; // Adjust based on your indexed fields
 
-                    var fuzzyTextQuery = new BooleanQuery();
+                //    var fuzzyTextQuery = new BooleanQuery();
 
-                    foreach (var field in fields)
-                    {
-                        var fieldQuery = new BooleanQuery();
+                //    foreach (var field in fields)
+                //    {
+                //        var fieldQuery = new BooleanQuery();
 
-                        foreach (var term in textTerms)
-                        {
-                            // Fuzziness: max 2 edits (Levenshtein distance)
-                            var fuzzy = new FuzzyQuery(new Term(field, term), maxEdits: 2);
-                            fieldQuery.Add(fuzzy, Occur.SHOULD); // OR within field
-                        }
+                //        foreach (var term in textTerms)
+                //        {
+                //            // Fuzziness: max 2 edits (Levenshtein distance)
+                //            var fuzzy = new FuzzyQuery(new Term(field, term), maxEdits: 2);
+                //            fieldQuery.Add(fuzzy, Occur.SHOULD); // OR within field
+                //        }
 
-                        fuzzyTextQuery.Add(fieldQuery, Occur.SHOULD); // OR across fields
-                    }
+                //        fuzzyTextQuery.Add(fieldQuery, Occur.SHOULD); // OR across fields
+                //    }
 
-                    booleanQuery.Add(fuzzyTextQuery, Occur.MUST);
-                    hasFilters = true;
-                }
+                //    booleanQuery.Add(fuzzyTextQuery, Occur.MUST);
+                //    hasFilters = true;
+                //}
+
 
 
                 // 🧩 Add filter queries
-                if (searchParams.SearchParamFilters != null && searchParams.SearchParamFilters.Any())
+
+                if (searchParams.SearchParamFilters?.Any() == true)
                 {
-                    var groupedFilters = searchParams.SearchParamFilters.GroupBy(f => f.Category);
-                    foreach (var group in groupedFilters)
+                    // Group filters by their Category
+                    var groupedByCategory = searchParams.SearchParamFilters
+                        .GroupBy(f => f.Category, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var grp in groupedByCategory)
                     {
-                        var categoryQuery = new BooleanQuery();
-                        foreach (var filter in group)
+                        // Within each category: OR together its filters
+                        var categoryGroupQuery = new BooleanQuery
+                        {
+                            MinimumNumberShouldMatch = 1
+                        };
+
+                        foreach (var filter in grp)
                         {
                             if (!string.IsNullOrWhiteSpace(filter.Subcategory))
                             {
-                                var childCategory = await databaseContext.ProductCardCategories
-                                    .AsNoTracking()
-                                    .Where(z => z.ParentName == filter.Category && z.PlatformId == searchParams.PlatformId)
-                                    .FirstOrDefaultAsync();
-
-                                if (childCategory != null)
-                                    categoryQuery.Add(new TermQuery(new Term(childCategory.Name, filter.Option)), Occur.SHOULD);
+                                // Both Category AND Categories must match for this option
+                                var pairQ = new BooleanQuery
+                                {
+                                    { new TermQuery(new Term("Category",    filter.Option   )), Occur.MUST },
+                                    { new TermQuery(new Term("Categories", filter.Subcategory)), Occur.MUST }
+                                };
+                                categoryGroupQuery.Add(pairQ, Occur.SHOULD);
                             }
                             else
                             {
-                                categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                                // Simple term filter
+                                categoryGroupQuery.Add(
+                                    new TermQuery(new Term(filter.Category, filter.Option)),
+                                    Occur.SHOULD);
                             }
                         }
-                        booleanQuery.Add(categoryQuery, Occur.MUST);
-                        hasFilters = true;
+
+                        // Across different categories: AND each categoryGroupQuery
+                        BooleanFilterQuery.Add(categoryGroupQuery, Occur.MUST);
                     }
+
+                    hasFilters = true;
                 }
 
-                var sortCriteria = new Sort(new SortField("Score", SortFieldType.INT64, true));
+                var booleanQuery = new BooleanQuery {
+                    { BooleanFilterQuery, Occur.MUST }    // require at least one of those SHOULDs
+                };
+
+
+
                 ScoreDoc[] allHits = searcher.Search(new MatchAllDocsQuery(), int.MaxValue, sortCriteria).ScoreDocs;
                 ScoreDoc[] filteredHits = hasFilters
                     ? searcher.Search(booleanQuery, int.MaxValue, sortCriteria).ScoreDocs
@@ -229,27 +260,28 @@ namespace AuthScape.Marketplace.Services
             }
         }
 
-        async Task<IEnumerable<CategoryFilters>> GetAvailableFilters(
-            SearchParams searchParams,
-            IndexSearcher searcher,
-            ScoreDoc[] filteredOutHits,
-            ScoreDoc[] showAllPossibleHits,
-            BooleanQuery booleanQuery,
-            int platformId = 1,
-            long? companyId = null)
+        public async Task<IEnumerable<CategoryFilters>> GetAvailableFilters(
+                SearchParams searchParams,
+                IndexSearcher searcher,
+                ScoreDoc[] filteredOutHits,
+                ScoreDoc[] showAllPossibleHits,
+                BooleanQuery booleanQuery,
+                int platformId = 1,
+                long? companyId = null)
         {
-            const int PageSize = 10000;
-            var categoryOptions = new HashSet<CategoryFilters>();
-            var activeFilters = searchParams.SearchParamFilters?.ToList() ?? new List<SearchParamFilter>();
+            var categoryOptions = new List<CategoryFilters>();
+            var activeFilters = searchParams.SearchParamFilters?.ToList()
+                                ?? new List<SearchParamFilter>();
 
-            // Collect all unique category names (excluding system fields)
+            // Get all Lucene field names except system fields
             var fieldInfos = MultiFields.GetMergedFieldInfos(searcher.IndexReader);
             var allCategories = fieldInfos
-                .Where(f => f.Name != "Id" && f.Name != "Name" && f.Name != "ReferenceId" && f.Name != "Score")
                 .Select(f => f.Name)
+                .Where(name => name != "Id" && name != "Name"
+                            && name != "ReferenceId" && name != "Score")
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Preload all ProductCardCategories from DB once to avoid multiple DB calls
+            // Preload all ProductCardCategories
             var allProductCardCategories = await databaseContext.ProductCardCategories
                 .Where(p => p.CompanyId == companyId && p.PlatformId == platformId)
                 .AsNoTracking()
@@ -257,182 +289,161 @@ namespace AuthScape.Marketplace.Services
 
             foreach (var category in allCategories)
             {
-                var productCardCategory = allProductCardCategories
-                    .FirstOrDefault(s => s.Name.Equals(category, StringComparison.OrdinalIgnoreCase));
-
-                // Skip if category type is None
-                if (productCardCategory != null && 
-                    productCardCategory.ProductCardCategoryType == ProductCardCategoryType.None ||
-                    productCardCategory.ProductCardCategoryType == ProductCardCategoryType.TextField)
+                // Skip categories of type None or TextField
+                var cardCat = allProductCardCategories
+                    .FirstOrDefault(p => p.Name.Equals(category, StringComparison.OrdinalIgnoreCase));
+                if (cardCat != null &&
+                    (cardCat.ProductCardCategoryType == ProductCardCategoryType.None ||
+                     cardCat.ProductCardCategoryType == ProductCardCategoryType.TextField))
+                {
                     continue;
+                }
 
-                // Build other filters excluding current category
+                // Build a query of all active filters *excluding* this category
                 var otherFilters = activeFilters
                     .Where(f => !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
                     .ToList();
+                var otherFiltersQuery = await BuildOtherFiltersQuery(
+                    otherFilters, databaseContext, platformId);
 
-                Query otherFiltersQuery = await BuildOtherFiltersQuery(otherFilters, databaseContext, platformId);
-
-                // Fetch all matching docs with paging to avoid limits
+                // Fetch all matching docs for those other filters
                 var docs = new List<Lucene.Net.Documents.Document>();
                 ScoreDoc lastDoc = null;
                 while (true)
                 {
-                    var topDocs = searcher.SearchAfter(lastDoc, otherFiltersQuery, PageSize);
+                    var topDocs = searcher.SearchAfter(lastDoc, otherFiltersQuery, int.MaxValue);
                     if (topDocs.ScoreDocs.Length == 0) break;
-
                     foreach (var hit in topDocs.ScoreDocs)
-                    {
                         docs.Add(searcher.Doc(hit.Doc));
-                    }
-
                     lastDoc = topDocs.ScoreDocs[^1];
                 }
 
+                // Tally option counts
                 var filterOptions = new Dictionary<string, FilterOption>(StringComparer.OrdinalIgnoreCase);
-
-                // Check if this category has subcategories (i.e. is a parent)
-                var parentCategory = allProductCardCategories
-                    .FirstOrDefault(p => p.ParentName != null && p.ParentName.Equals(category, StringComparison.OrdinalIgnoreCase));
-
-                // Build main filter options count
                 foreach (var doc in docs)
                 {
-                    var value = doc.Get(category);
-                    if (string.IsNullOrWhiteSpace(value)) continue;
-
-                    if (!filterOptions.TryGetValue(value, out var filterOption))
+                    foreach (var val in doc.GetValues(category))
                     {
-                        filterOption = new FilterOption { Key = value, Value = 0, Subcategories = new List<FilterOption>() };
-                        filterOptions[value] = filterOption;
+                        if (string.IsNullOrWhiteSpace(val)) continue;
+                        if (!filterOptions.TryGetValue(val, out var opt))
+                        {
+                            opt = new FilterOption { Key = val, Value = 0, Subcategories = new List<FilterOption>() };
+                            filterOptions[val] = opt;
+                        }
+                        opt.Value++;
                     }
-
-                    filterOption.Value++;
                 }
 
-                // If there is a parent category, build subcategory counts
-                if (parentCategory != null)
+                // If this category has subcategories, tally those
+                var parentCat = allProductCardCategories
+                    .FirstOrDefault(p => !string.IsNullOrEmpty(p.ParentName)
+                                      && p.ParentName.Equals(category, StringComparison.OrdinalIgnoreCase));
+                if (parentCat != null)
                 {
-                    var subCatName = parentCategory.Name;
-                    var parentName = parentCategory.ParentName;
-
-                    var groupedSubs = docs
-                        .Select(doc => new
-                        {
-                            SubRaw = doc.Get(subCatName),
-                            ParentRaw = doc.Get(parentName)
-                        })
-                        .Where(x => !string.IsNullOrWhiteSpace(x.SubRaw) && !string.IsNullOrWhiteSpace(x.ParentRaw))
-                        .Select(x => new
-                        {
-                            Sub = x.SubRaw.ToLowerInvariant(),
-                            Parent = x.ParentRaw.ToLowerInvariant(),
-                            SubRaw = x.SubRaw,
-                            ParentRaw = x.ParentRaw
-                        })
-                        .GroupBy(x => new { x.Parent, x.Sub })
-                        .ToList();
-
-                    foreach (var group in groupedSubs)
+                    var subName = parentCat.Name;
+                    var parentName = parentCat.ParentName;
+                    var grouped = docs
+                        .Select(d => new { Sub = d.Get(subName), Parent = d.Get(parentName) })
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Sub) && !string.IsNullOrWhiteSpace(x.Parent))
+                        .GroupBy(x => new { x.Parent, x.Sub });
+                    foreach (var g in grouped)
                     {
-                        var originalParent = group.First().ParentRaw;
-                        var originalSub = group.First().SubRaw;
-
-                        if (filterOptions.TryGetValue(originalParent, out var parentOption))
+                        var parentRaw = g.Key.Parent;
+                        var subRaw = g.Key.Sub;
+                        if (filterOptions.TryGetValue(parentRaw, out var pOpt))
                         {
-                            var existingSub = parentOption.Subcategories
-                                .FirstOrDefault(z => z.Key.Equals(originalSub, StringComparison.OrdinalIgnoreCase));
-                            if (existingSub == null)
-                            {
-                                parentOption.Subcategories.Add(new FilterOption { Key = originalSub, Value = group.Count() });
-                            }
+                            var existing = pOpt.Subcategories
+                                .FirstOrDefault(s => s.Key.Equals(subRaw, StringComparison.OrdinalIgnoreCase));
+                            if (existing == null)
+                                pOpt.Subcategories.Add(new FilterOption { Key = subRaw, Value = g.Count() });
                             else
-                            {
-                                existingSub.Value += group.Count();
-                            }
+                                existing.Value += g.Count();
                         }
                     }
                 }
 
-                // Build final CategoryFilters only if there are options
+                // Only include categories that have at least one option
                 if (filterOptions.Count > 0)
                 {
-                    var categoryFilter = new CategoryFilters
+                    var catFilter = new CategoryFilters
                     {
                         Category = category,
-                        Options = filterOptions.Values.Select(opt => new CategoryFilterOption
-                        {
-                            Name = opt.Key,
-                            IsChecked = activeFilters.Any(f =>
-                                f.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                                f.Option.Equals(opt.Key, StringComparison.OrdinalIgnoreCase)),
-                            Count = opt.Value,
-                            Subcategories = opt.Subcategories?.OrderBy(z => z.Key).Select(z => new CategoryFilterOption
+                        Options = filterOptions.Values
+                            .OrderBy(o => o.Key)
+                            .Select(o => new CategoryFilterOption
                             {
-                                Name = z.Key,
-                                Count = z.Value,
-                                IsChecked = false
-                            }).ToList()
-                        }).OrderBy(z => z.Name).ToList()
+                                Name = o.Key,
+                                Count = o.Value,
+                                IsChecked = activeFilters.Any(f =>
+                                    f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)
+                                    && f.Option.Equals(o.Key, StringComparison.OrdinalIgnoreCase)),
+                                Subcategories = o.Subcategories
+                                    .OrderBy(s => s.Key)
+                                    .Select(s => new CategoryFilterOption
+                                    {
+                                        Name = s.Key,
+                                        Count = s.Value,
+                                        IsChecked = false
+                                    })
+                                    .ToList()
+                            })
+                            .ToList()
                     };
-
-                    categoryOptions.Add(categoryFilter);
+                    categoryOptions.Add(catFilter);
                 }
             }
 
-            return categoryOptions.OrderBy(z => z.Category);
+            return categoryOptions.OrderBy(c => c.Category);
         }
 
 
 
 
 
-        public async Task<Query> BuildOtherFiltersQuery(
-            List<SearchParamFilter> otherFilters,
-            DatabaseContext databaseContext, int platformId) // Add database context
+        private async Task<Query> BuildOtherFiltersQuery(
+                IEnumerable<SearchParamFilter> filters,
+                DatabaseContext databaseContext,
+                int platformId)
         {
-            if (!otherFilters.Any())
+            if (!filters.Any())
                 return new MatchAllDocsQuery();
 
-            var booleanQuery = new BooleanQuery();
+            var root = new BooleanQuery();
 
-            // Group filters by their original category
-            var groupedFilters = otherFilters.GroupBy(f => f.Category);
+            var grouped = filters
+                .GroupBy(f => f.Category, StringComparer.OrdinalIgnoreCase);
 
-            foreach (var group in groupedFilters)
+            foreach (var grp in grouped)
             {
-                string originalCategory = group.Key;
-                string resolvedCategory = originalCategory;
+                var categoryQ = new BooleanQuery { MinimumNumberShouldMatch = 1 };
 
-                // Check if any filter in this group has a subcategory
-                bool hasSubcategory = group.Any(f => !string.IsNullOrWhiteSpace(f.Subcategory));
-
-                // If subcategory exists, resolve the child category from the database
-                if (hasSubcategory)
+                foreach (var filter in grp)
                 {
-                    var childCategory = await databaseContext.ProductCardCategories
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(z => z.ParentName == originalCategory && z.PlatformId == platformId);
-
-                    if (childCategory != null)
-                        resolvedCategory = childCategory.Name;
+                    if (!string.IsNullOrWhiteSpace(filter.Subcategory))
+                    {
+                        var pairQ = new BooleanQuery
+                    {
+                        { new TermQuery(new Term("Category",    filter.Option   )), Occur.MUST },
+                        { new TermQuery(new Term("Categories", filter.Subcategory)), Occur.MUST }
+                    };
+                        categoryQ.Add(pairQ, Occur.SHOULD);
+                    }
+                    else
+                    {
+                        categoryQ.Add(
+                            new TermQuery(new Term(filter.Category, filter.Option)),
+                            Occur.SHOULD);
+                    }
                 }
 
-                // Build the category query with the resolved category name
-                var categoryQuery = new BooleanQuery();
-                foreach (var filter in group)
-                {
-                    categoryQuery.Add(
-                        new TermQuery(new Term(resolvedCategory, filter.Option)),
-                        Occur.SHOULD
-                    );
-                }
-
-                booleanQuery.Add(categoryQuery, Occur.MUST);
+                root.Add(categoryQ, Occur.MUST);
             }
 
-            return booleanQuery;
+            return root;
         }
+
+
+
 
         public async Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null)
         {
