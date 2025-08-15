@@ -14,7 +14,7 @@
 
 
         public string Title { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public int TicketStatusId { get; set; }
         public int TicketTypeId { get; set; }
         public long? CompanyId { get; set; }
@@ -28,6 +28,8 @@
 
         public TicketType TicketType { get; set; }
         public TicketStatus TicketStatus { get; set; }
+
+        public string? CustomPayload { get; set; }
 
 
         public long? PrivateLabelCompanyId { get; set; }

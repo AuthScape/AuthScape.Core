@@ -70,6 +70,14 @@ namespace Services.Database
         public string Domain { get; set; }
         public string Name { get; set; }
         public string Subject { get; set; }
+        public TicketSystemAttachments Attachments { get; set; }
+    }
+
+    public class TicketSystemAttachments
+    {
+        public string Container { get; set; }
+        public string BaseUri { get; set; }
+        public string AzureConnectionString { get; set; }
     }
 
     public class PrivateLabelSettings
