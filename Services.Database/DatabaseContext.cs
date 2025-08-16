@@ -79,6 +79,7 @@ namespace Services.Context
 
         public DbSet<Plan> Plans { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<WalletTransaction> WalletTransactions { get; set; }
         public DbSet<WalletPaymentMethod> WalletPaymentMethods { get; set; }
         public DbSet<StoreCredit> StoreCredits { get; set; }
         public DbSet<StripeConnectAccount> StripeConnectAccounts { get; set; }

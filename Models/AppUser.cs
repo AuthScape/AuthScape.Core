@@ -22,6 +22,12 @@ namespace AuthScape.Models.Users
         public DateTimeOffset? WhenInviteSent { get; set; }
         public Location? Location { get; set; }
         public Company? Company { get; set; }
+
+        public string? Culture { get; set; }
+        public string? Country { get; set; }
+        public string? TimeZoneId { get; set; }
+
+
         public ICollection<Wallet> Cards { get; set; }
         public ICollection<StoreCredit> StoreCredits { get; set; }
         public ICollection<StoreCredit> GiftedCredit { get; set; } // credits that you gifted to another user

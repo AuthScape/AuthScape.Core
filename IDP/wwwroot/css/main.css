@@ -11410,7 +11410,7 @@ a {
 	-webkit-transition: .3s all ease;
 	-o-transition: .3s all ease;
 	transition: .3s all ease;
-	color: #01d28e;
+	color: #1e2b19;
 }
 
 	a:hover, a:focus {
@@ -11421,7 +11421,7 @@ a {
 	}
 
 	a:hover, a:active, a:focus {
-		color: #01d28e;
+		color: #1e2b19;
 		outline: none !important;
 		text-decoration: none !important;
 	}
@@ -11435,7 +11435,7 @@ h1, h2, h3, h4, h5,
 }
 
 .bg-primary {
-	background: #01d28e !important;
+	background: #1e2b19 !important;
 }
 
 .ftco-section {
@@ -11528,7 +11528,7 @@ h1, h2, h3, h4, h5,
 		outline: none !important;
 		-webkit-box-shadow: none;
 		box-shadow: none;
-		border: 1px solid #01d28e;
+		border: 1px solid #1e2b19;
 	}
 
 .field-icon {
@@ -11560,7 +11560,7 @@ h1, h2, h3, h4, h5,
 	text-transform: uppercase;
 	font-size: 12px;
 	letter-spacing: 1px;
-	color: #01d28e;
+	color: #1e2b19;
 	font-weight: 700;
 }
 
@@ -11585,7 +11585,7 @@ h1, h2, h3, h4, h5,
 		}
 
 		.social-media .social-icon:hover, .social-media .social-icon:focus {
-			background: #01d28e;
+			background: #1e2b19;
 		}
 
 			.social-media .social-icon:hover span, .social-media .social-icon:focus span {
@@ -11653,11 +11653,11 @@ h1, h2, h3, h4, h5,
 
 /* Style the checkmark/indicator */
 .checkbox-primary {
-	color: #01d28e;
+	color: #1e2b19;
 }
 
 	.checkbox-primary input:checked ~ .checkmark:after {
-		color: #01d28e;
+		color: #1e2b19;
 	}
 
 .btn {
@@ -11673,25 +11673,25 @@ h1, h2, h3, h4, h5,
 	}
 
 	.btn.btn-primary {
-		background: #01d28e !important;
-		border: 1px solid #01d28e !important;
+		background: #1e2b19 !important;
+		border: 1px solid #1e2b19 !important;
 		color: #fff !important;
 	}
 
 		.btn.btn-primary:hover {
-			border: 1px solid #01d28e;
+			border: 1px solid #1e2b19;
 			background: transparent;
-			color: #01d28e;
+			color: #1e2b19;
 		}
 
 		.btn.btn-primary.btn-outline-primary {
-			border: 1px solid #01d28e;
+			border: 1px solid #1e2b19;
 			background: transparent;
-			color: #01d28e;
+			color: #1e2b19;
 		}
 
 			.btn.btn-primary.btn-outline-primary:hover {
 				border: 1px solid transparent;
-				background: #01d28e;
+				background: #1e2b19;
 				color: #fff;
 			}

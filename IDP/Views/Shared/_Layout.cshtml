@@ -1,56 +1,85 @@
-﻿<!DOCTYPE html>
+﻿@{
+    Layout = null; // this is a standalone layout
+    var title = ViewData["Title"] as string ?? "Manage your account";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Auth Server</title>
-	<text>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" type="image/png" href="images/icons/favicon.ico" />
-	<link rel="stylesheet" type="text/css" href="~/bootstrap/css/bootstrap.min.css">
-	<link rel="stylesheet" type="text/css" href="~/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
-	<link rel="stylesheet" type="text/css" href="~/css/main.css">
-	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-	</text>
+    <title>@title - Auth Server</title>
+
+    <!-- your existing includes -->
+    <link rel="icon" type="image/png" href="~/images/icons/favicon.ico" />
+    <link rel="stylesheet" href="~/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/fonts/font-awesome-4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="~/css/main.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+
+    @RenderSection("Styles", required: false)
+
+    <style>
+        /* Sleek polish; no forms here */
+        body {
+            background: var(--bs-body-bg, #fff);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,.65);
+            backdrop-filter: saturate(160%) blur(10px);
+            border: 1px solid rgba(0,0,0,.06);
+            border-radius: .75rem;
+        }
+
+        .manage-header {
+            border-bottom: 1px solid rgba(0,0,0,.08);
+        }
+
+        .sidebar .list-group-item {
+            border: 0;
+            border-left: 3px solid transparent;
+            border-radius: .5rem;
+            margin-bottom: .25rem;
+        }
+
+        .sidebar .list-group-item.active {
+            background: #12d48a; /* your green brand color */
+            border-left-color: #12d48a;
+            color: #fff;
+        }
+
+        .content-pad {
+            padding: 1.25rem;
+            width: 100%;
+        }
+
+        .sticky-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
+            background: var(--bs-body-bg, #fff);
+            border-top: 1px solid rgba(0,0,0,.08);
+        }
+    </style>
 </head>
 <body>
-    
-   @* <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">mvcTest</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
+    <div class="container-fluid my-4">
+        <div class="row g-4">
+            <section class="col-12 col-md-12">
+                <div class="content-pad">
+                    @RenderBody()
                 </div>
-            </div>
-        </nav>
-    </header>*@
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+            </section>
+        </div>
     </div>
 
-
+    <!-- scripts (unchanged from your layout) -->
     <script src="~/jquery/jquery-3.2.1.min.js"></script>
     <script src="~/bootstrap/js/popper.js"></script>
     <script src="~/bootstrap/js/bootstrap.min.js"></script>
     <script src="~/js/main.js"></script>
     <script src="~/lib/qrcode.min.js"></script>
 
-    @RenderSection("scripts", required: false)
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

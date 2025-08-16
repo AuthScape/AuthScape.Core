@@ -17,6 +17,7 @@ using Services.Context;
 using Services.Cores;
 using Services.Database;
 using Services.Tracking;
+using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -212,6 +213,20 @@ namespace AuthScape.IDP
             app.UseStatusCodePagesWithReExecute("/error");
 
             app.UseRouting();
+
+
+            var supportedCultures = CultureInfo
+                .GetCultures(CultureTypes.SpecificCultures | CultureTypes.NeutralCultures)
+                .OrderBy(c => c.Name)
+                .ToList();
+
+            var localizationOptions = new RequestLocalizationOptions()
+                .SetDefaultCulture("en-US")
+                .AddSupportedCultures(supportedCultures.Select(c => c.Name).ToArray())
+                .AddSupportedUICultures(supportedCultures.Select(c => c.Name).ToArray());
+
+            app.UseRequestLocalization(localizationOptions);
+
 
             app.UseHttpsRedirection();
             app.UseAuthentication();

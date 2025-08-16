@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250815214708_localizationAdded")]
+    partial class localizationAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1237,44 +1240,6 @@ namespace Services.Database.Migrations
                     b.HasIndex("WalletId");
 
                     b.ToTable("WalletPaymentMethods");
-                });
-
-            modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ExternalRef")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StripeObjectId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WalletId");
-
-                    b.ToTable("WalletTransactions");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Settings.Settings", b =>
@@ -2961,17 +2926,6 @@ namespace Services.Database.Migrations
                     b.HasOne("AuthScape.Models.PaymentGateway.Wallet", "Wallet")
                         .WithMany("WalletPaymentMethods")
                         .HasForeignKey("WalletId")
-                        .IsRequired();
-
-                    b.Navigation("Wallet");
-                });
-
-            modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletTransaction", b =>
-                {
-                    b.HasOne("AuthScape.Models.PaymentGateway.Wallet", "Wallet")
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Wallet");
