@@ -3,16 +3,144 @@
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
 }
+<style>
+    /* icon spacing + section headings */
+    .nav-pills .nav-link i {
+        margin-right: .75rem;
+    }
+
+    .nav-section-title {
+        font-size: .85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #6c757d;
+        padding: .75rem 1rem .25rem;
+    }
+</style>
+
 <ul class="nav nav-pills flex-column">
-    <li class="nav-item"><a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">Profile</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">Email</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">Password</a></li>
+
+    <!-- Profile & Identity -->
+    <li class="nav-section-title">Profile &amp; Identity</li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">
+            <i class="fa fa-user"></i>Profile
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">
+            <i class="fa fa-envelope-o"></i>Email
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">
+            <i class="fa fa-key"></i>Password
+        </a>
+    </li>
     @if (hasExternalLogins)
     {
-        <li id="external-logins" class="nav-item"><a id="external-login" class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins">External logins</a></li>
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="external-logins" asp-page="./ExternalLogins">
+                <i class="fa fa-external-link"></i>External logins
+            </a>
+        </li>
     }
-    <li class="nav-item"><a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">Two-factor authentication</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PassKeyAuthenticationNavClass(ViewContext)" id="passkey" asp-page="./PassKeyAuthentication">PassKey</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">Personal data</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PaymentMethodsClass(ViewContext)" id="paymentMethods" asp-page="./PaymentMethods">Payment Methods</a></li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="language-region" asp-page="./LanguageRegion">
+            <i class="fa fa-language"></i>Language &amp; Region &amp; Time zone
+        </a>
+    </li>
+
+    <!-- Security -->
+    <li class="nav-section-title mt-3">Security</li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">
+            <i class="fa fa-shield"></i>Two-factor authentication
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="login-alerts" asp-page="./LoginAlerts">
+            <i class="fa fa-bell"></i>Login alerts
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="security-questions" asp-page="./SecurityQuestions">
+            <i class="fa fa-question-circle"></i>Security questions
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="app-passwords" asp-page="./AppPasswords">
+            <i class="fa fa-lock"></i>App passwords
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="sessions" asp-page="./Sessions">
+            <i class="fa fa-desktop"></i>Session management
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.PassKeyAuthenticationNavClass(ViewContext)" id="passkey" asp-page="./PassKeyAuthentication">
+            <i class="fa fa-user-secret"></i>PassKey
+        </a>
+    </li>
+
+    <!-- Data & Privacy -->
+    <li class="nav-section-title mt-3">Data &amp; Privacy</li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">
+            <i class="fa fa-database"></i>Personal data
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="connected-apps" asp-page="./ConnectedApps">
+            <i class="fa fa-plug"></i>Connected apps
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="activity-history" asp-page="./ActivityHistory">
+            <i class="fa fa-history"></i>Activity history
+        </a>
+    </li>
+
+    <!-- Billing & Subscriptions -->
+    <li class="nav-section-title mt-3">Billing &amp; Subscriptions</li>
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.PaymentMethodsClass(ViewContext)" id="payment-methods" asp-page="./Wallet">
+            <i class="fa fa-credit-card"></i>Payment methods
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="subscriptions" asp-page="./Subscriptions">
+            <i class="fa fa-star"></i>Subscriptions
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="billing-history" asp-page="./BillingHistory">
+            <i class="fa fa-file-text-o"></i>Billing history / Invoices
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="promo-codes" asp-page="./PromoCodes">
+            <i class="fa fa-ticket"></i>Promo codes / Credits
+        </a>
+    </li>
+
+    <!-- Notifications -->
+    <li class="nav-section-title mt-3">Notifications</li>
+    <li class="nav-item">
+        <a class="nav-link" id="email-notifications" asp-page="./EmailNotifications">
+            <i class="fa fa-envelope-o"></i>Email notifications
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="push-notifications" asp-page="./PushNotifications">
+            <i class="fa fa-mobile"></i>Push notifications
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="sms-alerts" asp-page="./SmsAlerts">
+            <i class="fa fa-commenting-o"></i>SMS alerts
+        </a>
+    </li>
+
 </ul>

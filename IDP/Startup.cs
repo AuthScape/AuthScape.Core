@@ -2,6 +2,7 @@ using AuthScape.IDP;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.StripePayment.Services;
+using IDP.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -109,6 +110,7 @@ namespace IDP
                 services.AddScoped<ISendGridService, SendGridService>();
                 services.AddScoped<IStripePayService, StripePayService>();
                 services.AddScoped<IInviteService, InviteService>();
+                services.AddScoped<IWalletResolver, WalletResolver>();
 
                 //ThirdPartyAuthService.AddThirdPartyAutentication(services);
 

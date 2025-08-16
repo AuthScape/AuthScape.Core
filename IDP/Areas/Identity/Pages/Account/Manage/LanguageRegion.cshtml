@@ -1,0 +1,159 @@
+﻿@page
+@model LanguageRegionModel
+@{
+    ViewData["Title"] = "Language & Region";
+}
+
+<div class="mb-3">
+    <h2 class="h4 mb-1">Language & Region</h2>
+    <p class="text-muted">Pick one locale; we’ll use it for language, region, currency, and formatting.</p>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger"><strong>Please fix the errors below.</strong></div>
+}
+
+<div class="card shadow-sm glass-card">
+    <div class="card-body">
+        <form method="post" class="row g-3 needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="Input_Culture">Locale</label>
+
+                <!-- One dropdown. Each option carries region & currency via data- attributes -->
+                <select asp-for="Input.Culture" class="form-select" id="Input_Culture">
+                    @foreach (var opt in Model.LocaleOptions)
+                    {
+                        <option value="@opt.Culture"
+                                data-country="@opt.Country"
+                                data-currency="@opt.Currency">
+                            @opt.Display
+                        </option>
+                    }
+                </select>
+                <span class="text-danger small" asp-validation-for="Input.Culture"></span>
+                <div class="form-text">Example: “English (United Kingdom) — GBP”.</div>
+            </div>
+
+            <!-- Hidden: we fill these automatically from the selected locale + browser -->
+            <input type="hidden" asp-for="Input.Country" id="Input_Country" />
+            <input type="hidden" asp-for="Input.TimeZoneId" id="Input_TimeZoneId" />
+
+            <div class="col-12">
+                <div class="border rounded p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong class="me-3">Preview</strong>
+                        <span class="text-muted small">Updates when you change the locale</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted">Date & time</div>
+                            <div id="previewDate" class="fw-semibold">—</div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted">Number</div>
+                            <div id="previewNumber" class="fw-semibold">—</div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted">Currency</div>
+                            <div id="previewCurrency" class="fw-semibold">—</div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="small text-muted">Time zone now</div>
+                            <div id="previewTz" class="fw-semibold">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sticky-actions mt-2 pt-3 d-flex justify-content-end gap-2">
+                <a asp-page="./Index" class="btn btn-outline-secondary">Cancel</a>
+                <button class="btn btn-primary" style="margin-left:20px;">
+                    <i class="fa fa-floppy-o me-2" style="padding-right:10px;"></i>Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .glass-card {
+            background: rgba(255,255,255,.65);
+            backdrop-filter: saturate(160%) blur(10px);
+            border: 1px solid rgba(0,0,0,.06);
+            border-radius: .75rem
+        }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const sel = document.getElementById("Input_Culture");
+            const hidCountry = document.getElementById("Input_Country");
+            const hidTz = document.getElementById("Input_TimeZoneId");
+
+            const elDate = document.getElementById("previewDate");
+            const elNum  = document.getElementById("previewNumber");
+            const elCur  = document.getElementById("previewCurrency");
+            const elTz   = document.getElementById("previewTz");
+
+            // Capture browser time zone (IANA)
+            const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (hidTz) hidTz.value = browserTz;
+
+            function currencyFromOption(opt) {
+                return opt?.dataset?.currency || "USD";
+            }
+            function countryFromOption(opt) {
+                return opt?.dataset?.country || "US";
+            }
+
+            function updatePreview() {
+                const opt = sel.options[sel.selectedIndex];
+                const locale = sel.value || navigator.language;
+                const currency = currencyFromOption(opt); // ISO 4217, e.g., GBP, EUR, JPY
+                const country  = countryFromOption(opt);
+                if (hidCountry) hidCountry.value = country;
+
+                const now = new Date();
+
+                try {
+                    elDate.textContent = new Intl.DateTimeFormat(locale, {
+                        dateStyle: "full", timeStyle: "long", timeZone: browserTz
+                    }).format(now);
+                } catch { elDate.textContent = now.toString(); }
+
+                try {
+                    elNum.textContent = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 })
+                        .format(1234567.89);
+                } catch { elNum.textContent = "1,234,567.89"; }
+
+                // IMPORTANT: use the selected locale + ISO currency code, and ask for SYMBOL
+                try {
+                    elCur.textContent = new Intl.NumberFormat(locale, {
+                        style: "currency",
+                        currency: currency,
+                        currencyDisplay: "symbol"
+                    }).format(1999.99);
+                } catch (e) {
+                    console.warn("Currency preview error:", e);
+                    elCur.textContent = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+                        .format(1999.99);
+                }
+
+                try {
+                    elTz.textContent = new Intl.DateTimeFormat(locale, { timeStyle: "long", timeZone: browserTz })
+                        .format(now) + " (" + browserTz + ")";
+                } catch { elTz.textContent = browserTz; }
+            }
+
+            sel.addEventListener("change", updatePreview);
+            updatePreview();
+        })();
+    </script>
+}
