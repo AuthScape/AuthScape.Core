@@ -1,8 +1,10 @@
-﻿using AuthScape.TicketSystem.Modals;
+﻿using AuthScape.Document.Mapping.Models;
+using AuthScape.TicketSystem.Modals;
 using AuthScape.TicketSystem.Models;
 using AuthScape.TicketSystem.Services;
 using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
 
@@ -28,9 +30,9 @@ namespace AuthScape.TicketSystem.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTicketPublic(CreatePublicTicketParam param)
+        public async Task<IActionResult> CreateTicketPublic([FromForm] CreatePublicTicketParam param)
         {
-            var ticketId = await ticketService.CreateTicketPublic(param.Email, param.FirstName, param.LastName, param.TicketTypeId, param.TicketStatusId, param.Description, param.PrivateLabelCompanyId);
+            var ticketId = await ticketService.CreateTicketPublic(param.Email, param.FirstName, param.LastName, param.TicketTypeId, param.TicketStatusId, param.Description, param.CompanyName, param.JobTitle, param.Address, param.PhoneNumber, param.File,  param.PrivateLabelCompanyId);
             return Ok(ticketId);
         }
 
@@ -157,11 +159,17 @@ namespace AuthScape.TicketSystem.Controllers
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string? CompanyName { get; set; }
+        public string? JobTitle { get; set; }
+        public string? Address { get; set; }
+        public string? PhoneNumber { get; set; }
         public string Email { get; set; }
         public int TicketTypeId { get; set; }
         public int TicketStatusId { get; set; }
         public string? Description { get; set; }
         public long? PrivateLabelCompanyId { get; set; }
+        public IFormFile? File { get; set; }
+
     }
 
     public class CreateTicketMessageParam
