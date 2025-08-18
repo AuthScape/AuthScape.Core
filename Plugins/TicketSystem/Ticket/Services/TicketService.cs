@@ -420,7 +420,6 @@ namespace AuthScape.TicketSystem.Services
             await databaseContext.Tickets.AddAsync(newTicket);
             await databaseContext.SaveChangesAsync();
 
-            // add blob file here 
             if (file is not null && file.Length > 0)
             {
                 FileInfo fi = new FileInfo(file.FileName);
@@ -430,6 +429,7 @@ namespace AuthScape.TicketSystem.Services
                     TicketId = newTicket.Id,
                     FileName = file.Name,
                     Name = file.Name,
+                    ContentType ="Ticket Attachment",
                     URL = appSettings.Ticketing.Attachments.BaseUri + "/" + appSettings.Ticketing.Attachments.Container + newTicket.Id + "-" + file.Name + fi.Extension,
                 });
                 await databaseContext.SaveChangesAsync();
