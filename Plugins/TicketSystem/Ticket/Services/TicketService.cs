@@ -430,7 +430,7 @@ namespace AuthScape.TicketSystem.Services
                     TicketId = newTicket.Id,
                     FileName = file.Name,
                     Name = file.Name,
-                    URL = "https://blobstorage.com/" + appSettings.Ticketing.Attachments.Container + newTicket.Id + "-" + file.Name + fi.Extension,
+                    URL = appSettings.Ticketing.Attachments.BaseUri + "/" + appSettings.Ticketing.Attachments.Container + newTicket.Id + "-" + file.Name + fi.Extension,
                 });
                 await databaseContext.SaveChangesAsync();
             }
