@@ -12,7 +12,10 @@
         public string? CompanyName { get; set; }
         public string? LocationName { get; set; }
 
-
+        public string? ALTCompanyName { get; set; }
+        public string? JobTitle { get; set; }
+        public string? Address { get; set; }
+        public string? PhoneNumber { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
         public int TicketStatusId { get; set; }

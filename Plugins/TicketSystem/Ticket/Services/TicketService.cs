@@ -2,10 +2,13 @@
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
 using AuthScape.TicketSystem.Modals;
 using AuthScape.TicketSystem.Models;
 using CoreBackpack;
+using CoreBackpack.Azure;
 using CoreBackpack.Time;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Models.Email;
@@ -19,7 +22,7 @@ namespace AuthScape.TicketSystem.Services
     {
         Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments);
         Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message);
-        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, long? PrivateLabelCompanyId = null);
+        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description,  string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
         Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null);
         Task CreateTicketStatus(string name);
@@ -42,15 +45,17 @@ namespace AuthScape.TicketSystem.Services
         readonly IUserManagementService userManagementService;
         readonly ISendGridService sendGridService;
         readonly INotificationService notificationService;
+        readonly IBlobStorage blobStorage;
         readonly AppSettings appSettings;
 
-        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISendGridService sendGridService, IOptions<AppSettings> appSettings, INotificationService notificationService)
+        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISendGridService sendGridService, IOptions<AppSettings> appSettings, INotificationService notificationService, IBlobStorage blobStorage)
         {
             this.databaseContext = databaseContext;
             this.userManagementService = userManagementService;
             this.sendGridService = sendGridService;
             this.appSettings = appSettings.Value;
             this.notificationService = notificationService;
+            this.blobStorage = blobStorage;
         }
 
         public async Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments)
@@ -388,12 +393,14 @@ namespace AuthScape.TicketSystem.Services
             return newTicket.Id;
         }
 
-        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, long? PrivateLabelCompanyId = null)
+        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null)
         {
             var newTicket = new Ticket()
             {
                 Email = email,
-                Title = firstName,
+                Title = !string.IsNullOrWhiteSpace(description)
+            ? (description.Length > 120 ? description[..120] : description) 
+            : $"{firstName} {lastName} - New Ticket",
                 FirstName = firstName,
                 LastName = lastName,
                 TicketTypeId = ticketTypeId,
@@ -403,11 +410,30 @@ namespace AuthScape.TicketSystem.Services
                 PriorityLevel = PriorityLevel.Medium,
                 Created = SystemTime.Now,
                 LastUpdated = SystemTime.Now,
+                ALTCompanyName = companyName,
+                JobTitle = jobTitle,
+                Address = address,
+                PhoneNumber = phoneNumber,
                 PrivateLabelCompanyId = PrivateLabelCompanyId
             };
 
             await databaseContext.Tickets.AddAsync(newTicket);
             await databaseContext.SaveChangesAsync();
+
+            // add blob file here 
+            if (file is not null && file.Length > 0)
+            {
+                FileInfo fi = new FileInfo(file.FileName);
+                var ticketfile = await blobStorage.UploadBlob(appSettings.Ticketing.Attachments.AzureConnectionString, appSettings.Ticketing.Attachments.Container, newTicket.Id + "-" + file.Name + fi.Extension, file.OpenReadStream(), true);
+                await databaseContext.TicketAttachments.AddAsync(new TicketAttachment()
+                {
+                    TicketId = newTicket.Id,
+                    FileName = file.Name,
+                    Name = file.Name,
+                    URL = "https://blobstorage.com/" + appSettings.Ticketing.Attachments.Container + newTicket.Id + "-" + file.Name + fi.Extension,
+                });
+                await databaseContext.SaveChangesAsync();
+            }
 
             await databaseContext.TicketMessages.AddAsync(new TicketMessage()
             {
