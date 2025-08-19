@@ -398,9 +398,7 @@ namespace AuthScape.TicketSystem.Services
             var newTicket = new Ticket()
             {
                 Email = email,
-                Title = !string.IsNullOrWhiteSpace(description)
-            ? (description.Length > 120 ? description[..120] : description) 
-            : $"{firstName} {lastName} - New Ticket",
+                Title = $"{firstName} {lastName} - New Ticket",
                 FirstName = firstName,
                 LastName = lastName,
                 TicketTypeId = ticketTypeId,
@@ -420,7 +418,7 @@ namespace AuthScape.TicketSystem.Services
             await databaseContext.Tickets.AddAsync(newTicket);
             await databaseContext.SaveChangesAsync();
 
-            if (file is not null && file.Length > 0)
+            if (file != null && file.Length > 0)
             {
                 FileInfo fi = new FileInfo(file.FileName);
                 var ticketfile = await blobStorage.UploadBlob(appSettings.Ticketing.Attachments.AzureConnectionString, appSettings.Ticketing.Attachments.Container, newTicket.Id + "-" + file.Name + fi.Extension, file.OpenReadStream(), true);
@@ -430,7 +428,7 @@ namespace AuthScape.TicketSystem.Services
                     FileName = file.Name,
                     Name = file.Name,
                     ContentType ="Ticket Attachment",
-                    URL = appSettings.Ticketing.Attachments.BaseUri + "/" + appSettings.Ticketing.Attachments.Container + newTicket.Id + "-" + file.Name + fi.Extension,
+                    URL = appSettings.Ticketing.Attachments.BaseUri + "/" + appSettings.Ticketing.Attachments.Container + "/" + newTicket.Id + "-" + file.Name + fi.Extension,
                 });
                 await databaseContext.SaveChangesAsync();
             }
