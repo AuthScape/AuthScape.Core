@@ -22,7 +22,7 @@ namespace AuthScape.TicketSystem.Services
     {
         Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments);
         Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message);
-        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description,  string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null);
+        Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? message,   string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
         Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null);
         Task CreateTicketStatus(string name);
@@ -393,7 +393,7 @@ namespace AuthScape.TicketSystem.Services
             return newTicket.Id;
         }
 
-        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null)
+        public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? message,  string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null)
         {
             var newTicket = new Ticket()
             {
@@ -412,7 +412,7 @@ namespace AuthScape.TicketSystem.Services
                 JobTitle = jobTitle,
                 Address = address,
                 PhoneNumber = phoneNumber,
-                PrivateLabelCompanyId = PrivateLabelCompanyId
+                PrivateLabelCompanyId = PrivateLabelCompanyId,
             };
 
             await databaseContext.Tickets.AddAsync(newTicket);
@@ -437,7 +437,7 @@ namespace AuthScape.TicketSystem.Services
             {
                 TicketId = newTicket.Id,
                 CreatedByUserId = null,
-                Message = description,
+                Message = message,
                 Created = SystemTime.Now,
                 Name = (firstName + " " + lastName),
                 IsNote = false
