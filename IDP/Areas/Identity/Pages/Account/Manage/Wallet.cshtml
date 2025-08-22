@@ -3,12 +3,17 @@
 
 @{
     ViewData["Title"] = "Payment Methods";
-    var pk = Model.StripePublicKey;           // from PageModel
-    var walletBalance = Model.Balance;        // from PageModel
-    var activeWalletId = Model.ActiveWalletId;// from PageModel
+    var pk = Model.StripePublicKey;
+    var walletBalance = Model.Balance;
+    var activeWalletId = Model.ActiveWalletId;
+
+    // Set from backend if redirect returned requires_action → verify_with_microdeposits
+    var achVerifyPending = (bool?)ViewData["AchVerifyPending"] == true;
+    var achHostedUrl = ViewData["AchHostedUrl"] as string;
+    var achVerifyHint = ViewData["AchVerifyHint"] as string; // "amounts" or "descriptor_code"
 }
 
-@Html.AntiForgeryToken() <!-- renders hidden __RequestVerificationToken -->
+@Html.AntiForgeryToken()
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 <script src="https://js.stripe.com/v3/"></script>
@@ -35,7 +40,7 @@
     .pm-tile {
         border: 1px solid #e7ebf0;
         border-radius: 14px;
-        transition: transform .05s,box-shadow .15s
+        transition: transform .05s, box-shadow .15s
     }
 
         .pm-tile:hover {
@@ -77,7 +82,7 @@
     <div class="page-header mb-3">
         <div>
             <h1 class="h4 mb-1">Payment Methods</h1>
-            <div class="text-muted">Manage saved cards and add credit to your balance.</div>
+            <div class="text-muted">Manage saved cards and bank accounts, and add credit to your balance.</div>
         </div>
     </div>
 
@@ -99,7 +104,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addFundsModal">Add Credit</button>
-                    <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#addCardModal">Add New Card</button>
+                    <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#addPmModal">Add Payment Method</button>
                 </div>
             </div>
         </div>
@@ -108,25 +113,63 @@
             <div class="p-4 pm-tile h-100 d-flex align-items-center justify-content-between">
                 <div>
                     <div class="section-title">Default charge method</div>
-                    <div class="text-muted small">Used for subscriptions and one-click charges.</div>
+                    <div class="text-muted small">Used for subscriptions and one‑click charges.</div>
                 </div>
-                <button class="btn btn-ghost" data-bs-toggle="modal" data-bs-target="#addCardModal">Change</button>
+                <button class="btn btn-ghost" data-bs-toggle="modal" data-bs-target="#addPmModal">Change</button>
             </div>
         </div>
     </div>
 
+    <!-- ACH micro-deposits verification banner (hidden if not needed) -->
+    <div id="ach-verify-panel" class="alert alert-warning mt-3" style="display:@(achVerifyPending ? "block" : "none")">
+        <div class="fw-semibold mb-1">Verify your bank account</div>
+        <div class="small">
+            We sent two small deposits (or a descriptor code) to your bank. Enter them here to finish setup.
+            <div class="mt-2" id="ach-hosted-wrapper" style="display:@(string.IsNullOrWhiteSpace(achHostedUrl) ? "none" : "block")">
+                <a id="ach-hosted-link" class="btn btn-sm btn-primary" href="@(achHostedUrl ?? "#")" target="_blank" rel="noopener">Verify on Stripe</a>
+                <span class="text-muted ms-2">or verify below:</span>
+            </div>
+        </div>
+        <form id="ach-verify-form" class="mt-3">
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Deposit 1 (¢)</label>
+                    <input class="form-control" id="amt1" type="number" min="1" step="1" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Deposit 2 (¢)</label>
+                    <input class="form-control" id="amt2" type="number" min="1" step="1" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Descriptor code (SM…)</label>
+                    <input class="form-control" id="code" type="text" placeholder="SMXXXX" />
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-outline-primary" id="verify-ach-client">Verify (client)</button>
+                <button type="button" class="btn btn-outline-secondary" id="verify-ach-server">Verify (server)</button>
+            </div>
+            <div class="form-text mt-1" id="ach-hint" style="display:@(string.IsNullOrWhiteSpace(achVerifyHint) ? "none" : "block")">
+                @if (!string.IsNullOrWhiteSpace(achVerifyHint))
+                {
+                    <text>Hint: expected verification via <b>@achVerifyHint</b>.</text>
+                }
+            </div>
+        </form>
+    </div>
+
     <!-- Methods -->
     <div class="mt-4 d-flex align-items-center justify-content-between">
-        <div class="section-title">Saved cards</div>
-        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">Add Card</button>
+        <div class="section-title">Saved payment methods</div>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPmModal">Add Payment Method</button>
     </div>
 
     @if (!Model.Methods.Any())
     {
         <div class="empty mt-3">
-            <div class="mb-2 fw-semibold">No cards yet</div>
-            <div class="text-muted mb-3">Save a card to speed up checkout and enable autopay.</div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">Add your first card</button>
+            <div class="mb-2 fw-semibold">No methods yet</div>
+            <div class="text-muted mb-3">Save a card or bank account to speed up checkout and enable autopay.</div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPmModal">Add your first method</button>
         </div>
     }
     else
@@ -134,17 +177,23 @@
         <div class="mt-3 list-group list-group-flush">
             @foreach (var pm in Model.Methods)
             {
-                var brand = string.IsNullOrWhiteSpace(pm.Brand) ? "Card" : pm.Brand;
-                var exp = $"{pm.ExpMonth:D2}/{pm.ExpYear}";
-                string shortBrand = (brand ?? "CARD").ToUpperInvariant();
+                var isBank = pm.WalletType == AuthScape.Models.PaymentGateway.WalletType.us_bank_account;
+                var label = isBank
+                ? (string.IsNullOrWhiteSpace(pm.BankName) ? "Bank" : pm.BankName)
+                : (string.IsNullOrWhiteSpace(pm.Brand) ? "Card" : pm.Brand);
+                var sub = isBank
+                ? (string.IsNullOrWhiteSpace(pm.AccountType) ? "US bank account" : pm.AccountType)
+                : $"Expires {pm.ExpMonth:D2}/{pm.ExpYear}";
+
+                var shortBrand = (label ?? (isBank ? "BANK" : "CARD")).ToUpperInvariant();
                 if (shortBrand.Length > 4) { shortBrand = shortBrand.Substring(0, 4); }
                 <div class="list-group-item py-3">
                     <div class="d-flex align-items-center justify-content-between gap-3">
                         <div class="d-flex align-items-center gap-3">
                             <div class="card-brand text-secondary">@shortBrand</div>
                             <div class="d-flex flex-column">
-                                <div class="fw-semibold">@brand •••• @pm.Last4</div>
-                                <div class="text-muted small">Expires @exp</div>
+                                <div class="fw-semibold">@label •••• @pm.Last4</div>
+                                <div class="text-muted small">@sub</div>
                             </div>
                         </div>
                         <div class="d-flex gap-2">
@@ -157,6 +206,7 @@
         </div>
     }
 
+    <!-- Add Funds -->
     <div class="modal fade" id="addFundsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -182,22 +232,22 @@
         </div>
     </div>
 
-    <!-- Add Card Modal -->
-    <div class="modal fade" id="addCardModal" tabindex="-1" aria-hidden="true">
+    <!-- Add Payment Method -->
+    <div class="modal fade" id="addPmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add a Card</h5>
+                    <h5 class="modal-title">Add a Payment Method</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="card-form">
+                <form id="pm-form">
                     <div class="modal-body">
                         <div id="payment-element" class="border rounded p-3"></div>
-                        <div class="form-text mt-2">Your card is stored securely with Stripe.</div>
+                        <div class="form-text mt-2">Your information is stored securely with Stripe.</div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button id="saveCard" class="btn btn-primary">Save Card</button>
+                        <button id="savePm" class="btn btn-primary">Save Payment Method</button>
                     </div>
                 </form>
             </div>
@@ -205,18 +255,16 @@
     </div>
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const anti = document.querySelector('input[name="__RequestVerificationToken"]').value;
     const stripe = Stripe("@Model.StripePublicKey");
     const activeWalletId = "@Model.ActiveWalletId";
 
-    // Helper to POST to Razor Page handlers (?handler=Name)
+    // --- helper to POST to Razor Page handlers
     async function postToHandler(handler, bodyObjOrFormData) {
       const url = `/Wallets?handler=${encodeURIComponent(handler)}`;
       const options = { method: 'POST' };
-
       if (bodyObjOrFormData instanceof FormData) {
         bodyObjOrFormData.append('__RequestVerificationToken', anti);
         options.body = bodyObjOrFormData;
@@ -226,14 +274,13 @@
         form.append('__RequestVerificationToken', anti);
         options.body = form;
       }
-
       const res = await fetch(url, options);
       if (!res.ok) throw new Error(await res.text());
       const ct = res.headers.get('content-type') || "";
       return ct.includes('application/json') ? res.json() : res.text();
     }
 
-    // Add Funds (Checkout redirect)
+    // ---------- Add Funds (Checkout)
     document.getElementById('add-funds-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const dollars = Number(document.getElementById('topup').value || 0);
@@ -243,33 +290,73 @@
       window.location = url;
     });
 
-    // Add Card (SetupIntent → Payment Element)
-    const addCardModal = document.getElementById('addCardModal');
-    let elements, paymentElement;
+    // ---------- Stripe Elements lifecycle (prevents "Element destroyed" errors)
+    const addPmModal = document.getElementById('addPmModal');
+    const paymentElementContainer = document.getElementById('payment-element');
 
-    addCardModal.addEventListener('shown.bs.modal', async () => {
-      const { clientSecret } = await postToHandler('SetupIntent', { walletId: activeWalletId });
-      elements = stripe.elements({ clientSecret });
-      paymentElement = elements.create('payment');
-      paymentElement.mount('#payment-element');
+    let elements = null;
+    let paymentElement = null;
+    let clientSecretCurrent = null;
+    let isMounting = false;
+    let isSubmitting = false;
+
+    addPmModal.addEventListener('shown.bs.modal', async () => {
+      if (isMounting || paymentElement) return;
+      try {
+        isMounting = true;
+        const { clientSecret } = await postToHandler('SetupIntent', { walletId: activeWalletId });
+        clientSecretCurrent = clientSecret;
+
+        paymentElementContainer.innerHTML = '';
+        elements = stripe.elements({ clientSecret });
+        paymentElement = elements.create('payment', { paymentMethodOrder: ['us_bank_account', 'card'] });
+        paymentElement.mount('#payment-element');
+      } catch (err) {
+        console.error(err);
+        alert('Unable to initialize payment form. Please try again.');
+      } finally {
+        isMounting = false;
+      }
     });
 
-    addCardModal.addEventListener('hidden.bs.modal', () => {
-      if (paymentElement) paymentElement.unmount();
-      elements = null; paymentElement = null;
+    addPmModal.addEventListener('hidden.bs.modal', () => {
+      try { if (paymentElement) paymentElement.destroy(); }
+      finally {
+        paymentElement = null;
+        elements = null;
+        clientSecretCurrent = null;
+        paymentElementContainer.innerHTML = '';
+        isSubmitting = false;
+        isMounting = false;
+      }
     });
 
-    // Save card
-    document.getElementById('card-form').addEventListener('submit', async (e) => {
+    document.getElementById('pm-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const { error } = await stripe.confirmSetup({
-        elements,
-        confirmParams: { return_url: window.location.href } // reload on success
-      });
-      if (error) alert(error.message);
+      if (isSubmitting) return;
+      if (!elements || !paymentElement || !clientSecretCurrent) {
+        alert('Payment form is not ready. Please reopen “Add Payment Method”.');
+        return;
+      }
+      isSubmitting = true;
+      const saveBtn = document.getElementById('savePm');
+      saveBtn.disabled = true;
+
+      try {
+        const { error } = await stripe.confirmSetup({
+          elements,
+          confirmParams: { return_url: window.location.href } // back with ?setup_intent=... & ?setup_intent_client_secret=...
+        });
+        if (error) alert(error.message);
+      } catch (err) {
+        alert(err?.message || 'Could not save payment method.');
+      } finally {
+        isSubmitting = false;
+        saveBtn.disabled = false;
+      }
     });
 
-    // Make default / Delete
+    // ---------- Make default / Delete
     document.querySelectorAll('.make-default').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const pmId = e.currentTarget.dataset.pmid;
@@ -281,9 +368,97 @@
     document.querySelectorAll('.delete-method').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const pmId = e.currentTarget.dataset.pmid;
-        if (!confirm('Remove this card?')) return;
+        if (!confirm('Remove this payment method?')) return;
         await postToHandler('DeleteMethod', { pmId, walletId: activeWalletId });
         location.reload();
       });
     });
+
+    // ---------- ACH micro‑deposits verification
+
+    // On load, if server didn't show banner, ask backend if verification is pending.
+    document.addEventListener('DOMContentLoaded', async () => {
+      const banner = document.getElementById('ach-verify-panel');
+      const alreadyVisible = banner && banner.style.display !== 'none';
+      if (alreadyVisible) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const siClientSecret = params.get('setup_intent_client_secret');
+
+      try {
+        const payload = {};
+        if (siClientSecret) payload.clientSecret = siClientSecret;
+        const res = await postToHandler('AchStatus', payload);
+
+        if (res && res.needsVerification) {
+          banner.style.display = 'block';
+
+          if (res.hostedVerificationUrl) {
+            const wrap = document.getElementById('ach-hosted-wrapper');
+            const link = document.getElementById('ach-hosted-link');
+            wrap.style.display = 'block';
+            link.href = res.hostedVerificationUrl;
+          }
+
+          if (res.microdepositType) {
+            const hint = document.getElementById('ach-hint');
+            hint.style.display = 'block';
+            hint.innerHTML = `Hint: expected verification via <b>${res.microdepositType}</b>.`;
+          }
+
+          if (res.clientSecret && !siClientSecret) {
+            window.__achClientSecret = res.clientSecret; // cache for client-side verify
+          }
+        }
+      } catch (e) {
+        console.warn('ACH status probe failed:', e);
+      }
+    });
+
+    function getSiClientSecretFromUrlOrCache() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('setup_intent_client_secret') || window.__achClientSecret || null;
+    }
+
+    const verifyClientBtn = document.getElementById('verify-ach-client');
+    const verifyServerBtn = document.getElementById('verify-ach-server');
+
+    async function doClientVerify() {
+      const siClientSecret = getSiClientSecretFromUrlOrCache();
+      if (!siClientSecret) {
+        alert("Missing verification token. Use 'Verify on Stripe' above or the Server Verify button.");
+        return;
+      }
+      const a1 = document.getElementById('amt1').value;
+      const a2 = document.getElementById('amt2').value;
+      const code = (document.getElementById('code').value || '').trim();
+
+      let result;
+      if (code) {
+        result = await stripe.verifyMicrodepositsForSetup({ clientSecret: siClientSecret, descriptorCode: code });
+      } else if (a1 && a2) {
+        result = await stripe.verifyMicrodepositsForSetup({ clientSecret: siClientSecret, amounts: [Number(a1), Number(a2)] });
+      } else {
+        alert('Enter both deposit amounts or the descriptor code.');
+        return;
+      }
+
+      if (result.error) { alert(result.error.message); return; }
+      location.href = window.location.pathname; // reload so backend saves PM in succeeded branch
+    }
+
+    async function doServerVerify() {
+      const payload = {
+        clientSecret: getSiClientSecretFromUrlOrCache(),
+        amount1: Number(document.getElementById('amt1').value || 0),
+        amount2: Number(document.getElementById('amt2').value || 0),
+        descriptorCode: (document.getElementById('code').value || '').trim()
+      };
+      const res = await postToHandler('VerifyAch', payload);
+      if (res.status === 'succeeded') location.reload();
+      else alert('Verification status: ' + res.status);
+    }
+
+    verifyClientBtn?.addEventListener('click', doClientVerify);
+    verifyServerBtn?.addEventListener('click', doServerVerify);
 </script>
