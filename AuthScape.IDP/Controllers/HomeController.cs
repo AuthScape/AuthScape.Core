@@ -15,7 +15,7 @@ namespace IDP.Controllers
         public IActionResult Index()
         {
             //var returnUrl = appSettings.LoginRedirectUrl + "/login";
-            return Redirect("/Identity/Account/Manage/index");
+            return Redirect("/Profile");
             //return View();
         }
         public IActionResult Error()

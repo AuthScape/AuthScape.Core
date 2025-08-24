@@ -401,6 +401,7 @@ namespace AuthScape.ContentManagement.Services
             await databaseContext.SaveChangesAsync();
         }
 
+
         public async Task<AuthScape.ContentManagement.Models.Page?> GetPageWithSlug(List<string>? slugs, string? Host = null)
         {
             if (Host.Contains("localhost"))
