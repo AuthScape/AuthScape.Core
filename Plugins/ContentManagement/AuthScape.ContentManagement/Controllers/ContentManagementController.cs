@@ -64,7 +64,7 @@ namespace AuthScape.DocumentReader.Controllers
             return Ok(page);
         }
 
-        [HttpGet]
+        [HttpPost]
         public async Task<IActionResult> GetPageWithSlug(GetPageWithSlugParam param)
         {
             var page = await _contentManagementService.GetPageWithSlug(param.Slugs, param.Host);

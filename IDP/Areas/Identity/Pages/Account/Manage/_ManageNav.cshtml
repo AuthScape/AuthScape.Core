@@ -46,7 +46,7 @@
         </li>
     }
     <li class="nav-item">
-        <a class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="language-region" asp-page="./LanguageRegion">
+        <a class="nav-link @ManageNavPages.LanguageRegionTimeZoneNavClass(ViewContext)" id="language-region" asp-page="./LanguageRegion">
             <i class="fa fa-language"></i>Language &amp; Region &amp; Time zone
         </a>
     </li>
@@ -61,6 +61,11 @@
     <li class="nav-item">
         <a class="nav-link" id="login-alerts" asp-page="./LoginAlerts">
             <i class="fa fa-bell"></i>Login alerts
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="login-alerts" asp-page="./ExternalLogins">
+            <i class="fa fa-bell"></i>External Logins
         </a>
     </li>
     <li class="nav-item">

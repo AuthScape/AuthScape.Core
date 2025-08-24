@@ -126,7 +126,7 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
             var opts = new SetupIntentCreateOptions
             {
                 Customer = wallet.PaymentCustomerId,
-                PaymentMethodTypes = new List<string> { "us_bank_account", "card" },
+                //PaymentMethodTypes = new List<string> { "us_bank_account", "card" },
                 Metadata = new Dictionary<string, string> { ["wallet_id"] = wallet.Id.ToString() },
                 PaymentMethodOptions = new SetupIntentPaymentMethodOptionsOptions
                 {

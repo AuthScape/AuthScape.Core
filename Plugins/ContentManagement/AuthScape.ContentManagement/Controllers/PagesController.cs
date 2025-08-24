@@ -20,5 +20,19 @@ namespace AuthScape.DocumentReader.Controllers
             var page = await _contentManagementService.GetPageWithSlug(param.Slugs, param.Host);
             return Ok(page);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPageImageAssets(long? oemCompanyId)
+        {
+            var page = await _contentManagementService.GetPageImageAssets(oemCompanyId);
+            return Ok(page);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetHomePage()
+        {
+            var page = await _contentManagementService.GetHomepage();
+            return Ok(page);
+        }
     }
 }
