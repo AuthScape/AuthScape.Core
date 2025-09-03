@@ -16,6 +16,7 @@ namespace AuthScape.ContentManagement.Services
     {
         Task<PagedList<Page>> GetPages(string search, int sort, long[]? chipFilters, int offset = 1, int length = 12, long? privateLabelCompanyId = null);
         Task<PagedList<PageImageAsset>> GetPageAssets(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null);
+        Task<PagedList<PageBlockList>> GetPageBlockList(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null);
         Task<List<PageType>> GetPageTypes();
         Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null);
         Task<Page> GetPage(Guid pageId);
@@ -24,8 +25,11 @@ namespace AuthScape.ContentManagement.Services
         Task UpdatePage(Guid? pageId, string title, long pageTypeId, long? pageRootId, string description, int? recursion, string slug, long? PrivateLabelCompanyId = null);
         Task<Guid> CreateNewAsset(string title, IFormFile file, string description, long? PrivateLabelCompanyId = null);
         Task UpdateAsset(Guid? assetId, string title, string description, long? PrivateLabelCompanyId = null);
+        Task<Guid> CreateNewBlockList(string title, string? email, string? keyword, string description, long? PrivateLabelCompanyId = null);
+        Task UpdateBlockList(Guid? assetId, string title, string? email, string? keyword, string description, long? PrivateLabelCompanyId = null);
         Task RemovePage(Guid pageId);
         Task RemoveAsset(Guid assetId);
+        Task RemoveBlockList(Guid blockId);
         Task<AuthScape.ContentManagement.Models.Page?> GetPageWithSlug(List<string>? slugs, string? Host = null);
         Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId);
         Task<List<PageImageAsset>> GetPageImageAssets(long? oemCompanyId);
@@ -69,6 +73,7 @@ namespace AuthScape.ContentManagement.Services
                 .ToListAsync();
         }
 
+        
         public async Task<Page?> GetHomepage()
         {
             var homepagePageType = await databaseContext.PageTypes.Where(pt => pt.IsHomepage).FirstOrDefaultAsync();
@@ -274,6 +279,47 @@ namespace AuthScape.ContentManagement.Services
             await databaseContext.SaveChangesAsync();
         }
 
+
+        public async Task<Guid> CreateNewBlockList(string title, string? email, string? keyword, string description, long? PrivateLabelCompanyId = null)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var blocklist = new PageBlockList
+            {
+                Title = title,
+                Email = email,
+                Keyword = keyword,
+                CompanyId = PrivateLabelCompanyId,
+                Description = description,
+                Created = DateTimeOffset.Now,
+                LastUpdated = DateTimeOffset.Now,
+            };
+
+            databaseContext.PageBlockLists.Add(blocklist);
+            await databaseContext.SaveChangesAsync();
+
+            return blocklist.Id;
+        }
+
+
+        public async Task UpdateBlockList(Guid? blocklistId, string title, string? email, string? keyword, string description, long? PrivateLabelCompanyId = null)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var blockList = await databaseContext.PageBlockLists.Where(p => p.Id == blocklistId && p.CompanyId == PrivateLabelCompanyId).FirstOrDefaultAsync();
+            if (blockList == null) { throw new Exception("BlockList does not exist"); }
+
+            blockList.Title = title;
+            blockList.Email = email;
+            blockList.Keyword = keyword;
+            blockList.Description = description;
+            blockList.LastUpdated = DateTimeOffset.Now;
+
+            await databaseContext.SaveChangesAsync();
+        }
+
         public async Task<Page> GetPage(Guid pageId)
         {
             var page = await databaseContext.Pages
@@ -390,6 +436,14 @@ namespace AuthScape.ContentManagement.Services
             var asset = await databaseContext.PageImageAssets.Where(pa => pa.Id == assetId).FirstOrDefaultAsync();
             if (asset == null) { throw new Exception("Asset does not exist"); }
             databaseContext.PageImageAssets.Remove(asset);
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveBlockList(Guid blockId)
+        {
+            var blockList = await databaseContext.PageBlockLists.Where(pa => pa.Id == blockId).FirstOrDefaultAsync();
+            if (blockList == null) { throw new Exception("BlockList does not exist"); }
+            databaseContext.PageBlockLists.Remove(blockList);
             await databaseContext.SaveChangesAsync();
         }
         public async Task UpdatePageContent(Guid pageId, string data)
@@ -523,6 +577,59 @@ namespace AuthScape.ContentManagement.Services
                     FileName = p.FileName,
                     Description = p.Description,
                     Url = p.Url,
+                    CompanyId = p.CompanyId,
+                    Created = p.Created,
+                    LastUpdated = p.LastUpdated,
+                })
+                .ToPagedResultAsync(offset - 1, length);
+
+            return pageAssets;
+        }
+
+
+        public async Task<PagedList<PageBlockList>> GetPageBlockList(string search, int sort, int offset = 1, int length = 12, long? privateLabelCompanyId = null)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim().ToLower();
+            }
+
+
+            var pageBlockListQuery = databaseContext.PageBlockLists
+                .AsNoTracking()
+                .Where(pq =>
+                    pq.CompanyId == privateLabelCompanyId &&
+                    (string.IsNullOrWhiteSpace(search) || pq.Title.ToLower().Contains(search)));
+
+
+            switch (sort)
+            {
+                case 1:
+                    pageBlockListQuery = pageBlockListQuery.OrderBy(pq => pq.Title);
+                    break;
+                case 2:
+                    pageBlockListQuery = pageBlockListQuery.OrderByDescending(pq => pq.Title);
+                    break;
+                case 3:
+                    pageBlockListQuery = pageBlockListQuery.OrderBy(pq => pq.LastUpdated);
+                    break;
+                case 4:
+                    pageBlockListQuery = pageBlockListQuery.OrderByDescending(pq => pq.LastUpdated);
+                    break;
+            }
+
+            var pageAssets = await pageBlockListQuery
+                .Select(p => new PageBlockList
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Email = p.Email,
+                    Keyword = p.Keyword,
+                    Description = p.Description,
                     CompanyId = p.CompanyId,
                     Created = p.Created,
                     LastUpdated = p.LastUpdated,
