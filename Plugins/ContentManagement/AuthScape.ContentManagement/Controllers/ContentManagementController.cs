@@ -43,6 +43,20 @@ namespace AuthScape.DocumentReader.Controllers
             });
         }
 
+
+        [HttpPost]
+        public async Task<IActionResult> GetPageBlockList ([FromBody] DataGridParam dataGridParam)
+        {
+            var data = await _contentManagementService.GetPageBlockList(dataGridParam.Search, dataGridParam.Sort, dataGridParam.Offset, dataGridParam.Length, dataGridParam.PrivateLabelCompanyId);
+            return Ok(new ReactDataTable()
+            {
+                recordsTotal = data.total,
+                recordsFiltered = data.total,
+                data = data
+            });
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> GetPageTypes()
         {
@@ -122,6 +136,21 @@ namespace AuthScape.DocumentReader.Controllers
 
 
         [HttpPost]
+        public async Task<IActionResult> CreateNewBlockList([FromForm] BlockListParam param)
+        {
+            await _contentManagementService.CreateNewBlockList(param.Title, param.Email, param.KeyWord, param.Description, param.PrivateLabelCompanyId);
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateBlockList([FromBody] BlockListParam param)
+        {
+            await _contentManagementService.UpdateBlockList(param.BlockId, param.Title, param.Email, param.KeyWord, param.Description, param.PrivateLabelCompanyId);
+            return Ok();
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> RemovePage(Guid pageId)
         {
             await _contentManagementService.RemovePage(pageId);
@@ -133,6 +162,13 @@ namespace AuthScape.DocumentReader.Controllers
         public async Task<IActionResult> RemoveAsset(Guid assetId)
         {
             await _contentManagementService.RemoveAsset(assetId);
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveBlockList(Guid blockId)
+        {
+            await _contentManagementService.RemoveBlockList(blockId);
             return Ok();
         }
 
@@ -175,6 +211,17 @@ namespace AuthScape.DocumentReader.Controllers
         public string Description { get; set; }
         public long? PrivateLabelCompanyId { get; set; }
     }
+
+    public class BlockListParam
+    {
+        public Guid? BlockId { get; set; }
+        public string Title { get; set; }
+        public string? Email {  get; set; }
+        public string? KeyWord { get; set; }
+        public string Description { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
+    }
+
 
     public class ContentParam
     {

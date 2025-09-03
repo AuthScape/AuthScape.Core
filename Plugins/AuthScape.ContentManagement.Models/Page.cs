@@ -59,4 +59,16 @@ namespace AuthScape.ContentManagement.Models
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset LastUpdated { get; set; }
     }
+
+    public class PageBlockList
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; }
+        public string? Email { get; set; }
+        public string? Keyword { get; set; }
+        public string Description { get; set; }
+        public long? CompanyId { get; set; }
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset LastUpdated { get; set; }
+    }
 }
