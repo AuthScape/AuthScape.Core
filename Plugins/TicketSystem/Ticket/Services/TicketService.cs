@@ -395,6 +395,32 @@ namespace AuthScape.TicketSystem.Services
 
         public async Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? message,  string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null)
         {
+            var blockedList = await databaseContext.PageBlockLists
+                     .AsNoTracking()
+                     .Where(pbl => pbl.CompanyId == PrivateLabelCompanyId)
+                     .ToListAsync();
+
+            var isBlocked = blockedList.Any(block =>
+                (!string.IsNullOrWhiteSpace(block.Email) &&
+                 string.Equals(block.Email.Trim(), email?.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+
+                (!string.IsNullOrWhiteSpace(block.Keyword) && (
+                    (!string.IsNullOrWhiteSpace(description) && description.Contains(block.Keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(message) && message.Contains(block.Keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(firstName) && firstName.Contains(block.Keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(lastName) && lastName.Contains(block.Keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(companyName) && companyName.Contains(block.Keyword, StringComparison.OrdinalIgnoreCase))
+                ))
+            );
+
+       
+            if (isBlocked)
+            {
+                return 0;
+            }
+
+
+
             var newTicket = new Ticket()
             {
                 Email = email,
@@ -443,6 +469,8 @@ namespace AuthScape.TicketSystem.Services
                 IsNote = false
             });
             await databaseContext.SaveChangesAsync();
+
+            
 
             await notificationService.NotifyTicketCreated(newTicket);
 
