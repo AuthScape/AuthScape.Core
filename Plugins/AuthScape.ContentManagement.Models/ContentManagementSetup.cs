@@ -35,6 +35,12 @@ namespace AuthScape.ContentManagement.Models
             {
                 entity.HasKey(e => e.Id);
             });
+
+            builder.Entity<PageBlockList>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
         }
+
     }
 }
