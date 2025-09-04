@@ -46,7 +46,7 @@
     <PackageReference Include="AspNet.Security.OAuth.Yammer" Version="9.4.0" />
     <PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
     <PackageReference Include="CoreBackpack" Version="1.0.42" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
