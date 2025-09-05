@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using System.Collections.Specialized;
+using System.Web;
+using AuthScape.Models.Users;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Services.Context;
-using System.Collections.Specialized;
-using System.Web;
 
 namespace AuthScape.IDP.Controllers
 {
@@ -12,6 +13,8 @@ namespace AuthScape.IDP.Controllers
 
         public string? MinifiedCSS { get; set; }
         public string? CompanyName { get; set; }
+        public long? CompanyId { get; set; }
+        public string? CompanyLogo {  get; set; }
 
         public AuthScapePageModel(DatabaseContext databaseContext)
         {
@@ -50,11 +53,15 @@ namespace AuthScape.IDP.Controllers
 
                     MinifiedCSS = dnsRecord.MinifiedCSSFile;
                     CompanyName = company.Title;
+                    CompanyId = company.Id;
+                    CompanyLogo = company.Logo;
                 }
                 else
                 {
                     MinifiedCSS = null;
                     CompanyName = null;
+                    CompanyId = null;
+                    CompanyLogo = null;
                 }
             }
         }
