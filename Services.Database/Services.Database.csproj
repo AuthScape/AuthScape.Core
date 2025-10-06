@@ -5,10 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fido2" Version="3.0.1" />
-    <PackageReference Include="Fido2.Models" Version="3.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
+    <PackageReference Include="Fido2" Version="4.0.0" />
+    <PackageReference Include="Fido2.Models" Version="4.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,10 +23,6 @@
     <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
     <ProjectReference Include="..\Plugins\NodeService\AuthScape.NodeService.Models\AuthScape.Flows.Models.csproj" />
     <ProjectReference Include="..\Plugins\Tickets\AuthScape.TicketSystem.Modals\AuthScape.TicketSystem.Modals.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

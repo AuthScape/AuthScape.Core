@@ -10,11 +10,12 @@
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.PrivateLabel.Models</Product>
-    <Version>1.2.392</Version>
+    <Version>1.2.394</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
 </Project>

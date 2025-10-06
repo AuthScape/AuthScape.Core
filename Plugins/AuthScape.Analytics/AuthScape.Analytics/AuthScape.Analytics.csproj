@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Analytics</PackageId>
     <Title>AuthScape.Analytics</Title>
-    <Version>1.2.392</Version>
+    <Version>1.2.394</Version>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
     <Product>AuthScape.Analytics</Product>
@@ -15,7 +15,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 

@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
-using System;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -173,27 +173,6 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FidoStoredCredential",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    PublicKey = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    UserHandle = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    SignatureCounter = table.Column<long>(type: "bigint", nullable: false),
-                    CredType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RegDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AaGuid = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DescriptorJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FidoStoredCredential", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FlowProjects",
                 columns: table => new
                 {
@@ -326,6 +305,24 @@ namespace Services.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PageBlockLists",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Keyword = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PageBlockLists", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PageImageAssets",
                 columns: table => new
                 {
@@ -368,7 +365,6 @@ namespace Services.Database.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRecursive = table.Column<bool>(type: "bit", nullable: false),
                     IsHomepage = table.Column<bool>(type: "bit", nullable: false),
                     IsLink = table.Column<bool>(type: "bit", nullable: false),
                     IsEmail = table.Column<bool>(type: "bit", nullable: false)
@@ -441,6 +437,20 @@ namespace Services.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ProductCardCategories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Settings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "newsequentialid()"),
+                    SettingTypeId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Settings", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -538,7 +548,9 @@ namespace Services.Database.Migrations
                 {
                     ThirdPartyAuthenticationType = table.Column<int>(type: "int", nullable: false),
                     ClientId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ClientSecret = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ClientSecret = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RedirectUri = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProviderName = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -728,6 +740,7 @@ namespace Services.Database.Migrations
                     FavIcon = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     GoogleAnaltyics = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MicrosoftClarity = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    HubspotTracking = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MinifiedCSSFile = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DNSErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DemoCompanyId = table.Column<long>(type: "bigint", nullable: true),
@@ -757,8 +770,8 @@ namespace Services.Database.Migrations
                     ZipCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     lat = table.Column<float>(type: "real", nullable: true),
                     lng = table.Column<float>(type: "real", nullable: true),
-                    IsArchived = table.Column<bool>(type: "bit", nullable: false),
-                    CompanyId = table.Column<long>(type: "bigint", nullable: false)
+                    IsDeactivated = table.Column<bool>(type: "bit", nullable: false),
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -781,7 +794,9 @@ namespace Services.Database.Migrations
                     IsRequired = table.Column<bool>(type: "bit", nullable: false),
                     GridSize = table.Column<int>(type: "int", nullable: true),
                     TabId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CompanyId = table.Column<long>(type: "bigint", nullable: true)
+                    CompanyId = table.Column<long>(type: "bigint", nullable: true),
+                    IsColumnOnDatagrid = table.Column<bool>(type: "bit", nullable: false),
+                    Properties = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1010,8 +1025,12 @@ namespace Services.Database.Migrations
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LocationName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ALTCompanyName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TicketStatusId = table.Column<int>(type: "int", nullable: false),
                     TicketTypeId = table.Column<int>(type: "int", nullable: false),
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
@@ -1019,6 +1038,7 @@ namespace Services.Database.Migrations
                     PriorityLevel = table.Column<int>(type: "int", nullable: false),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     LastUpdated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CustomPayload = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PrivateLabelCompanyId = table.Column<long>(type: "bigint", nullable: true),
                     CustomTabPayload = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -1077,6 +1097,9 @@ namespace Services.Database.Migrations
                     CompanyId = table.Column<long>(type: "bigint", nullable: true),
                     LocationId = table.Column<long>(type: "bigint", nullable: true),
                     WhenInviteSent = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Culture = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Country = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TimeZoneId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -1120,6 +1143,24 @@ namespace Services.Database.Migrations
                     table.PrimaryKey("PK_CompanyCustomFields", x => new { x.CompanyId, x.CustomFieldId });
                     table.ForeignKey(
                         name: "FK_CompanyCustomFields_CustomFields_CustomFieldId",
+                        column: x => x.CustomFieldId,
+                        principalTable: "CustomFields",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LocationCustomFields",
+                columns: table => new
+                {
+                    LocationId = table.Column<long>(type: "bigint", nullable: false),
+                    CustomFieldId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LocationCustomFields", x => new { x.LocationId, x.CustomFieldId });
+                    table.ForeignKey(
+                        name: "FK_LocationCustomFields_CustomFields_CustomFieldId",
                         column: x => x.CustomFieldId,
                         principalTable: "CustomFields",
                         principalColumn: "Id");
@@ -1257,7 +1298,7 @@ namespace Services.Database.Migrations
                     ReferenceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Subject = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
-                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                    Type = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1416,6 +1457,33 @@ namespace Services.Database.Migrations
                     table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
                     table.ForeignKey(
                         name: "FK_AspNetUserTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Fido2Credentials",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CredentialId = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    PublicKey = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    UserHandle = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    SignatureCounter = table.Column<long>(type: "bigint", nullable: false),
+                    CredType = table.Column<int>(type: "int", nullable: false),
+                    RegDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AaGuid = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Fido2Credentials", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Fido2Credentials_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -1649,6 +1717,31 @@ namespace Services.Database.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "WalletTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    WalletId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StripeObjectId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExternalRef = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WalletTransactions_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AnalyticsConversions_SessionId",
                 table: "AnalyticsConversions",
@@ -1764,6 +1857,11 @@ namespace Services.Database.Migrations
                 column: "DocumentFolderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Fido2Credentials_UserId",
+                table: "Fido2Credentials",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FlowEdges_FlowProjectId",
                 table: "FlowEdges",
                 column: "FlowProjectId");
@@ -1817,6 +1915,11 @@ namespace Services.Database.Migrations
                 name: "IX_KanbanCards_KanbanColumnId",
                 table: "KanbanCards",
                 column: "KanbanColumnId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocationCustomFields_CustomFieldId",
+                table: "LocationCustomFields",
+                column: "CustomFieldId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Locations_CompanyId",
@@ -1938,6 +2041,11 @@ namespace Services.Database.Migrations
                 name: "IX_Wallets_UserId",
                 table: "Wallets",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTransactions_WalletId",
+                table: "WalletTransactions",
+                column: "WalletId");
         }
 
         /// <inheritdoc />
@@ -1989,7 +2097,7 @@ namespace Services.Database.Migrations
                 name: "Documents");
 
             migrationBuilder.DropTable(
-                name: "FidoStoredCredential");
+                name: "Fido2Credentials");
 
             migrationBuilder.DropTable(
                 name: "FlowEdges");
@@ -2013,6 +2121,9 @@ namespace Services.Database.Migrations
                 name: "KanbanCardCollaborators");
 
             migrationBuilder.DropTable(
+                name: "LocationCustomFields");
+
+            migrationBuilder.DropTable(
                 name: "Loggings");
 
             migrationBuilder.DropTable(
@@ -2020,6 +2131,9 @@ namespace Services.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OpenIddictTokens");
+
+            migrationBuilder.DropTable(
+                name: "PageBlockLists");
 
             migrationBuilder.DropTable(
                 name: "PageImageAssets");
@@ -2038,6 +2152,9 @@ namespace Services.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProductCardCategories");
+
+            migrationBuilder.DropTable(
+                name: "Settings");
 
             migrationBuilder.DropTable(
                 name: "SharedDocuments");
@@ -2077,6 +2194,9 @@ namespace Services.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "WalletPaymentMethods");
+
+            migrationBuilder.DropTable(
+                name: "WalletTransactions");
 
             migrationBuilder.DropTable(
                 name: "AnalyticsMails");

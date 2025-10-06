@@ -45,6 +45,7 @@ namespace AuthScape.ContentManagement.Models
         public bool IsInHeaderNavigation { get; set; }
         public bool Highlight { get; set; }
         public int? Order { get; set; }
+        public long? ParentId { get; set; }
         public ICollection<Page> Pages { get; set; }
     }
 

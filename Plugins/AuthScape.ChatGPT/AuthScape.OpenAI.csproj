@@ -7,14 +7,15 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.OpenAI</PackageId>
     <Title>AuthScape.OpenAI</Title>
-    <Version>1.2.392</Version>
+    <Version>1.2.394</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.OpenAI</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenAI" Version="2.1.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
+    <PackageReference Include="OpenAI" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>

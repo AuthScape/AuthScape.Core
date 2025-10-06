@@ -7,8 +7,10 @@ using CoreBackpack.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Services;
 using Services.Context;
 using Services.Database;
+using ISlugService = Services.ISlugService;
 
 namespace AuthScape.ContentManagement.Services
 {
@@ -34,6 +36,7 @@ namespace AuthScape.ContentManagement.Services
         Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId);
         Task<List<PageImageAsset>> GetPageImageAssets(long? oemCompanyId);
         Task<Page?> GetHomepage();
+        Task<long> CreatePageRoot(string Name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null);
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -416,6 +419,35 @@ namespace AuthScape.ContentManagement.Services
         {
             var pageTypes = await databaseContext.PageTypes.AsNoTracking().ToListAsync();
             return pageTypes;
+        }
+
+        public async Task<long> CreatePageRoot(string Name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null)
+        {
+            // look at the private label domain and find the companyId (if we are on the private label)
+            //domain
+            long? companyId = null;
+            if (domain != null)
+            {
+                var dnsRecord = await databaseContext.DnsRecords.Where(z => z.Domain.ToLower() == domain.ToLower()).AsNoTracking().FirstOrDefaultAsync();
+                if (dnsRecord != null)
+                {
+                    companyId = dnsRecord.CompanyId;
+                }
+            }
+
+            var pageRoot = new PageRoot()
+            {
+                Title = Name,
+                RootUrl = slug,
+                IsInHeaderNavigation = isInHeaderNavigation,
+                Highlight = highlight,
+                Order = order,
+                CompanyId = companyId
+            };
+            await databaseContext.PageRoots.AddAsync(pageRoot);
+            await databaseContext.SaveChangesAsync();
+
+            return pageRoot.Id;
         }
 
         public async Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null)
