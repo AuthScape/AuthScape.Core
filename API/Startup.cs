@@ -247,7 +247,6 @@ namespace API
         {
             authenticationManager.Configure(app, env);
 
-
             // remove if not using wwwroot folder...
             app.UseStaticFiles();
 

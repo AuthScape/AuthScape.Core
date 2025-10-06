@@ -12,15 +12,15 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20250421140626_testing")]
-    partial class testing
+    [Migration("20251006152302_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -361,6 +361,40 @@ namespace Services.Database.Migrations
                     b.HasIndex("PageTypeId");
 
                     b.ToTable("Pages");
+                });
+
+            modelBuilder.Entity("AuthScape.ContentManagement.Models.PageBlockList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Keyword")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastUpdated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PageBlockLists");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageImageAsset", b =>
@@ -1242,6 +1276,67 @@ namespace Services.Database.Migrations
                     b.ToTable("WalletPaymentMethods");
                 });
 
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExternalRef")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StripeObjectId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("WalletTransactions");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.Settings.Settings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SettingTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Settings");
+                });
+
             modelBuilder.Entity("AuthScape.Models.Stylesheets.Stylesheet", b =>
                 {
                     b.Property<long>("Id")
@@ -1284,8 +1379,14 @@ namespace Services.Database.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Country")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Culture")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -1338,6 +1439,9 @@ namespace Services.Database.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TimeZoneId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
@@ -1410,10 +1514,10 @@ namespace Services.Database.Migrations
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("CompanyId")
+                    b.Property<long?>("CompanyId")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("IsArchived")
+                    b.Property<bool>("IsDeactivated")
                         .HasColumnType("bit");
 
                     b.Property<string>("State")
@@ -1782,6 +1886,9 @@ namespace Services.Database.Migrations
                     b.Property<string>("HeaderCode")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("HubspotTracking")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("MicrosoftClarity")
                         .HasColumnType("nvarchar(max)");
 
@@ -1870,6 +1977,12 @@ namespace Services.Database.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("ALTCompanyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<long?>("CompanyId")
                         .HasColumnType("bigint");
 
@@ -1882,11 +1995,13 @@ namespace Services.Database.Migrations
                     b.Property<long?>("CreatedById")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CustomPayload")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CustomTabPayload")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
@@ -1895,6 +2010,9 @@ namespace Services.Database.Migrations
 
                     b.Property<string>("FirstName")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JobTitle")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LastName")
@@ -1908,6 +2026,9 @@ namespace Services.Database.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<string>("LocationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PriorityLevel")
@@ -2098,11 +2219,17 @@ namespace Services.Database.Migrations
                     b.Property<int?>("GridSize")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsColumnOnDatagrid")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsRequired")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Properties")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("TabId")
@@ -2135,6 +2262,25 @@ namespace Services.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CustomFieldsTab");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManagementSystem.Models.LocationCustomField", b =>
+                {
+                    b.Property<long>("LocationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CustomFieldId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("LocationId", "CustomFieldId");
+
+                    b.HasIndex("CustomFieldId");
+
+                    b.ToTable("LocationCustomFields");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.UserCustomField", b =>
@@ -2270,13 +2416,15 @@ namespace Services.Database.Migrations
                     b.Property<string>("AaGuid")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CredType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("CredType")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("CredentialId")
                         .IsRequired()
                         .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("DeviceName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("PublicKey")
                         .IsRequired()
@@ -2685,8 +2833,8 @@ namespace Services.Database.Migrations
                         .HasColumnType("nvarchar(400)");
 
                     b.Property<string>("Type")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 
@@ -2869,6 +3017,17 @@ namespace Services.Database.Migrations
                     b.Navigation("Wallet");
                 });
 
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletTransaction", b =>
+                {
+                    b.HasOne("AuthScape.Models.PaymentGateway.Wallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
+                });
+
             modelBuilder.Entity("AuthScape.Models.Users.AppUser", b =>
                 {
                     b.HasOne("AuthScape.Models.Users.Company", "Company")
@@ -2888,8 +3047,7 @@ namespace Services.Database.Migrations
                 {
                     b.HasOne("AuthScape.Models.Users.Company", "Company")
                         .WithMany("Locations")
-                        .HasForeignKey("CompanyId")
-                        .IsRequired();
+                        .HasForeignKey("CompanyId");
 
                     b.Navigation("Company");
                 });
@@ -3060,6 +3218,16 @@ namespace Services.Database.Migrations
                         .HasForeignKey("TabId");
 
                     b.Navigation("CustomFieldTab");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManagementSystem.Models.LocationCustomField", b =>
+                {
+                    b.HasOne("AuthScape.UserManagementSystem.Models.CustomField", "CustomField")
+                        .WithMany("LocationCustomFields")
+                        .HasForeignKey("CustomFieldId")
+                        .IsRequired();
+
+                    b.Navigation("CustomField");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.UserCustomField", b =>
@@ -3340,6 +3508,8 @@ namespace Services.Database.Migrations
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CustomField", b =>
                 {
                     b.Navigation("CompanyCustomFields");
+
+                    b.Navigation("LocationCustomFields");
 
                     b.Navigation("UserCustomFields");
                 });

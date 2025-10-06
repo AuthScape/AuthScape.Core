@@ -17,7 +17,7 @@ namespace Services.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1322,6 +1322,9 @@ namespace Services.Database.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("SettingTypeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -2410,9 +2413,8 @@ namespace Services.Database.Migrations
                     b.Property<string>("AaGuid")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CredType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("CredType")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("CredentialId")
                         .IsRequired()
@@ -2828,8 +2830,8 @@ namespace Services.Database.Migrations
                         .HasColumnType("nvarchar(400)");
 
                     b.Property<string>("Type")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 

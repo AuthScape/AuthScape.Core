@@ -1,4 +1,5 @@
 ﻿using AuthScape.Models.Users;
+using Fido2NetLib.Objects;
 
 namespace Models.Authentication
 {
@@ -9,7 +10,7 @@ namespace Models.Authentication
         public byte[] PublicKey { get; set; }
         public byte[] UserHandle { get; set; }
         public uint SignatureCounter { get; set; }
-        public string CredType { get; set; }
+        public PublicKeyCredentialType CredType { get; set; }
         public DateTime RegDate { get; set; }
         public string? AaGuid { get; set; }
 

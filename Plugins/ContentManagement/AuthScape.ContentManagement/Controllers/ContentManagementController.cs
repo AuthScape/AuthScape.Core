@@ -64,6 +64,13 @@ namespace AuthScape.DocumentReader.Controllers
             return Ok(pageTypes);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreatePageRoot(string name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null)
+        {
+            var newPageRootId = await _contentManagementService.CreatePageRoot(name, slug, isInHeaderNavigation, highlight, order, domain);
+            return Ok(newPageRootId);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetPageRoots(long? privateLabelCompanyId = null)
         {

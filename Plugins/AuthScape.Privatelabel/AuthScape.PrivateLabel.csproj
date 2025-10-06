@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.2.392</Version>
+    <Version>1.2.394</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.PrivateLabel</Product>
@@ -15,8 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="Authsome" Version="1.0.8" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.6.0" />
-    <PackageReference Include="NUglify" Version="1.21.15" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
+    <PackageReference Include="NUglify" Version="1.21.17" />
     <PackageReference Include="Scryber.Core.OpenType" Version="6.0.0.5-beta" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
