@@ -64,12 +64,29 @@ namespace AuthScape.DocumentReader.Controllers
             return Ok(pageTypes);
         }
 
+
         [HttpPost]
-        public async Task<IActionResult> CreatePageRoot(string name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null)
+        public async Task<IActionResult> CreatePageRoot([FromBody] PageRootParam param)
         {
-            var newPageRootId = await _contentManagementService.CreatePageRoot(name, slug, isInHeaderNavigation, highlight, order, domain);
+            var newPageRootId = await _contentManagementService.CreatePageRoot(param.Title, param.Slug, param.IsInHeaderNavigation, param.Highlight, param.Order, param.PrivateLabelCompanyId, param.ParentId);
             return Ok(newPageRootId);
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> UpdatePageRoot([FromBody] PageRootParam param)
+        {
+            await _contentManagementService.UpdatePageRoot(param.PageRootId, param.Title, param.Slug, param.IsInHeaderNavigation, param.Highlight, param.Order, param.PrivateLabelCompanyId, param.ParentId);
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemovePageRoot(long pageRootId)
+        {
+            await _contentManagementService.RemovePageRoot(pageRootId);
+            return Ok();
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetPageRoots(long? privateLabelCompanyId = null)
@@ -208,6 +225,18 @@ namespace AuthScape.DocumentReader.Controllers
         public int? Recursion { get; set; }
         public string Slug { get; set; }
         public long? PrivateLabelCompanyId { get; set; }
+    }
+
+    public class PageRootParam
+    {
+        public long? PageRootId { get; set; }
+        public string Title { get; set; }
+        public string Slug { get; set; }
+        public bool IsInHeaderNavigation { get; set; }
+        public bool Highlight { get; set; }
+        public int Order { get; set; }
+        public long? PrivateLabelCompanyId { get; set; }
+        public long? ParentId { get; set; }
     }
 
     public class AssetParam

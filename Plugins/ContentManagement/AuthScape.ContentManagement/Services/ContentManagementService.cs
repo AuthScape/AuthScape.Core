@@ -36,7 +36,9 @@ namespace AuthScape.ContentManagement.Services
         Task<Guid> CreatePageDuplication(Guid pageId, long oemCompanyId);
         Task<List<PageImageAsset>> GetPageImageAssets(long? oemCompanyId);
         Task<Page?> GetHomepage();
-        Task<long> CreatePageRoot(string Name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null);
+        Task<long> CreatePageRoot(string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId);
+        Task UpdatePageRoot(long? pageRootId, string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId);
+        Task RemovePageRoot(long pageRootId);
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -394,26 +396,34 @@ namespace AuthScape.ContentManagement.Services
             }
 
             var pages = await pageQuery
-                .Select(p => new Page
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Slug = p.Slug,
-                    Content = p.Content,
-                    CompanyId = p.CompanyId,
-                    Description = p.Description,
-                    Created = p.Created,
-                    LastUpdated = p.LastUpdated,
-                    PageTypeId = p.PageTypeId,
-                    PageRootId = p.PageRootId,
-                    Recursion = p.Recursion,
-                    TypeTitle = p.PageType.Title,
-                    RootUrl = p.PageRoot.RootUrl,
-                })
-                .ToPagedResultAsync(offset - 1, length);
+            .Select(p => new Page
+            {
+                Id = p.Id,
+                Title = p.Title,
+                Slug = p.Slug,
+                Content = p.Content,
+                CompanyId = p.CompanyId,
+                Description = p.Description,
+                Created = p.Created,
+                LastUpdated = p.LastUpdated,
+                PageTypeId = p.PageTypeId,
+                PageRootId = p.PageRootId,
+                Recursion = p.Recursion,
+                TypeTitle = p.PageType.Title,
+                RootUrl = p.PageRoot != null
+                    ? (p.PageRoot.ParentId != null
+                        ? databaseContext.PageRoots
+                            .Where(pr => pr.Id == p.PageRoot.ParentId)
+                            .Select(pr => pr.RootUrl)
+                            .FirstOrDefault() + "/" + p.PageRoot.RootUrl
+                        : p.PageRoot.RootUrl)
+                    : null,
+            })
+            .ToPagedResultAsync(offset - 1, length);
 
             return pages;
         }
+
 
         public async Task<List<PageType>> GetPageTypes()
         {
@@ -421,40 +431,79 @@ namespace AuthScape.ContentManagement.Services
             return pageTypes;
         }
 
-        public async Task<long> CreatePageRoot(string Name, string slug, bool isInHeaderNavigation, bool highlight, int order, string? domain = null)
+        public async Task<long> CreatePageRoot(string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId)
         {
-            // look at the private label domain and find the companyId (if we are on the private label)
-            //domain
-            long? companyId = null;
-            if (domain != null)
-            {
-                var dnsRecord = await databaseContext.DnsRecords.Where(z => z.Domain.ToLower() == domain.ToLower()).AsNoTracking().FirstOrDefaultAsync();
-                if (dnsRecord != null)
-                {
-                    companyId = dnsRecord.CompanyId;
-                }
-            }
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
 
             var pageRoot = new PageRoot()
             {
-                Title = Name,
+                Title = title,
                 RootUrl = slug,
                 IsInHeaderNavigation = isInHeaderNavigation,
                 Highlight = highlight,
                 Order = order,
-                CompanyId = companyId
+                CompanyId = privateLabelCompanyId,
+                 ParentId = parentId
             };
-            await databaseContext.PageRoots.AddAsync(pageRoot);
+            databaseContext.PageRoots.Add(pageRoot);
             await databaseContext.SaveChangesAsync();
 
             return pageRoot.Id;
         }
 
+        public async Task UpdatePageRoot(long? pageRootId, string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            if (pageRootId == null) { throw new Exception("Id must be provided"); }
+
+            var pageRoot = await databaseContext.PageRoots.Where(pr => pr.Id == pageRootId).FirstOrDefaultAsync();
+
+            if (pageRoot == null) { throw new Exception("Page Root does not exist"); }
+
+            pageRoot.Title = title;
+            pageRoot.RootUrl = slug;
+            pageRoot.IsInHeaderNavigation = isInHeaderNavigation;
+            pageRoot.Highlight = highlight;
+            pageRoot.Order = order;
+            pageRoot.CompanyId = privateLabelCompanyId;
+            pageRoot.ParentId = parentId;
+
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task RemovePageRoot(long pageRootId)
+        {
+            var signedInUser = await userService.GetSignedInUser();
+            if (signedInUser == null) { throw new Exception("User is not logged in"); }
+
+            var pages = await databaseContext.Pages.Where(p => p.PageRootId == pageRootId).ToListAsync();
+            if (pages.Count > 0)
+            {
+                throw new Exception("Clear all the pages with the Root, before removing it");
+            }
+
+            var childRoots = await databaseContext.PageRoots.Where(pr => pr.ParentId == pageRootId).ToListAsync();
+            if (childRoots.Count > 0)
+            {
+                throw new Exception("Cannot remove this page root because it has child page roots. Remove child page roots first.");
+            }
+
+            var pageRoot = await databaseContext.PageRoots.Where(pr => pr.Id == pageRootId).FirstOrDefaultAsync();
+            if (pageRoot == null) { throw new Exception("Page Root does not exist"); }
+
+            databaseContext.PageRoots.Remove(pageRoot);
+            await databaseContext.SaveChangesAsync();
+        }
+   
         public async Task<List<PageRoot>> GetPageRoots(long? privateLabelCompanyId = null)
         {
             var pageRoots = await databaseContext.PageRoots.AsNoTracking().Where(z => z.CompanyId == privateLabelCompanyId).ToListAsync();
             return pageRoots;
         }
+
         public async Task RemovePage(Guid pageId)
         {
             var page = await databaseContext.Pages.Where(pt => pt.Id == pageId).FirstOrDefaultAsync();
@@ -499,7 +548,6 @@ namespace AuthScape.ContentManagement.Services
                 Host = "https://" + Host;
             }
 
-            //var slug = String.Join("/", slugs);
             var privateLabelCompanyId = await databaseContext.DnsRecords
                 .AsNoTracking()
                 .Where(d => d.Domain.ToLower() == Host.ToLower())
@@ -511,30 +559,56 @@ namespace AuthScape.ContentManagement.Services
                 .Include(p => p.PageType)
                 .Where(z => z.Recursion == null && z.CompanyId == privateLabelCompanyId);
 
-            if (slugs != null)
+            if (slugs != null && slugs.Count > 0)
             {
-                if (slugs.Count() == 1)
+                if (slugs.Count == 1)
                 {
-                    // this is only on the slug
                     var pageSlug = slugs.FirstOrDefault();
-
-                    page = page.Where(z => z.Slug == pageSlug);
+                    page = page.Where(z => z.Slug == pageSlug && z.PageRootId == null);
                 }
-                else
+                else if (slugs.Count == 2)
                 {
-                    // this has a root
-                    var pageSlug = slugs.LastOrDefault();
-
-                    var rootPageSlug = slugs.FirstOrDefault();
+                    var rootSlug = slugs[0];
+                    var pageSlug = slugs[1];
 
                     var rootPage = await databaseContext.PageRoots
                         .AsNoTracking()
-                        .Where(z => z.CompanyId == privateLabelCompanyId && z.RootUrl == rootPageSlug)
+                        .Where(z => z.CompanyId == privateLabelCompanyId
+                            && z.RootUrl == rootSlug
+                            && z.ParentId == null) 
                         .FirstOrDefaultAsync();
 
                     if (rootPage != null)
                     {
                         page = page.Where(z => z.PageRootId == rootPage.Id && z.Slug == pageSlug);
+                    }
+                }
+                else if (slugs.Count >= 3)
+                {
+                    var parentSlug = slugs[0];
+                    var childSlug = slugs[1];
+                    var pageSlug = slugs.Last();
+
+                    var parentRoot = await databaseContext.PageRoots
+                        .AsNoTracking()
+                        .Where(z => z.CompanyId == privateLabelCompanyId
+                            && z.RootUrl == parentSlug
+                            && z.ParentId == null)
+                        .FirstOrDefaultAsync();
+
+                    if (parentRoot != null)
+                    {
+                        var childRoot = await databaseContext.PageRoots
+                            .AsNoTracking()
+                            .Where(z => z.CompanyId == privateLabelCompanyId
+                                && z.RootUrl == childSlug
+                                && z.ParentId == parentRoot.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (childRoot != null)
+                        {
+                            page = page.Where(z => z.PageRootId == childRoot.Id && z.Slug == pageSlug);
+                        }
                     }
                 }
             }
@@ -556,13 +630,7 @@ namespace AuthScape.ContentManagement.Services
                 PageTypeId = p.PageTypeId,
                 Recursion = p.Recursion,
                 TypeTitle = p.PageType.Title,
-
             }).FirstOrDefaultAsync();
-
-            //if (_page == null)
-            //{
-            //    throw new BadRequestException("Page does not exist");
-            //}
 
             return _page;
         }
