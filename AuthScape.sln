@@ -162,6 +162,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Model
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Services", "Plugins\AuthScape.Marketplace.Services\AuthScape.Marketplace.Services.csproj", "{5A24654C-5475-420A-8919-1903BFA778D2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sitemap", "Sitemap", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authscape.Sitemap", "Plugins\AuthScape.Sitemap\SitemapService\Authscape.Sitemap.csproj", "{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -372,6 +376,10 @@ Global
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -442,6 +450,8 @@ Global
 		{3834C447-DB09-4305-9BA2-8E56A393C7E1} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{4E2F2971-B2A1-4488-8CAA-40EB0FB5DD5A} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{5A24654C-5475-420A-8919-1903BFA778D2} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
+		{45A11CA9-53CA-4F33-A8B4-7B931DA04AE7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11328C71-22BA-46C6-9F11-1C391681FE61}
