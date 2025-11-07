@@ -5,35 +5,504 @@
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
-<h3>@ViewData["Title"]</h3>
+@section Styles {
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-avatar-container {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .profile-avatar {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .profile-avatar-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 600;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .profile-avatar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-avatar-upload {
+            margin-top: 0.5rem;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .upload-btn {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background-color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-username {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #1a202c;
+        }
+
+        .profile-meta {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .form-group-custom {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label-custom {
+            display: block;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+
+        .form-control-custom:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control-custom:disabled {
+            background-color: #f7fafc;
+            color: #718096;
+            cursor: not-allowed;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.875rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-save:active {
+            transform: translateY(0);
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-top: 0.375rem;
+        }
+
+        .file-name {
+            display: inline-block;
+            margin-left: 1rem;
+            font-size: 0.875rem;
+            color: #4a5568;
+        }
+
+        /* External Logins Styling */
+        .connected-account {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .connected-account:hover {
+            border-color: #cbd5e0;
+            background: #f1f5f9;
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .provider-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            font-size: 1.125rem;
+        }
+
+        .provider-icon.google {
+            background: #4285F4;
+        }
+
+        .provider-icon.microsoft {
+            background: #00A4EF;
+        }
+
+        .provider-icon.facebook {
+            background: #1877F2;
+        }
+
+        .provider-icon.twitter {
+            background: #1DA1F2;
+        }
+
+        .provider-icon.github {
+            background: #181717;
+        }
+
+        .provider-icon.apple {
+            background: #000000;
+        }
+
+        .provider-icon.default {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .account-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .account-name {
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 1rem;
+        }
+
+        .account-status {
+            font-size: 0.875rem;
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+
+        .btn-remove {
+            background: white;
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-remove:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-add-provider {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            border: 2px dashed #cbd5e0;
+            background: white;
+            color: #4a5568;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-add-provider:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .btn-add-provider .provider-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 0.95rem;
+        }
+
+        .no-logins-message {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+            font-size: 0.95rem;
+        }
+    </style>
+}
+
+<div class="profile-header">
+    <h2 class="mb-1" style="font-size: 2rem; font-weight: 700;">Profile Settings</h2>
+    <p class="mb-0" style="opacity: 0.9;">Manage your account information and preferences</p>
+</div>
+
 <partial name="_StatusMessage" for="StatusMessage" />
-<div class="row">
-    <div class="col-md-6">
-        <form id="profile-form" method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
-            <div class="form-floating mb-3">
-                @*<label asp-for="Username" class="form-label"></label>*@
-                
-                <input type="file" asp-for="Input.Photo" name="file" />
+<form id="profile-form" method="post" enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
-                @*<input asp-for="Username" class="form-control" placeholder="Photo" disabled />*@
+    <div class="profile-card">
+        <div class="profile-avatar-container">
+            <div class="profile-avatar">
+                <div class="profile-avatar-circle" id="avatarPreview">
+                    @if (!string.IsNullOrEmpty(Model.PhotoUrl))
+                    {
+                        <img id="avatarImage" src="@Model.PhotoUrl" class="profile-avatar-image" />
+                        <span id="avatarInitials" style="display: none;">@(string.IsNullOrEmpty(Model.Username) ? "U" : Model.Username.Substring(0, 1).ToUpper())</span>
+                    }
+                    else
+                    {
+                        <span id="avatarInitials">@(string.IsNullOrEmpty(Model.Username) ? "U" : Model.Username.Substring(0, 1).ToUpper())</span>
+                        <img id="avatarImage" class="profile-avatar-image" style="display: none;" />
+                    }
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-username">@Model.Username</div>
+                <div class="profile-meta">Member since @Model.MemberSince.ToString("MMMM yyyy")</div>
+                <div class="profile-avatar-upload mt-3">
+                    <div class="upload-btn-wrapper">
+                        <button class="upload-btn" type="button">Change Photo</button>
+                        <input type="file" asp-for="Input.Photo" name="file" id="photoInput" accept="image/*" />
+                    </div>
+                    <span class="file-name" id="fileName"></span>
+                </div>
+                <p class="help-text mt-2">Recommended: Square image, at least 400x400px</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="form-section">
+            <h3 class="form-section-title">Account Information</h3>
+
+            <div class="form-group-custom">
+                <label asp-for="Username" class="form-label-custom">Username</label>
+                <input asp-for="Username" class="form-control-custom" disabled />
+                <p class="help-text">Your username cannot be changed</p>
             </div>
 
-            <div class="form-floating mb-3">
-                <label asp-for="Username" class="form-label"></label>
-                <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
-            </div>
-            <div class="form-floating mb-3">
-                <label asp-for="Input.PhoneNumber" class="form-label"></label>
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
+            <div class="form-group-custom">
+                <label asp-for="Input.PhoneNumber" class="form-label-custom">Phone Number</label>
+                <input asp-for="Input.PhoneNumber" class="form-control-custom" placeholder="Enter your phone number" />
                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                <p class="help-text">We'll use this for account security and notifications</p>
             </div>
-            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </form>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button id="update-profile-button" type="submit" class="btn-save">
+                Save Changes
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="profile-card">
+    <div class="form-section">
+        <h3 class="form-section-title">Connected Accounts</h3>
+        <p class="help-text mb-3">Manage external login providers connected to your account</p>
+
+        @if (Model.CurrentLogins?.Count > 0)
+        {
+            foreach (var login in Model.CurrentLogins)
+            {
+                var providerLower = login.LoginProvider.ToLower();
+                var iconClass = "default";
+                var providerInitial = login.LoginProvider.Substring(0, 1).ToUpper();
+
+                if (providerLower.Contains("google")) { iconClass = "google"; providerInitial = "G"; }
+                else if (providerLower.Contains("microsoft")) { iconClass = "microsoft"; providerInitial = "M"; }
+                else if (providerLower.Contains("facebook")) { iconClass = "facebook"; providerInitial = "F"; }
+                else if (providerLower.Contains("twitter")) { iconClass = "twitter"; providerInitial = "T"; }
+                else if (providerLower.Contains("github")) { iconClass = "github"; providerInitial = "G"; }
+                else if (providerLower.Contains("apple")) { iconClass = "apple"; providerInitial = "A"; }
+
+                <div class="connected-account">
+                    <div class="account-info">
+                        <div class="provider-icon @iconClass">@providerInitial</div>
+                        <div class="account-details">
+                            <div class="account-name">@login.ProviderDisplayName</div>
+                            <div class="account-status">
+                                <span class="status-dot"></span>
+                                Connected
+                            </div>
+                        </div>
+                    </div>
+                    <form asp-page-handler="RemoveLogin" method="post" style="margin: 0;">
+                        <input type="hidden" name="LoginProvider" value="@login.LoginProvider" />
+                        <input type="hidden" name="ProviderKey" value="@login.ProviderKey" />
+                        <button type="submit" class="btn-remove" onclick="return confirm('Are you sure you want to remove this login?');">
+                            Remove
+                        </button>
+                    </form>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="no-logins-message">
+                <p>No external accounts connected yet.</p>
+                <p>Connect your accounts below for easier sign-in.</p>
+            </div>
+        }
+
+        @if (Model.OtherLogins?.Count > 0)
+        {
+            <div class="mt-4">
+                <h4 class="form-label-custom mb-3">Add Another Account</h4>
+                <form asp-page-handler="LinkLogin" method="post">
+                    @foreach (var provider in Model.OtherLogins)
+                    {
+                        var providerLower = provider.Name.ToLower();
+                        var iconClass = "default";
+                        var providerInitial = provider.DisplayName.Substring(0, 1).ToUpper();
+
+                        if (providerLower.Contains("google")) { iconClass = "google"; providerInitial = "G"; }
+                        else if (providerLower.Contains("microsoft")) { iconClass = "microsoft"; providerInitial = "M"; }
+                        else if (providerLower.Contains("facebook")) { iconClass = "facebook"; providerInitial = "F"; }
+                        else if (providerLower.Contains("twitter")) { iconClass = "twitter"; providerInitial = "T"; }
+                        else if (providerLower.Contains("github")) { iconClass = "github"; providerInitial = "G"; }
+                        else if (providerLower.Contains("apple")) { iconClass = "apple"; providerInitial = "A"; }
+
+                        <button type="submit" name="provider" value="@provider.Name" class="btn-add-provider">
+                            <div class="provider-icon @iconClass">@providerInitial</div>
+                            <span>Connect @provider.DisplayName</span>
+                        </button>
+                    }
+                </form>
+            </div>
+        }
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatarImage = document.getElementById('avatarImage');
+                    const avatarInitials = document.getElementById('avatarInitials');
+                    avatarImage.src = e.target.result;
+                    avatarImage.style.display = 'block';
+                    avatarInitials.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 }

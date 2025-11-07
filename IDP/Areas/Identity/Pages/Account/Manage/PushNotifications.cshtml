@@ -1,0 +1,397 @@
+@page "/PushNotifications"
+@model PushNotificationsModel
+@{
+    ViewData["Title"] = "Push Notifications";
+    ViewData["ActivePage"] = "PushNotifications";
+}
+
+@section Styles {
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-top: 0.375rem;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            border-color: #cbd5e0;
+            background: #f1f5f9;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .notification-description {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e0;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.875rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary-custom {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 0.875rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .btn-secondary-custom:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .device-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .device-info {
+            flex: 1;
+        }
+
+        .device-name {
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 1rem;
+        }
+
+        .device-details {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .device-status {
+            font-size: 0.875rem;
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .warning-banner {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .warning-icon {
+            color: #f59e0b;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .warning-content {
+            flex: 1;
+        }
+
+        .warning-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 0.25rem;
+        }
+
+        .warning-text {
+            color: #92400e;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h2 class="mb-1" style="font-size: 2rem; font-weight: 700;">Push Notifications</h2>
+    <p class="mb-0" style="opacity: 0.9;">Manage push notifications for your devices</p>
+</div>
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div class="page-card">
+    <div class="warning-banner">
+        <div class="warning-icon">⚠</div>
+        <div class="warning-content">
+            <div class="warning-title">Browser Permissions Required</div>
+            <p class="warning-text">To receive push notifications, you need to allow notifications in your browser settings.</p>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Enable Push Notifications</h3>
+            <p class="help-text" style="margin-top: 0.5rem;">Allow this site to send you push notifications</p>
+        </div>
+        <button type="button" class="btn-primary-custom" onclick="requestNotificationPermission()">
+            Enable Notifications
+        </button>
+    </div>
+</div>
+
+<form method="post">
+    <div class="page-card">
+        <div class="form-section">
+            <h3 class="form-section-title">Activity Notifications</h3>
+            <p class="help-text mb-3">Get real-time notifications about important activities</p>
+
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-title">Security alerts</div>
+                    <div class="notification-description">Immediate alerts for suspicious activity or login attempts</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" name="SecurityAlerts" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-title">Messages</div>
+                    <div class="notification-description">Notifications for new messages and replies</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" name="Messages" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-title">Activity updates</div>
+                    <div class="notification-description">Get notified about important activity on your account</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" name="ActivityUpdates">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-card">
+        <div class="form-section">
+            <h3 class="form-section-title">System Notifications</h3>
+            <p class="help-text mb-3">Updates about system status and maintenance</p>
+
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-title">Maintenance notifications</div>
+                    <div class="notification-description">Be informed about scheduled maintenance windows</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" name="Maintenance" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-title">System updates</div>
+                    <div class="notification-description">Notifications about new features and system changes</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" name="SystemUpdates">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-card">
+        <div class="form-section">
+            <h3 class="form-section-title">Registered Devices</h3>
+            <p class="help-text mb-3">Devices that can receive push notifications</p>
+
+            <div class="device-item">
+                <div class="device-icon">📱</div>
+                <div class="device-info">
+                    <div class="device-name">iPhone 13 Pro</div>
+                    <div class="device-details">Last active: 2 hours ago</div>
+                </div>
+                <div class="device-status">Active</div>
+            </div>
+
+            <div class="device-item">
+                <div class="device-icon">💻</div>
+                <div class="device-info">
+                    <div class="device-name">Chrome on Windows</div>
+                    <div class="device-details">Last active: Currently active</div>
+                </div>
+                <div class="device-status">Active</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-card">
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn-primary-custom">
+                Save Preferences
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("This browser does not support push notifications.");
+                return;
+            }
+
+            Notification.requestPermission().then(function(permission) {
+                if (permission === "granted") {
+                    new Notification("Push notifications enabled!", {
+                        body: "You'll now receive push notifications from this site.",
+                        icon: "/icon.png"
+                    });
+                } else if (permission === "denied") {
+                    alert("Push notifications have been blocked. Please enable them in your browser settings.");
+                }
+            });
+        }
+
+        // Check notification permission on page load
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                console.log("Notifications are enabled");
+            }
+        }
+    </script>
+}
