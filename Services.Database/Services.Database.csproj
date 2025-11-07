@@ -7,8 +7,8 @@
   <ItemGroup>
     <PackageReference Include="Fido2" Version="4.0.0" />
     <PackageReference Include="Fido2.Models" Version="4.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
   </ItemGroup>
 

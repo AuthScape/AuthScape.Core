@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>AuthScape.Document.Mapping</PackageId>
-    <Version>1.2.394</Version>
+    <Version>1.2.404</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Document.Mapping</Product>
@@ -21,7 +21,7 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CoreBackpack" Version="1.0.42" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.9.0" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
     <PackageReference Include="OpenAI" Version="2.5.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />

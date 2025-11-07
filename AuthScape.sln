@@ -41,11 +41,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ContentManagement", "Conten
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthScape.ContentManagement", "Plugins\ContentManagement\AuthScape.ContentManagement\AuthScape.ContentManagement.csproj", "{E9A58E7E-8C76-4086-8029-BB057BD1339E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Readme", "Readme", "{736D7B6E-1C31-439E-A68E-E19F509178B6}"
-	ProjectSection(SolutionItems) = preProject
-		Readme.md = Readme.md
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthScape.SendGrid.WebhookController", "Plugins\AuthScape.SendGrid.Webhook\AuthScape.SendGrid.WebhookController.csproj", "{6DBB16DC-774F-428D-A790-D3680263EE46}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IdentityServer", "IdentityServer", "{C9CB52E2-9207-47E7-AA37-9DCD09D53FF5}"
@@ -161,6 +156,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Models", "Plugins\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj", "{4E2F2971-B2A1-4488-8CAA-40EB0FB5DD5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Services", "Plugins\AuthScape.Marketplace.Services\AuthScape.Marketplace.Services.csproj", "{5A24654C-5475-420A-8919-1903BFA778D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Sitemap", "Plugins\AuthScape.Sitemap\AuthScape.Sitemap.csproj", "{A353E9BC-CDDB-4B77-8A03-5C449FC07839}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -372,6 +369,10 @@ Global
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A24654C-5475-420A-8919-1903BFA778D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -383,6 +384,7 @@ Global
 		{E58A84DE-593E-4E8B-9A9B-0903279BEC91} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
 		{DA9B6F95-A339-4C9F-9BEE-F926E2338F63} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
 		{D573A221-72B7-4BB8-B620-0D8787465617} = {DA9B6F95-A339-4C9F-9BEE-F926E2338F63}
+		{6B740F85-C459-48CF-84AF-1C9EF2A36B0C} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
 		{653992BB-C5FB-41AB-8F53-EA87AD28239F} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
 		{E9A58E7E-8C76-4086-8029-BB057BD1339E} = {653992BB-C5FB-41AB-8F53-EA87AD28239F}
 		{6DBB16DC-774F-428D-A790-D3680263EE46} = {E58A84DE-593E-4E8B-9A9B-0903279BEC91}
@@ -442,6 +444,7 @@ Global
 		{3834C447-DB09-4305-9BA2-8E56A393C7E1} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{4E2F2971-B2A1-4488-8CAA-40EB0FB5DD5A} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{5A24654C-5475-420A-8919-1903BFA778D2} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
+		{A353E9BC-CDDB-4B77-8A03-5C449FC07839} = {6B740F85-C459-48CF-84AF-1C9EF2A36B0C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11328C71-22BA-46C6-9F11-1C391681FE61}

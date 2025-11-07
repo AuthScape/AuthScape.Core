@@ -10,6 +10,7 @@ using AuthScape.Flows.Services;
 using AuthScape.Kanban.Services;
 using AuthScape.Logging.Services;
 using AuthScape.Marketplace.Services;
+using AuthScape.Models.Sitemap;
 using AuthScape.Models.Users;
 using AuthScape.OpenAI;
 using AuthScape.PrivateLabel.Services;
@@ -149,11 +150,7 @@ namespace API
 
                 services.AddScoped<IMarketplaceService, MarketplaceService>();
 
-
-
-
-
-
+                services.AddScoped<ISitemapService, SitemapService>();
 
 
 

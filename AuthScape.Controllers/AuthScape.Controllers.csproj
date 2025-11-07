@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.2.394</Version>
+    <Version>1.2.404</Version>
     <Product>AuthScape.Controller</Product>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
@@ -21,8 +21,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.9.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
     <PackageReference Include="OpenIddict" Version="7.1.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.1.0" />

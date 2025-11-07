@@ -53,6 +53,8 @@ namespace Services.Context
         public DbSet<Fido2Credential> Fido2Credentials { get; set; }
         public DbSet<Settings> Settings { get; set; }
 
+        public DbSet<CompanyDomain> CompanyDomains { get; set; }
+
         #region Marketplace
 
         //public DbSet<ProductCard> ProductCards { get; set; }
@@ -129,7 +131,6 @@ namespace Services.Context
         public DbSet<TicketAttachment> TicketAttachments { get; set; }
 
         #endregion
-
 
         #region Documents
 
@@ -244,6 +245,13 @@ namespace Services.Context
                       .HasForeignKey(e => e.UserId)
                       .HasPrincipalKey(e => e.Id); // Match ApplicationUser's long Id
             });
+
+
+            
+
+            
+
+
 
             #region Documents
 

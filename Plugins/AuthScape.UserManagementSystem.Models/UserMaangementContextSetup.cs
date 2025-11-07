@@ -30,6 +30,12 @@ namespace AuthScape.UserManageSystem.Models
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
+
+            builder.Entity<CompanyDomain>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+            });
         }
     }
 }

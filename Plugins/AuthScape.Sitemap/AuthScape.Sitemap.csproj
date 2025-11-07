@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Version>1.2.404</Version>
+		<Authors>ZuechB</Authors>
+		<Company>ZuechB</Company>
+		<Product>AuthScape.Sitemap</Product>
+		<PackageId>AuthScape.Sitemap</PackageId>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\AuthScape.Models\AuthScape.Models.csproj" />
+	  <ProjectReference Include="..\..\AuthScape.Services\AuthScape.Services.csproj" />
+	  <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
+	  <ProjectReference Include="..\..\Services\Services.csproj" />
+	</ItemGroup>
+
+</Project>

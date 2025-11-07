@@ -1322,6 +1322,20 @@ namespace AuthScape.UserManageSystem.Services
             }
             await databaseContext.SaveChangesAsync();
 
+            databaseContext.CompanyDomains.RemoveRange(databaseContext.CompanyDomains.Where(z => z.CompanyId == param.Id));
+            await databaseContext.SaveChangesAsync();
+
+            foreach (var domain in param.Domains)
+            {
+                await databaseContext.CompanyDomains.AddAsync(new CompanyDomain()
+                {
+                    CompanyId = param.Id,
+                    Domain = domain
+                });
+            }
+            await databaseContext.SaveChangesAsync();
+
+
             return responseItems;
         }
 

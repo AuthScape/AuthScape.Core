@@ -263,7 +263,7 @@ namespace AuthScape.PrivateLabel.Controllers
         public async Task<IActionResult> GetFavIcon(long oemCompanyId)
         {
             var dnsRecord = await databaseContext.DnsRecords.AsNoTracking().Where(d => d.CompanyId == oemCompanyId).FirstOrDefaultAsync();
-            if (dnsRecord != null)
+            if (dnsRecord != null && !String.IsNullOrWhiteSpace(dnsRecord.FavIcon))
             {
                 var httpClient = httpClientFactory.CreateClient();
                 var stream = await httpClient.GetStreamAsync(dnsRecord.FavIcon);

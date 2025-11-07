@@ -8,6 +8,7 @@
 
         public List<LocationCompanyParam>? Locations { get; set; }
         public List<CustomFieldResult> CustomFields { get; set; }
+        public List<string> Domains { get; set; }
     }
 
     public class LocationCompanyParam

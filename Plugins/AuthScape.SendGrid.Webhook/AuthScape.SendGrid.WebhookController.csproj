@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.2" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.9.0" />
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.25" />
     <PackageReference Include="StrongGrid" Version="0.112.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
