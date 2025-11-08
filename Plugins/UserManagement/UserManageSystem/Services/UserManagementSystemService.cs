@@ -538,6 +538,12 @@ namespace AuthScape.UserManageSystem.Services
                 })
                 .FirstOrDefaultAsync();
 
+            company.EmailDomains = await databaseContext.CompanyDomains
+                .AsNoTracking()
+                .Where(e => e.CompanyId == companyId)
+                .Select(s => s.Domain)
+                .ToListAsync();
+
             company.CustomFields = customFields;
 
             return company;

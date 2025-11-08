@@ -21,7 +21,8 @@ namespace AuthScape.Models.Users
 
         [NotMapped]
         public List<CustomFieldResult> CustomFields { get; set; }
-
+        [NotMapped]
+        public List<string> EmailDomains { get; set; }
     }
 
     public class NCACompanyQuery
