@@ -30,7 +30,7 @@ namespace AuthScape.UserManageSystem.Services
         Task<List<Permission>> GetPermissions();
         Task<UserEditResult?> GetUser(long userId);
         Task<List<UpdatedResponseItem>> UpdateUser(UserEditResult user);
-        Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
+        Task<long?> AddUser(string firstName, string lastName, string email, string? phoneNumber = null, string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null);
         Task<List<Company>> GetCompanies(string? name = null);
         Task<PagedList<Location>> GetLocations(GetLocationParam param);
         Task<string> ChangeUserPassword(long userId, string newPassword);
@@ -159,9 +159,6 @@ namespace AuthScape.UserManageSystem.Services
                 await databaseContext.SaveChangesAsync();
             }
         }
-
-
-
 
 
 
@@ -537,15 +534,30 @@ namespace AuthScape.UserManageSystem.Services
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
-
-            company.EmailDomains = await databaseContext.CompanyDomains
+            
+            var companyDomains = await databaseContext.CompanyDomains
                 .AsNoTracking()
                 .Where(e => e.CompanyId == companyId)
                 .Select(s => s.Domain)
                 .ToListAsync();
 
-            company.CustomFields = customFields;
+            if (company != null)
+            {
+                if (companyDomains != null)
+                {
+                    company.EmailDomains = companyDomains;
+                }
 
+                if (customFields != null)
+                {
+                    company.CustomFields = customFields;
+                }
+            }
+            else
+            {
+                throw new BadRequestException("Company not found");
+            }
+                
             return company;
         }
 
@@ -829,7 +841,7 @@ namespace AuthScape.UserManageSystem.Services
             return null;
         }
 
-        public async Task<bool> AddUser(string firstName, string lastName, string email, string? phoneNumber = null,
+        public async Task<long?> AddUser(string firstName, string lastName, string email, string? phoneNumber = null,
             string? password = null, long? companyId = null, long? locationId = null, string? Roles = null, string? Permissions = null, Dictionary<string, string>? additionalFields = null)
         {
             var newUser = new AppUser();
@@ -959,11 +971,11 @@ namespace AuthScape.UserManageSystem.Services
                     await databaseContext.SaveChangesAsync();
                 }
 
+
+                return newUser.Id;
             }
 
-
-
-            return identityResult.Succeeded;
+            return null;
         }
 
         public async Task<List<Company>> GetCompanies(string? name = null)
@@ -1225,7 +1237,7 @@ namespace AuthScape.UserManageSystem.Services
         {
             var responseItems = new List<UpdatedResponseItem>();
 
-            Company company = null;
+            Company? company = null;
             if (param.Id == -1)
             {
                 company = new Company()
@@ -1331,16 +1343,18 @@ namespace AuthScape.UserManageSystem.Services
             databaseContext.CompanyDomains.RemoveRange(databaseContext.CompanyDomains.Where(z => z.CompanyId == param.Id));
             await databaseContext.SaveChangesAsync();
 
-            foreach (var domain in param.Domains)
+            if (param.Domains != null)
             {
-                await databaseContext.CompanyDomains.AddAsync(new CompanyDomain()
+                foreach (var domain in param.Domains)
                 {
-                    CompanyId = param.Id,
-                    Domain = domain
-                });
+                    await databaseContext.CompanyDomains.AddAsync(new CompanyDomain()
+                    {
+                        CompanyId = param.Id,
+                        Domain = domain
+                    });
+                }
+                await databaseContext.SaveChangesAsync();
             }
-            await databaseContext.SaveChangesAsync();
-
 
             return responseItems;
         }

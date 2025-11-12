@@ -1,16 +1,16 @@
 [
   {
-    "Name": "New Profile",
+    "Name": "DirectRun",
     "Projects": [
       {
         "Path": "API\\API.csproj",
         "Action": "Start",
-        "DebugTarget": "IIS Express"
+        "DebugTarget": "API"
       },
       {
         "Path": "IDP\\IDP.csproj",
         "Action": "Start",
-        "DebugTarget": "IIS Express"
+        "DebugTarget": "IDP"
       }
     ]
   }

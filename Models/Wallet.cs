@@ -1,4 +1,5 @@
-﻿using AuthScape.Models.Users;
+﻿using AuthScape.Models.PaymentGateway.Stripe;
+using AuthScape.Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.Models.PaymentGateway
@@ -11,11 +12,13 @@ namespace AuthScape.Models.PaymentGateway
         public long? UserId { get; set; }
         public long? LocationId { get; set; }
         public string? PaymentCustomerId { get; set; }
+        public Guid? DefaultPaymentMethodId { get; set; }
 
         public Company Company { get; set; }
         public AppUser User { get; set; }
 
         public ICollection<WalletPaymentMethod> WalletPaymentMethods { get; set; }
+        public ICollection<Subscription> Subscriptions { get; set; }
     }
 
     public class WalletPaymentMethod

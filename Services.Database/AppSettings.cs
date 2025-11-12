@@ -29,6 +29,7 @@ namespace Services.Database
         public ReportingSettings Reporting { get; set; }
         public LuceneSearch LuceneSearch { get; set; }
         public Spreadsheet Spreadsheet { get; set; }
+        public SubscriptionFeatures Subscriptions { get; set; }
     }
 
     public class OpenAI

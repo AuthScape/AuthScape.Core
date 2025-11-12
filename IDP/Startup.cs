@@ -109,6 +109,8 @@ namespace IDP
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<ISendGridService, SendGridService>();
                 services.AddScoped<IStripePayService, StripePayService>();
+                services.AddScoped<IStripeSubscriptionService, StripeSubscriptionService>();
+                services.AddScoped<IStripeInvoiceService, StripeInvoiceService>();
                 services.AddScoped<IInviteService, InviteService>();
                 services.AddScoped<IWalletResolver, WalletResolver>();
 

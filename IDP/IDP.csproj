@@ -48,6 +48,7 @@
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Plugins\SendGrid\SendGridService\AuthScape.SendGrid.csproj" />
     <ProjectReference Include="..\Services.Database\Services.Database.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.StripePayment.Controller\AuthScape.StripePayment.Controller.csproj" />
   </ItemGroup>
 
   <ItemGroup>
