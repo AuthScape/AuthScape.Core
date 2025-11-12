@@ -21,6 +21,8 @@ namespace AuthScape.StripePayment.Services
         Task<string> GeneratePaymentLink(PaymentLinkParam param);
         Task<Guid> AddPaymentMethod(SignedInUser signedInUser, PaymentMethodType paymentMethodType, Guid walletId, string paymentMethod);
         Task RemovePaymentMethod(SignedInUser signedInUser, Guid id);
+        Task<bool> SetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId, Guid paymentMethodId);
+        Task<WalletPaymentMethod> GetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId);
 
 
         // Stripe Checkout
@@ -1124,6 +1126,85 @@ namespace AuthScape.StripePayment.Services
               {
                   DefaultPaymentMethod = paymentMethod
               });
+        }
+
+        public async Task<bool> SetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId, Guid paymentMethodId)
+        {
+            var wallet = await context.Wallets
+                .Include(w => w.WalletPaymentMethods)
+                .FirstOrDefaultAsync(w => w.Id == walletId);
+
+            if (wallet == null)
+                return false;
+
+            // Verify the payment method belongs to this wallet
+            var paymentMethod = wallet.WalletPaymentMethods
+                .FirstOrDefault(pm => pm.Id == paymentMethodId && pm.Archived == null);
+
+            if (paymentMethod == null)
+                return false;
+
+            // Verify user has access to this wallet
+            if (wallet.UserId.HasValue && wallet.UserId.Value != signedInUser.Id &&
+                wallet.CompanyId.HasValue && wallet.CompanyId.Value != signedInUser.CompanyId &&
+                wallet.LocationId.HasValue && wallet.LocationId.Value != signedInUser.LocationId)
+            {
+                return false;
+            }
+
+            // Set the default payment method on the Stripe customer
+            if (!string.IsNullOrEmpty(wallet.PaymentCustomerId) && !string.IsNullOrEmpty(paymentMethod.PaymentMethodId))
+            {
+                try
+                {
+                    var service = new CustomerService();
+                    await service.UpdateAsync(wallet.PaymentCustomerId, new CustomerUpdateOptions
+                    {
+                        InvoiceSettings = new CustomerInvoiceSettingsOptions
+                        {
+                            DefaultPaymentMethod = paymentMethod.PaymentMethodId
+                        }
+                    });
+                }
+                catch (StripeException ex)
+                {
+                    // Log error but continue to update local database
+                    Console.WriteLine($"Failed to set default payment method in Stripe: {ex.Message}");
+                }
+            }
+
+            // Update the wallet
+            wallet.DefaultPaymentMethodId = paymentMethodId;
+            await context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<WalletPaymentMethod> GetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId)
+        {
+            var wallet = await context.Wallets
+                .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
+                .FirstOrDefaultAsync(w => w.Id == walletId);
+
+            if (wallet == null)
+                return null;
+
+            // Verify user has access to this wallet
+            if (wallet.UserId.HasValue && wallet.UserId.Value != signedInUser.Id &&
+                wallet.CompanyId.HasValue && wallet.CompanyId.Value != signedInUser.CompanyId &&
+                wallet.LocationId.HasValue && wallet.LocationId.Value != signedInUser.LocationId)
+            {
+                return null;
+            }
+
+            if (wallet.DefaultPaymentMethodId.HasValue)
+            {
+                return wallet.WalletPaymentMethods
+                    .FirstOrDefault(pm => pm.Id == wallet.DefaultPaymentMethodId.Value);
+            }
+
+            // If no default is set, return the first payment method
+            return wallet.WalletPaymentMethods.FirstOrDefault();
         }
     }
 

@@ -8,6 +8,7 @@ using AuthScape.Models.Logging;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
 using AuthScape.Models.PaymentGateway.Plans;
+using AuthScape.Models.PaymentGateway.Stripe;
 using AuthScape.Models.Settings;
 using AuthScape.Models.Stylesheets;
 using AuthScape.Models.Users;
@@ -86,6 +87,12 @@ namespace Services.Context
         public DbSet<WalletPaymentMethod> WalletPaymentMethods { get; set; }
         public DbSet<StoreCredit> StoreCredits { get; set; }
         public DbSet<StripeConnectAccount> StripeConnectAccounts { get; set; }
+
+        // Stripe Subscriptions & Invoices
+        public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<SubscriptionItem> SubscriptionItems { get; set; }
+        public DbSet<StripeInvoice> StripeInvoices { get; set; }
+        public DbSet<StripeInvoiceLineItem> StripeInvoiceLineItems { get; set; }
 
         #endregion
 
@@ -533,6 +540,61 @@ namespace Services.Context
                 entity.HasOne(e => e.Wallet)
                     .WithMany(m => m.WalletPaymentMethods)
                     .HasForeignKey(rf => rf.WalletId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            builder.Entity<Subscription>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasOne(e => e.Wallet)
+                    .WithMany(m => m.Subscriptions)
+                    .HasForeignKey(rf => rf.WalletId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+
+                entity.HasIndex(e => e.StripeSubscriptionId).IsUnique();
+            });
+
+            builder.Entity<SubscriptionItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasOne(e => e.Subscription)
+                    .WithMany(m => m.Items)
+                    .HasForeignKey(rf => rf.SubscriptionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+
+                entity.HasIndex(e => e.StripeSubscriptionItemId).IsUnique();
+            });
+
+            builder.Entity<StripeInvoice>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasOne(e => e.Wallet)
+                    .WithMany()
+                    .HasForeignKey(rf => rf.WalletId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+
+                entity.HasOne(e => e.Subscription)
+                    .WithMany()
+                    .HasForeignKey(rf => rf.SubscriptionId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.StripeInvoiceId).IsUnique();
+            });
+
+            builder.Entity<StripeInvoiceLineItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasOne(e => e.StripeInvoice)
+                    .WithMany(m => m.LineItems)
+                    .HasForeignKey(rf => rf.StripeInvoiceId)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 

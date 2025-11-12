@@ -1,0 +1,763 @@
+@page "/BillingHistory"
+@model IDP.Areas.Identity.Pages.Account.Manage.BillingHistoryModel
+
+@{
+    ViewData["Title"] = "Billing History";
+    ViewData["ActivePage"] = "BillingHistory";
+}
+
+@Html.AntiForgeryToken()
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="~/css/manage-pages.css" rel="stylesheet" />
+
+<style>
+    .billing-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-200);
+        padding-bottom: 0;
+    }
+
+    .billing-tab {
+        padding: 0.875rem 1.75rem;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: var(--gray-600);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        margin-bottom: -2px;
+        font-size: 0.95rem;
+    }
+
+    .billing-tab:hover {
+        color: var(--primary-color);
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .billing-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .filter-card {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-lg);
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        align-items: end;
+    }
+
+    .invoice-item {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-lg);
+        padding: 1.75rem;
+        margin-bottom: 1rem;
+        transition: all var(--transition-base);
+    }
+
+    .invoice-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .invoice-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        gap: 1rem;
+    }
+
+    .invoice-info {
+        flex: 1;
+    }
+
+    .invoice-number {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .invoice-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .invoice-currency {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .invoice-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .invoice-meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .invoice-meta-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+    }
+
+    .invoice-meta-value {
+        font-size: 0.95rem;
+        color: var(--gray-900);
+        font-weight: 500;
+    }
+
+    .invoice-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 140px;
+    }
+
+    .status-badge-paid {
+        background: var(--success-light);
+        color: #065f46;
+    }
+
+    .status-badge-open {
+        background: var(--warning-light);
+        color: #92400e;
+    }
+
+    .status-badge-draft {
+        background: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .status-badge-uncollectible,
+    .status-badge-void {
+        background: var(--danger-light);
+        color: #991b1b;
+    }
+
+    .transaction-item {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-md);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all var(--transition-base);
+    }
+
+    .transaction-item:hover {
+        border-color: var(--gray-300);
+        box-shadow: var(--shadow-md);
+    }
+
+    .amount-credit {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+
+    .amount-debit {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+
+    .invoice-table-container {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        border: 2px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .invoice-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .invoice-table th {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .invoice-table td {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        color: var(--gray-900);
+        vertical-align: middle;
+    }
+
+    .invoice-table tbody tr {
+        transition: background var(--transition-fast);
+    }
+
+    .invoice-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+
+    .invoice-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .invoice-details-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .invoice-details-section {
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .invoice-details-section:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .line-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .line-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--gray-200);
+    }
+
+    .line-item-info {
+        flex: 1;
+    }
+
+    .line-item-description {
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+    }
+
+    .line-item-quantity {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+    }
+
+    .line-item-amount {
+        font-weight: 600;
+        color: var(--gray-900);
+        font-size: 1.0625rem;
+    }
+
+    .invoice-total-section {
+        background: var(--gray-50);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-md);
+        border: 2px solid var(--gray-200);
+    }
+
+    .invoice-total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+
+    .invoice-total-row.total {
+        font-size: 1.25rem;
+        font-weight: 700;
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+        border-top: 2px solid var(--gray-300);
+        color: var(--gray-900);
+    }
+
+    .sync-btn-wrapper {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+
+<div class="manage-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-actions">
+            <div>
+                <h1>Billing History</h1>
+                <p>View and manage your invoice history</p>
+            </div>
+            <button class="btn btn-primary" onclick="syncAllData()">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                </svg>
+                Sync from Stripe
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="billing-tabs">
+        <button class="billing-tab active" onclick="switchTab('invoices', this)">
+            Invoices
+        </button>
+        <button class="billing-tab" onclick="switchTab('transactions', this)">
+            Wallet Transactions
+        </button>
+    </div>
+
+    <!-- Invoices Tab -->
+    <div id="invoices-tab-content" class="tab-content-panel">
+        <!-- Filters -->
+        <div class="filter-card">
+            <div class="filter-grid">
+                <div class="form-group mb-0">
+                    <label class="form-label">Status</label>
+                    <select id="invoice-status-filter" class="form-control form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Open">Open</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Uncollectible">Uncollectible</option>
+                        <option value="Void">Void</option>
+                    </select>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label">From Date</label>
+                    <input type="date" id="invoice-start-date" class="form-control">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label">To Date</label>
+                    <input type="date" id="invoice-end-date" class="form-control">
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="loadInvoices()" style="width: 100%;">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices Container -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Your Invoices</h2>
+                    <p class="card-subtitle">Complete history of all your invoices</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="invoices-container">
+                    <div class="text-center py-5">
+                        <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                        <p class="text-muted mt-3">Loading invoices...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div id="transactions-tab-content" class="tab-content-panel" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Wallet Transactions</h2>
+                    <p class="card-subtitle">Your wallet top-ups and charges</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="transactions-container">
+                    <div class="text-center py-5">
+                        <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                        <p class="text-muted mt-3">Loading transactions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Details Modal -->
+<div class="modal fade" id="invoiceDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Invoice Details</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="invoice-details-content" class="invoice-details-grid">
+                    <!-- Content populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentWalletId = '@Model.ActiveWalletId';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadInvoices();
+        loadTransactions();
+    });
+
+    function switchTab(tabName, button) {
+        // Update tab buttons
+        document.querySelectorAll('.billing-tab').forEach(tab => tab.classList.remove('active'));
+        button.classList.add('active');
+
+        // Update tab content
+        document.getElementById('invoices-tab-content').style.display = tabName === 'invoices' ? 'block' : 'none';
+        document.getElementById('transactions-tab-content').style.display = tabName === 'transactions' ? 'block' : 'none';
+    }
+
+    async function loadInvoices() {
+        const container = document.getElementById('invoices-container');
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                <p class="text-muted mt-3">Loading invoices...</p>
+            </div>
+        `;
+
+        try {
+            const statusFilter = document.getElementById('invoice-status-filter').value;
+            const startDate = document.getElementById('invoice-start-date').value;
+            const endDate = document.getElementById('invoice-end-date').value;
+
+            let url = '/api/Invoice/GetMyInvoices?walletType=user&limit=100';
+            if (statusFilter) url += `&status=${statusFilter}`;
+            if (startDate) url += `&startDate=${startDate}`;
+            if (endDate) url += `&endDate=${endDate}`;
+
+            const response = await fetch(url, {
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                renderInvoices(data.invoices);
+            } else {
+                container.innerHTML = '<div class="alert alert-danger">Failed to load invoices</div>';
+            }
+        } catch (error) {
+            console.error('Error loading invoices:', error);
+            container.innerHTML = '<div class="alert alert-danger">Error loading invoices</div>';
+        }
+    }
+
+    function renderInvoices(invoices) {
+        const container = document.getElementById('invoices-container');
+
+        if (!invoices || invoices.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📄</div>
+                    <h3 class="empty-state-title">No invoices found</h3>
+                    <p class="empty-state-description">Your invoices will appear here once you have subscriptions or make purchases.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = invoices.map(invoice => {
+            const statusClass = invoice.status.toLowerCase();
+            return `
+                <div class="invoice-item">
+                    <div class="invoice-header">
+                        <div class="invoice-info">
+                            <div class="invoice-number">
+                                Invoice ${invoice.invoiceNumber || invoice.stripeInvoiceId.substring(0, 8)}
+                                <span class="badge status-badge-${statusClass}">${invoice.status}</span>
+                            </div>
+                            <div>
+                                <span class="invoice-amount">$${(invoice.total || 0).toFixed(2)}</span>
+                                ${invoice.currency ? `<span class="invoice-currency">${invoice.currency.toUpperCase()}</span>` : ''}
+                            </div>
+                            ${invoice.description ? `<div style="color: var(--gray-600); margin-top: 0.5rem;">${invoice.description}</div>` : ''}
+                            <div class="invoice-meta">
+                                <div class="invoice-meta-item">
+                                    <span class="invoice-meta-label">Created</span>
+                                    <span class="invoice-meta-value">${new Date(invoice.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                ${invoice.dueDate ? `
+                                <div class="invoice-meta-item">
+                                    <span class="invoice-meta-label">Due Date</span>
+                                    <span class="invoice-meta-value">${new Date(invoice.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                ` : ''}
+                                ${invoice.paidAt ? `
+                                <div class="invoice-meta-item">
+                                    <span class="invoice-meta-label">Paid</span>
+                                    <span class="invoice-meta-value">${new Date(invoice.paidAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="invoice-actions">
+                            <button class="btn btn-sm btn-outline" onclick="viewInvoice('${invoice.id}')">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                </svg>
+                                View
+                            </button>
+                            ${invoice.invoicePdfUrl ? `
+                            <a href="/api/Invoice/DownloadInvoicePdf?invoiceId=${invoice.id}" class="btn btn-sm btn-secondary" target="_blank">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                PDF
+                            </a>
+                            ` : ''}
+                            ${invoice.status === 'Open' && invoice.amountRemaining > 0 ? `
+                            <button class="btn btn-sm btn-success" onclick="retryPayment('${invoice.id}')">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                                    <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                                </svg>
+                                Pay Now
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function loadTransactions() {
+        const container = document.getElementById('transactions-container');
+
+        try {
+            // Note: You'll need to create a WalletTransactions API endpoint
+            // For now, showing a placeholder
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💳</div>
+                    <h3 class="empty-state-title">Wallet Transactions</h3>
+                    <p class="empty-state-description">Your wallet top-ups and charges will appear here.</p>
+                    <div class="mt-3">
+                        <div style="font-size: 0.95rem; color: var(--gray-600);">
+                            Current Balance: <strong style="color: var(--primary-color); font-size: 1.125rem;">$${('@Model.Balance').replace('$', '')}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            container.innerHTML = '<div class="alert alert-danger">Error loading transactions</div>';
+        }
+    }
+
+    async function viewInvoice(invoiceId) {
+        try {
+            const response = await fetch(`/api/Invoice/GetInvoice?invoiceId=${invoiceId}`, {
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                renderInvoiceDetails(data.invoice);
+                new bootstrap.Modal(document.getElementById('invoiceDetailsModal')).show();
+            }
+        } catch (error) {
+            console.error('Error loading invoice details:', error);
+            alert('Failed to load invoice details');
+        }
+    }
+
+    function renderInvoiceDetails(invoice) {
+        const content = document.getElementById('invoice-details-content');
+        const statusClass = invoice.status.toLowerCase();
+
+        content.innerHTML = `
+            <div class="invoice-details-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 1.125rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.5rem;">
+                            Invoice ${invoice.invoiceNumber || invoice.stripeInvoiceId.substring(0, 8)}
+                        </div>
+                        <span class="badge status-badge-${statusClass}">${invoice.status}</span>
+                    </div>
+                    <div class="invoice-amount">$${(invoice.total || 0).toFixed(2)}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1rem;">
+                    <div>
+                        <div class="invoice-meta-label">Created</div>
+                        <div class="invoice-meta-value">${new Date(invoice.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
+                    ${invoice.dueDate ? `
+                    <div>
+                        <div class="invoice-meta-label">Due Date</div>
+                        <div class="invoice-meta-value">${new Date(invoice.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
+                    ` : ''}
+                    ${invoice.paidAt ? `
+                    <div>
+                        <div class="invoice-meta-label">Paid On</div>
+                        <div class="invoice-meta-value">${new Date(invoice.paidAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            ${invoice.lineItems && invoice.lineItems.length > 0 ? `
+                <div class="invoice-details-section">
+                    <h3 style="font-size: 1.0625rem; font-weight: 600; color: var(--gray-900); margin-bottom: 1rem;">Line Items</h3>
+                    <div class="line-items-list">
+                        ${invoice.lineItems.map(item => `
+                            <div class="line-item">
+                                <div class="line-item-info">
+                                    <div class="line-item-description">${item.description}</div>
+                                    <div class="line-item-quantity">Quantity: ${item.quantity}</div>
+                                </div>
+                                <div class="line-item-amount">$${(item.amount || 0).toFixed(2)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <div class="invoice-details-section">
+                <div class="invoice-total-section">
+                    <div class="invoice-total-row">
+                        <span>Subtotal:</span>
+                        <span>$${(invoice.subtotal || 0).toFixed(2)}</span>
+                    </div>
+                    ${invoice.tax ? `
+                        <div class="invoice-total-row">
+                            <span>Tax:</span>
+                            <span>$${(invoice.tax || 0).toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                    <div class="invoice-total-row total">
+                        <span>Total:</span>
+                        <span>$${(invoice.total || 0).toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function retryPayment(invoiceId) {
+        if (!confirm('Retry payment for this invoice?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/Invoice/RetryPayment', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    invoiceId: invoiceId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Payment processed successfully!');
+                loadInvoices();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error retrying payment:', error);
+            alert('Failed to process payment');
+        }
+    }
+
+    async function syncAllData() {
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `
+            <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
+            Syncing...
+        `;
+
+        try {
+            const response = await fetch('/api/Invoice/SyncAllInvoices?walletType=user', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Data synced successfully!');
+                loadInvoices();
+            } else {
+                alert('Sync failed');
+            }
+        } catch (error) {
+            console.error('Error syncing data:', error);
+            alert('Failed to sync data');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+</script>

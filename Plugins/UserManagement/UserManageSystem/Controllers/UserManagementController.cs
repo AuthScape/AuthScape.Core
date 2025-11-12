@@ -64,6 +64,13 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok(companies.ToList());
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateAccount(CreateUserParam param)
+        {
+            var userId = await userManagementSystemService.AddUser(param.FirstName, param.LastName, param.Email);
+            return Ok(userId);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetRoles()
         {
@@ -264,7 +271,7 @@ namespace AuthScape.UserManageSystem.Controllers
                     uploadField.Properties
                 );
 
-                if (!isSuccessful)
+                if (isSuccessful != null)
                 {
                     uploadField.Password = "";
                     accountsNotUploaded.Add(uploadField);
