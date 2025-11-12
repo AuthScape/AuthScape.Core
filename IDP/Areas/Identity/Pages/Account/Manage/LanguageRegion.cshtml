@@ -4,9 +4,70 @@
     ViewData["Title"] = "Language & Region";
 }
 
-<div class="mb-3">
-    <h2 class="h4 mb-1">Language & Region</h2>
-    <p class="text-muted">Pick one locale; we’ll use it for language, region, currency, and formatting.</p>
+@section Styles {
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.875rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-save:active {
+            transform: translateY(0);
+        }
+
+        .btn-cancel {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.875rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--gray-400);
+            background: var(--gray-50);
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h2 class="mb-1" style="font-size: 2rem; font-weight: 700;">Language & Region</h2>
+    <p class="mb-0" style="opacity: 0.9;">Pick one locale; we'll use it for language, region, currency, and formatting.</p>
 </div>
 
 @if (!ViewData.ModelState.IsValid)
@@ -14,80 +75,67 @@
     <div class="alert alert-danger"><strong>Please fix the errors below.</strong></div>
 }
 
-<div class="card shadow-sm glass-card">
-    <div class="card-body">
-        <form method="post" class="row g-3 needs-validation" novalidate>
-            @Html.AntiForgeryToken()
+<div class="profile-card">
+    <form method="post" class="row g-3 needs-validation" novalidate>
+        @Html.AntiForgeryToken()
 
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold" for="Input_Culture">Locale</label>
+        <div class="col-12 col-md-6">
+            <label class="form-label fw-semibold" for="Input_Culture">Locale</label>
 
-                <!-- One dropdown. Each option carries region & currency via data- attributes -->
-                <select asp-for="Input.Culture" class="form-select" id="Input_Culture">
-                    @foreach (var opt in Model.LocaleOptions)
-                    {
-                        <option value="@opt.Culture"
-                                data-country="@opt.Country"
-                                data-currency="@opt.Currency">
-                            @opt.Display
-                        </option>
-                    }
-                </select>
-                <span class="text-danger small" asp-validation-for="Input.Culture"></span>
-                <div class="form-text">Example: “English (United Kingdom) — GBP”.</div>
-            </div>
+            <!-- One dropdown. Each option carries region & currency via data- attributes -->
+            <select asp-for="Input.Culture" class="form-select" id="Input_Culture">
+                @foreach (var opt in Model.LocaleOptions)
+                {
+                    <option value="@opt.Culture"
+                            data-country="@opt.Country"
+                            data-currency="@opt.Currency">
+                        @opt.Display
+                    </option>
+                }
+            </select>
+            <span class="text-danger small" asp-validation-for="Input.Culture"></span>
+            <div class="form-text">Example: "English (United Kingdom) — GBP".</div>
+        </div>
 
-            <!-- Hidden: we fill these automatically from the selected locale + browser -->
-            <input type="hidden" asp-for="Input.Country" id="Input_Country" />
-            <input type="hidden" asp-for="Input.TimeZoneId" id="Input_TimeZoneId" />
+        <!-- Hidden: we fill these automatically from the selected locale + browser -->
+        <input type="hidden" asp-for="Input.Country" id="Input_Country" />
+        <input type="hidden" asp-for="Input.TimeZoneId" id="Input_TimeZoneId" />
 
-            <div class="col-12">
-                <div class="border rounded p-3">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <strong class="me-3">Preview</strong>
-                        <span class="text-muted small">Updates when you change the locale</span>
+        <div class="col-12">
+            <div class="border rounded p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <strong class="me-3">Preview</strong>
+                    <span class="text-muted small">Updates when you change the locale</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="small text-muted">Date & time</div>
+                        <div id="previewDate" class="fw-semibold">—</div>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="small text-muted">Date & time</div>
-                            <div id="previewDate" class="fw-semibold">—</div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="small text-muted">Number</div>
-                            <div id="previewNumber" class="fw-semibold">—</div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="small text-muted">Currency</div>
-                            <div id="previewCurrency" class="fw-semibold">—</div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="small text-muted">Time zone now</div>
-                            <div id="previewTz" class="fw-semibold">—</div>
-                        </div>
+                    <div class="col-12 col-md-6">
+                        <div class="small text-muted">Number</div>
+                        <div id="previewNumber" class="fw-semibold">—</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="small text-muted">Currency</div>
+                        <div id="previewCurrency" class="fw-semibold">—</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="small text-muted">Time zone now</div>
+                        <div id="previewTz" class="fw-semibold">—</div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="sticky-actions mt-2 pt-3 d-flex justify-content-end gap-2">
-                <a asp-page="./Index" class="btn btn-outline-secondary">Cancel</a>
-                <button class="btn btn-primary" style="margin-left:20px;">
-                    <i class="fa fa-floppy-o me-2" style="padding-right:10px;"></i>Save changes
-                </button>
-            </div>
-        </form>
-    </div>
+        <div class="sticky-actions mt-2 pt-3 d-flex justify-content-end gap-2">
+            <a asp-page="./Index" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-save">
+                <i class="fa fa-floppy-o me-2"></i>Save changes
+            </button>
+        </div>
+    </form>
 </div>
-
-@section Styles {
-    <style>
-        .glass-card {
-            background: rgba(255,255,255,.65);
-            backdrop-filter: saturate(160%) blur(10px);
-            border: 1px solid rgba(0,0,0,.06);
-            border-radius: .75rem
-        }
-    </style>
-}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
