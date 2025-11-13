@@ -1,4 +1,4 @@
-﻿@page "/PassKeyAuthentication"
+@page "/PassKeyAuthentication"
 @using Microsoft.AspNetCore.Http.Features
 @model TwoFactorAuthenticationModel
 @{
@@ -6,22 +6,274 @@
     ViewData["ActivePage"] = ManageNavPages.PassKey;
 }
 
-@* <partial name="_StatusMessage" for="StatusMessage" /> *@
-<h3>@ViewData["Title"]</h3>
-@{
+<link href="~/css/manage-pages.css" rel="stylesheet" />
 
-    <div>
-        <button onclick="register()" class="btn btn-primary">Register New Device</button>
-    </div>
+<style>
+    .passkey-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
 
-    <!-- Add device list section -->
-    <div id="deviceList" class="mt-4">
-        <h4>Registered Devices</h4>
-        <div class="list-group" id="devices">
-            <!-- Devices will be loaded here dynamically -->
+    .passkey-hero-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--border-radius-lg);
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .passkey-hero-content h2 {
+        font-size: 1.375rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .passkey-hero-content p {
+        font-size: 0.95rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .device-item {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all var(--transition-base);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .device-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .device-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+
+    .device-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--border-radius-md);
+        background: var(--gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-600);
+        flex-shrink: 0;
+    }
+
+    .device-details {
+        flex: 1;
+    }
+
+    .device-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+    }
+
+    .device-meta {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .device-meta svg {
+        opacity: 0.7;
+    }
+
+    .device-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .benefit-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: var(--border-radius-md);
+    }
+
+    .benefit-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--border-radius-md);
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .benefit-content h4 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0 0 0.25rem 0;
+    }
+
+    .benefit-content p {
+        font-size: 0.8125rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.4;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+        <div>
+            <h1>PassKey Authentication</h1>
+            <p>Secure, passwordless authentication using biometrics or security keys</p>
         </div>
     </div>
-}
+
+    <!-- PassKey Hero Section -->
+    <div class="passkey-hero">
+        <div class="passkey-hero-icon">
+            <svg width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+            </svg>
+        </div>
+        <div class="passkey-hero-content">
+            <h2>Modern Authentication with PassKeys</h2>
+            <p>
+                PassKeys provide a more secure and convenient way to sign in. Use your fingerprint, face, or security key
+                instead of typing passwords. Your credentials never leave your device, making them resistant to phishing attacks.
+            </p>
+        </div>
+    </div>
+
+    <!-- Register New Device Card -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Quick Actions</h2>
+                <p class="card-subtitle">Register a new device for passwordless authentication</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <button onclick="register()" class="btn btn-primary">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Register New Device
+            </button>
+        </div>
+    </div>
+
+    <!-- Registered Devices -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Registered Devices</h2>
+                <p class="card-subtitle">Manage your passwordless authentication devices</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="devices">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-state-title">No devices registered</h3>
+                    <p class="empty-state-description">
+                        Register your first device to enable passwordless authentication
+                    </p>
+                    <button onclick="register()" class="btn btn-primary mt-3">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Register Your First Device
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Benefits Section -->
+    <div class="card card-flat">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Why Use PassKeys?</h2>
+                <p class="card-subtitle">The benefits of passwordless authentication</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>More Secure</h4>
+                        <p>Resistant to phishing and credential theft. Your keys never leave your device.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>Faster Login</h4>
+                        <p>Sign in with a single touch or glance. No typing required.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                    </div>
+                    <div class="benefit-content">
+                        <h4>No Passwords</h4>
+                        <p>Eliminate the need to remember complex passwords for this account.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -52,36 +304,90 @@
         }
 
         async function loadDevices() {
-            const response = await fetch('/Home/GetRegisteredDevices');
-            const devices = await response.json();
+            try {
+                const response = await fetch('/Home/GetRegisteredDevices');
+                const devices = await response.json();
 
-            const deviceList = document.getElementById('devices');
-            deviceList.innerHTML = '';
+                const deviceList = document.getElementById('devices');
 
-            devices.forEach(device => {
-                const deviceElement = document.createElement('div');
-                deviceElement.className = 'list-group-item d-flex justify-content-between align-items-center';
-                deviceElement.innerHTML = `
-                    <div>
-                        <strong>${device.deviceName || 'Unknown Device'}</strong>
-                        <div class="text-muted">Registered: ${new Date(device.registrationDate).toLocaleDateString()}</div>
+                if (!devices || devices.length === 0) {
+                    deviceList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="empty-state-title">No devices registered</h3>
+                            <p class="empty-state-description">
+                                Register your first device to enable passwordless authentication
+                            </p>
+                            <button onclick="register()" class="btn btn-primary mt-3">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                                Register Your First Device
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                deviceList.innerHTML = devices.map(device => `
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-icon">
+                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                </svg>
+                            </div>
+                            <div class="device-details">
+                                <div class="device-name">${device.deviceName || 'Unknown Device'}</div>
+                                <div class="device-meta">
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                    </svg>
+                                    Registered: ${new Date(device.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="device-actions">
+                            <button class="btn btn-sm btn-danger" onclick="deleteDevice('${device.credentialId}')">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-danger btn-sm" onclick="deleteDevice('${device.credentialId}')">Delete</button>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                document.getElementById('devices').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error loading devices</strong>
+                        <p>Unable to load your registered devices. Please try refreshing the page.</p>
+                    </div>
                 `;
-                deviceList.appendChild(deviceElement);
-            });
+            }
         }
 
         async function deleteDevice(credentialId) {
-            if (confirm('Are you sure you want to delete this device?')) {
-                const response = await fetch(`/Home/DeleteCredential?credentialId=${encodeURIComponent(credentialId)}`, {
-                    method: 'DELETE'
-                });
+            if (confirm('Are you sure you want to delete this device? You will need to re-register it to use it again.')) {
+                try {
+                    const response = await fetch(`/Home/DeleteCredential?credentialId=${encodeURIComponent(credentialId)}`, {
+                        method: 'DELETE'
+                    });
 
-                if (response.ok) {
-                    loadDevices();
-                } else {
-                    alert('Failed to delete device: ' + await response.text());
+                    if (response.ok) {
+                        loadDevices();
+                    } else {
+                        alert('Failed to delete device: ' + await response.text());
+                    }
+                } catch (error) {
+                    alert('Failed to delete device: ' + error.message);
                 }
             }
         }
@@ -89,51 +395,57 @@
 
         // Registration Flow
         async function register() {
-            const username = "@(Model.User.Identity.Name)";
+            try {
+                const username = "@(Model.User.Identity.Name)";
 
-            // Step 1: Get registration options from server
-            const optionsResponse = await fetch(`/Home/GetRegistrationOptions?username=${encodeURIComponent(username)}`);
-            const options = await optionsResponse.json();
+                // Step 1: Get registration options from server
+                const optionsResponse = await fetch(`/Home/GetRegistrationOptions?username=${encodeURIComponent(username)}`);
+                const options = await optionsResponse.json();
 
-                    // In your register() function
-            const publicKey = {
-                ...options,
-                rpId: "localhost", // Must match ServerDomain
-                challenge: base64urlToArrayBuffer(options.challenge),
-                user: {
-                    ...options.user,
-                    id: base64urlToArrayBuffer(options.user.id)
+                // In your register() function
+                const publicKey = {
+                    ...options,
+                    rpId: "localhost", // Must match ServerDomain
+                    challenge: base64urlToArrayBuffer(options.challenge),
+                    user: {
+                        ...options.user,
+                        id: base64urlToArrayBuffer(options.user.id)
+                    }
+                };
+
+                // Step 3: Create credential using browser API
+                const credential = await navigator.credentials.create({ publicKey });
+
+                // Step 4: Format response for server
+                const response = {
+                    id: credential.id,
+                    rawId: arrayBufferToBase64url(credential.rawId),
+                    type: credential.type,
+                    response: {
+                        attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
+                        clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
+                    }
+                };
+
+                // Step 5: Send registration to server
+                const registrationResponse = await fetch('/Home/RegisterCredential', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(response)
+                });
+
+                if (registrationResponse.ok) {
+                    alert('Registration successful! Your device is now registered.');
+                    loadDevices(); // Reload the device list
+                } else {
+                    alert('Registration failed: ' + await registrationResponse.text());
                 }
-            };
-
-            // Step 3: Create credential using browser API
-            const credential = await navigator.credentials.create({ publicKey });
-
-            // Step 4: Format response for server
-            const response = {
-                id: credential.id,
-                rawId: arrayBufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
-                    clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
-                }
-            };
-
-            // Step 5: Send registration to server
-            const registrationResponse = await fetch('/Home/RegisterCredential', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json' // 👈 Ensure you accept JSON responses
-                },
-                body: JSON.stringify(response)
-            });
-
-            if (registrationResponse.ok) {
-                alert('Registration successful!');
-            } else {
-                alert('Registration failed: ' + await registrationResponse.text());
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Registration failed: ' + error.message);
             }
         }
 
@@ -180,15 +492,8 @@
             });
 
             if (verificationResponse.ok) {
-                // alert('Login successful!');
-                // Redirect or update UI here
-
                 const data = await verificationResponse.text();
-                // const jsonData = await verificationResponse.json();
-
                 window.location.href = data;
-
-
             } else {
                 alert('Login failed: ' + await verificationResponse.text());
             }

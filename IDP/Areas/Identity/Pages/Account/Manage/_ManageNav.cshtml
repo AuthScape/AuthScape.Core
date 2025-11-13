@@ -4,21 +4,67 @@
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
 }
 <style>
-    /* icon spacing + section headings */
-    .nav-pills .nav-link i {
-        margin-right: .75rem;
+    .manage-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
     }
 
     .nav-section-title {
-        font-size: .85rem;
-        font-weight: 600;
+        font-size: 0.75rem;
+        font-weight: 700;
         text-transform: uppercase;
-        color: #6c757d;
-        padding: .75rem 1rem .25rem;
+        letter-spacing: 0.05em;
+        color: var(--gray-500);
+        padding: 1rem 0 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .nav-section-title:first-child {
+        margin-top: 0;
+        padding-top: 0;
+    }
+
+    .manage-nav .nav-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .manage-nav .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--gray-700);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        transition: all 0.15s ease;
+        border: 2px solid transparent;
+    }
+
+    .manage-nav .nav-link:hover {
+        background: var(--gray-100);
+        color: var(--gray-900);
+    }
+
+    .manage-nav .nav-link.active,
+    .manage-nav .nav-link[aria-current="page"] {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        color: var(--primary-color);
+        font-weight: 600;
+        border-color: var(--primary-color);
+    }
+
+    .manage-nav .nav-link i {
+        font-size: 1.125rem;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
     }
 </style>
 
-<ul class="nav nav-pills flex-column">
+<ul class="manage-nav">
 
     <!-- Profile & Identity -->
     <li class="nav-section-title">Profile &amp; Identity</li>
@@ -64,8 +110,8 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="login-alerts" asp-page="./ExternalLogins">
-            <i class="fa fa-bell"></i>External Logins
+        <a class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="external-logins-security" asp-page="./ExternalLogins">
+            <i class="fa fa-external-link"></i>External Logins
         </a>
     </li>
     <li class="nav-item">
@@ -115,12 +161,12 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="subscriptions" asp-page="./Subscriptions">
+        <a class="nav-link @ManageNavPages.SubscriptionsNavClass(ViewContext)" id="subscriptions" asp-page="./Subscriptions">
             <i class="fa fa-star"></i>Subscriptions
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="billing-history" asp-page="./BillingHistory">
+        <a class="nav-link @ManageNavPages.BillingHistoryNavClass(ViewContext)" id="billing-history" asp-page="./BillingHistory">
             <i class="fa fa-file-text-o"></i>Billing history / Invoices
         </a>
     </li>

@@ -1,33 +1,392 @@
-﻿@page "/PersonalData"
+@page "/PersonalData"
 @model PersonalDataModel
 @{
     ViewData["Title"] = "Personal Data";
     ViewData["ActivePage"] = ManageNavPages.PersonalData;
 }
 
-<h3>@ViewData["Title"]</h3>
+<link href="~/css/manage-pages.css" rel="stylesheet" />
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
+<style>
+    .data-info-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
 
-        <div class="row">
-            <div class="col-md-6">
-                <form id="download-data" asp-page="DownloadPersonalData" method="post">
-                    <button class="btn btn-primary" type="submit" style="width:100%;">Download</button>
-                </form>
+    .data-info-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .data-info-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--border-radius-md);
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .data-info-content h2 {
+        font-size: 1.375rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .data-info-content p {
+        font-size: 0.95rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .action-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .action-card {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        transition: all var(--transition-base);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .action-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .action-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--border-radius-md);
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-bottom: 1.25rem;
+    }
+
+    .action-card-icon.danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .action-card h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .action-card p {
+        font-size: 0.9375rem;
+        color: var(--gray-600);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        flex: 1;
+    }
+
+    .action-card .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .warning-notice {
+        background: var(--warning-light);
+        border: 2px solid var(--warning-color);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .warning-notice-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .warning-notice-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #92400e;
+        margin: 0;
+    }
+
+    .warning-notice p {
+        margin: 0;
+        color: #92400e;
+        line-height: 1.5;
+    }
+
+    .danger-zone {
+        background: var(--danger-light);
+        border: 2px solid var(--danger-color);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .danger-zone-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .danger-zone-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #991b1b;
+        margin: 0;
+    }
+
+    .danger-zone-content {
+        color: #991b1b;
+    }
+
+    .danger-zone-content p {
+        margin-bottom: 1.25rem;
+        line-height: 1.6;
+    }
+
+    .danger-zone-content strong {
+        font-weight: 700;
+    }
+
+    .gdpr-info-list {
+        background: white;
+        border-radius: var(--border-radius-md);
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .gdpr-info-list h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+
+    .gdpr-info-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .gdpr-info-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .gdpr-info-list li:last-child {
+        border-bottom: none;
+    }
+
+    .gdpr-info-list li svg {
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+        color: var(--primary-color);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+        <div>
+            <h1>Personal Data</h1>
+            <p>Manage, download, or delete your personal information</p>
+        </div>
+    </div>
+
+    <!-- Data Privacy Info -->
+    <div class="data-info-card">
+        <div class="data-info-header">
+            <div class="data-info-icon">
+                <svg width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                </svg>
             </div>
-            <div class="col-md-6">
+            <div class="data-info-content">
+                <h2>Your Data Rights</h2>
                 <p>
-                    <a id="delete" asp-page="DeletePersonalData" class="btn btn-danger" style="width:100%;">Delete</a>
+                    Your account contains personal data that you have provided to us. Under data protection laws,
+                    you have the right to access, download, and delete this data at any time.
                 </p>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- GDPR Information -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">What Data Do We Store?</h2>
+                <p class="card-subtitle">Information we collect and maintain about your account</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="gdpr-info-list">
+                <ul>
+                    <li>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                        </svg>
+                        <span><strong>Profile Information:</strong> Name, email address, and account settings</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                        </svg>
+                        <span><strong>Security Data:</strong> Authentication credentials and security preferences</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                        </svg>
+                        <span><strong>Activity Logs:</strong> Login history and account activity records</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                        </svg>
+                        <span><strong>Preferences:</strong> Your customization choices and app settings</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="action-cards-grid">
+        <!-- Download Data Card -->
+        <div class="action-card">
+            <div class="action-card-icon">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+            </div>
+            <h3>Download Your Data</h3>
+            <p>
+                Export all your personal data in a machine-readable format (JSON). This includes your profile information,
+                settings, and activity history. You can use this data with other services or keep it for your records.
+            </p>
+            <form id="download-data" asp-page="DownloadPersonalData" method="post">
+                <button class="btn btn-primary" type="submit">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    Download Data
+                </button>
+            </form>
+        </div>
+
+        <!-- Delete Data Card -->
+        <div class="action-card">
+            <div class="action-card-icon danger">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+            </div>
+            <h3>Delete Your Account</h3>
+            <p>
+                Permanently remove your account and all associated data from our systems. This action cannot be undone.
+                We recommend downloading your data first if you want to keep a copy.
+            </p>
+            <a id="delete" asp-page="DeletePersonalData" class="btn btn-danger">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                </svg>
+                Delete Account
+            </a>
+        </div>
+    </div>
+
+    <!-- Warning Notice -->
+    <div class="warning-notice">
+        <div class="warning-notice-header">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+            </svg>
+            <strong class="warning-notice-title">Important Information</strong>
+        </div>
+        <p>
+            <strong>Account Deletion is Permanent:</strong> Once you delete your account, all your data will be permanently
+            removed from our systems. This includes your profile, settings, history, and any content you've created.
+            This action cannot be reversed, and you will need to create a new account if you wish to use our services again.
+        </p>
+    </div>
+
+    <!-- Data Protection Info -->
+    <div class="card card-flat">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Your Privacy Matters</h2>
+                <p class="card-subtitle">How we protect and handle your data</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="benefits-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: var(--gray-50); border-radius: var(--border-radius-md);">
+                    <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin: 0 0 0.25rem 0;">Encrypted Storage</h4>
+                        <p style="font-size: 0.8125rem; color: var(--gray-600); margin: 0; line-height: 1.4;">Your data is encrypted at rest and in transit</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: var(--gray-50); border-radius: var(--border-radius-md);">
+                    <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin: 0 0 0.25rem 0;">GDPR Compliant</h4>
+                        <p style="font-size: 0.8125rem; color: var(--gray-600); margin: 0; line-height: 1.4;">We follow strict data protection regulations</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: var(--gray-50); border-radius: var(--border-radius-md);">
+                    <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin: 0 0 0.25rem 0;">Full Transparency</h4>
+                        <p style="font-size: 0.8125rem; color: var(--gray-600); margin: 0; line-height: 1.4;">You have complete control over your information</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

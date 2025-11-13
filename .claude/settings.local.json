@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(dotnet add reference:*)"
+      "Bash(dotnet add reference:*)",
+      "Bash(Select-String -Pattern \"TwoFactorAuthentication|error|Build succeeded|Build FAILED\" -Context 0,2)",
+      "Bash(Select-String -Pattern \"RZ1026|error:\")"
     ],
     "deny": [],
     "ask": []
