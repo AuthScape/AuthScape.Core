@@ -151,11 +151,14 @@ namespace IDP.Controllers
                     if (queryRole != null)
                     {
                         roles.Add(queryRole);
+                        // Add standard role claim for ASP.NET Core authorization
+                        principal.Identities.First().AddClaim(new Claim(Claims.Role, queryRole.Name));
                     }
                 }
 
                 //var names = roles.Select(s => s.Name);
 
+                // Keep the custom claim for backward compatibility
                 principal.Identities.First().AddClaim(new Claim("usersRoles", JsonConvert.SerializeObject(roles)));
             }
 

@@ -1,0 +1,193 @@
+@page
+@model IDP.Areas.Admin.Pages.IndexModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Styles {
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .dashboard-card-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            color: var(--primary-color);
+        }
+
+        .dashboard-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-card p {
+            color: var(--gray-600);
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 3rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section h2 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-section p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.125rem;
+        }
+    </style>
+}
+
+<div class="welcome-section">
+    <h2>Welcome to AuthScape Admin</h2>
+    <p>Manage your OAuth applications, API scopes, and identity server configuration</p>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-label">OAuth Applications</div>
+        <div class="stat-value">@Model.ApplicationCount</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #10b981;">
+        <div class="stat-label">API Scopes</div>
+        <div class="stat-value">@Model.ScopeCount</div>
+    </div>
+    <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-label">Active Users</div>
+        <div class="stat-value">-</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <a href="/Admin/IdentityServer/Applications" class="dashboard-card">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-cube"></i>
+        </div>
+        <h3>Applications</h3>
+        <p>Manage OAuth 2.0 and OpenID Connect client applications. Configure SPAs, web apps, native apps, and machine-to-machine clients.</p>
+    </a>
+
+    <a href="/Admin/IdentityServer/Scopes" class="dashboard-card">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-tag"></i>
+        </div>
+        <h3>API Scopes</h3>
+        <p>Define and manage API scopes for fine-grained access control. Control what resources your applications can access.</p>
+    </a>
+
+    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-users"></i>
+        </div>
+        <h3>Users & Roles</h3>
+        <p>Manage user accounts, roles, and permissions. Control who has access to your applications and resources.</p>
+    </div>
+
+    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-bar-chart"></i>
+        </div>
+        <h3>Analytics</h3>
+        <p>View authentication statistics, monitor API usage, and track application performance metrics.</p>
+    </div>
+
+    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-shield"></i>
+        </div>
+        <h3>Security</h3>
+        <p>Configure security policies, review audit logs, and manage security settings for your identity server.</p>
+    </div>
+
+    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-cog"></i>
+        </div>
+        <h3>Settings</h3>
+        <p>Configure global settings, customize branding, and manage system-wide preferences.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Disable clicks on coming soon cards
+        document.querySelectorAll('.dashboard-card[style*="opacity"]').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+            });
+        });
+    </script>
+}
