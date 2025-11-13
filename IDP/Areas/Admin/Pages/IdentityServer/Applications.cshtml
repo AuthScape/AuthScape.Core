@@ -1,0 +1,322 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.ApplicationsModel
+@{
+    ViewData["Title"] = "Manage Applications";
+}
+
+@section Styles {
+    <style>
+        .applications-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .application-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .application-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-color);
+        }
+
+        .application-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .application-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0 0 0.25rem;
+        }
+
+        .application-client-id {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            font-family: 'Courier New', monospace;
+        }
+
+        .application-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .type-spa {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .type-web {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .type-native {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-machine {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .type-device {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .type-spalegacy {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .application-description {
+            color: var(--gray-600);
+            font-size: 0.9375rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .application-meta {
+            display: flex;
+            gap: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .application-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .application-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--gray-900);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+    </style>
+}
+
+<div class="admin-header">
+    <h1>Manage Applications</h1>
+    <p>Configure OAuth 2.0 and OpenID Connect applications</p>
+</div>
+
+<div class="header-actions">
+    <div></div>
+    <a href="/Admin/Applications/Create" class="btn-primary-gradient">
+        <i class="fa fa-plus"></i>
+        Create Application
+    </a>
+</div>
+
+@if (Model.Applications == null || !Model.Applications.Any())
+{
+    <div class="empty-state">
+        <i class="fa fa-cube"></i>
+        <h3>No applications yet</h3>
+        <p>Create your first OAuth application to get started</p>
+        <a href="/Admin/Applications/Create" class="btn-primary-gradient">
+            <i class="fa fa-plus"></i>
+            Create Application
+        </a>
+    </div>
+}
+else
+{
+    <div class="applications-grid">
+        @foreach (var app in Model.Applications)
+        {
+            <div class="application-card">
+                <div class="application-header">
+                    <div class="application-info">
+                        <h3>@app.DisplayName</h3>
+                        <div class="application-client-id">@app.ClientId</div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span class="application-type-badge type-@(app.ClientType.ToString().ToLower())">
+                            @switch (app.ClientType)
+                            {
+                                case IDP.Models.IdentityServer.ClientType.Spa:
+                                    <i class="fa fa-chrome"></i>
+                                    <span>SPA</span>
+                                    break;
+                                case IDP.Models.IdentityServer.ClientType.Web:
+                                    <i class="fa fa-globe"></i>
+                                    <span>Web App</span>
+                                    break;
+                                case IDP.Models.IdentityServer.ClientType.Native:
+                                    <i class="fa fa-mobile"></i>
+                                    <span>Native</span>
+                                    break;
+                                case IDP.Models.IdentityServer.ClientType.Machine:
+                                    <i class="fa fa-server"></i>
+                                    <span>M2M</span>
+                                    break;
+                                case IDP.Models.IdentityServer.ClientType.Device:
+                                    <i class="fa fa-tablet"></i>
+                                    <span>Device</span>
+                                    break;
+                                case IDP.Models.IdentityServer.ClientType.SpaLegacy:
+                                    <i class="fa fa-history"></i>
+                                    <span>SPA (Legacy)</span>
+                                    break;
+                            }
+                        </span>
+                        <div class="application-actions">
+                            <a href="/Admin/Applications/Edit/@app.Id" class="btn-icon" title="Edit">
+                                <i class="fa fa-pencil"></i>
+                            </a>
+                            <button class="btn-icon" onclick="deleteApplication('@app.Id', '@app.DisplayName')" title="Delete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(app.Description))
+                {
+                    <div class="application-description">
+                        @app.Description
+                    </div>
+                }
+
+                <div class="application-meta">
+                    <div class="application-meta-item">
+                        <i class="fa fa-link"></i>
+                        <span>@app.RedirectUris?.Count redirect URIs</span>
+                    </div>
+                    <div class="application-meta-item">
+                        <i class="fa fa-shield"></i>
+                        <span>@(app.RequirePkce ? "PKCE Required" : "No PKCE")</span>
+                    </div>
+                    @if (app.AllowOfflineAccess)
+                    {
+                        <div class="application-meta-item">
+                            <i class="fa fa-refresh"></i>
+                            <span>Refresh Tokens</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function deleteApplication(id, name) {
+            if (confirm(`Are you sure you want to delete the application "${name}"?\n\nThis action cannot be undone.`)) {
+                fetch(`/Admin/Applications/Delete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to delete application');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the application');
+                });
+            }
+        }
+    </script>
+}

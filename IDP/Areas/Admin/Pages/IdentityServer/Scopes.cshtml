@@ -1,0 +1,299 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.ScopesModel
+@{
+    ViewData["Title"] = "API Scopes";
+}
+
+@section Styles {
+    <style>
+        .scopes-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .scope-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .scope-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-color);
+        }
+
+        .scope-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .scope-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0 0 0.25rem;
+        }
+
+        .scope-name {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            font-family: 'Courier New', monospace;
+        }
+
+        .scope-description {
+            color: var(--gray-600);
+            font-size: 0.9375rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .scope-resources {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .resource-badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+    </style>
+}
+
+<div class="admin-header">
+    <h1>API Scopes</h1>
+    <p>Manage OAuth 2.0 API scopes for fine-grained access control</p>
+</div>
+
+<div class="header-actions">
+    <div></div>
+    <button onclick="openCreateModal()" class="btn-primary-gradient">
+        <i class="fa fa-plus"></i>
+        Create Scope
+    </button>
+</div>
+
+@if (Model.Scopes == null || !Model.Scopes.Any())
+{
+    <div class="empty-state">
+        <i class="fa fa-tag"></i>
+        <h3>No scopes yet</h3>
+        <p>Create your first API scope to define access permissions</p>
+        <button onclick="openCreateModal()" class="btn-primary-gradient">
+            <i class="fa fa-plus"></i>
+            Create Scope
+        </button>
+    </div>
+}
+else
+{
+    <div class="scopes-grid">
+        @foreach (var scope in Model.Scopes)
+        {
+            <div class="scope-card">
+                <div class="scope-header">
+                    <div class="scope-info">
+                        <h3>@scope.DisplayName</h3>
+                        <div class="scope-name">@scope.Name</div>
+                    </div>
+                    <div class="application-actions">
+                        <button class="btn-icon" onclick="openEditModal('@scope.Id', '@scope.Name', '@scope.DisplayName', '@scope.Description')" title="Edit">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="btn-icon" onclick="deleteScope('@scope.Id', '@scope.Name')" title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(scope.Description))
+                {
+                    <div class="scope-description">
+                        @scope.Description
+                    </div>
+                }
+
+                @if (scope.Resources != null && scope.Resources.Any())
+                {
+                    <div class="scope-resources">
+                        @foreach (var resource in scope.Resources)
+                        {
+                            <span class="resource-badge">@resource</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<!-- Create/Edit Modal -->
+<div id="scopeModal" class="modal">
+    <div class="modal-content">
+        <form method="post" id="scopeForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="scopeId" id="scopeId" />
+
+            <div class="modal-header">
+                <h2 id="modalTitle">Create Scope</h2>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="scopeName">Scope Name *</label>
+                    <input type="text" id="scopeName" name="scopeName" class="form-control" required
+                           placeholder="api1.read" />
+                    <small class="form-text">Unique identifier for this scope (lowercase, no spaces)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="scopeDisplayName">Display Name *</label>
+                    <input type="text" id="scopeDisplayName" name="scopeDisplayName" class="form-control" required
+                           placeholder="Read Access" />
+                    <small class="form-text">User-friendly name for this scope</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="scopeDescription">Description</label>
+                    <textarea id="scopeDescription" name="scopeDescription" class="form-control"
+                              placeholder="Allows read access to the API"></textarea>
+                    <small class="form-text">Optional description of what this scope grants access to</small>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary-gradient" id="submitBtn">
+                    <i class="fa fa-check"></i>
+                    Create Scope
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCreateModal() {
+            document.getElementById('modalTitle').textContent = 'Create Scope';
+            document.getElementById('submitBtn').innerHTML = '<i class="fa fa-check"></i> Create Scope';
+            document.getElementById('scopeForm').action = '?handler=Create';
+            document.getElementById('scopeId').value = '';
+            document.getElementById('scopeName').value = '';
+            document.getElementById('scopeName').readOnly = false;
+            document.getElementById('scopeDisplayName').value = '';
+            document.getElementById('scopeDescription').value = '';
+            document.getElementById('scopeModal').classList.add('show');
+        }
+
+        function openEditModal(id, name, displayName, description) {
+            document.getElementById('modalTitle').textContent = 'Edit Scope';
+            document.getElementById('submitBtn').innerHTML = '<i class="fa fa-check"></i> Save Changes';
+            document.getElementById('scopeForm').action = '?handler=Edit';
+            document.getElementById('scopeId').value = id;
+            document.getElementById('scopeName').value = name;
+            document.getElementById('scopeName').readOnly = true;
+            document.getElementById('scopeDisplayName').value = displayName;
+            document.getElementById('scopeDescription').value = description || '';
+            document.getElementById('scopeModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('scopeModal').classList.remove('show');
+        }
+
+        function deleteScope(id, name) {
+            if (confirm(`Are you sure you want to delete the scope "${name}"?\n\nThis action cannot be undone.`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '?handler=Delete';
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'scopeId';
+                idInput.value = id;
+                form.appendChild(idInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('scopeModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+}

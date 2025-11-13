@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
+    <ProjectReference Include="..\Authscape.Backpack\Authscape.Backpack.csproj" />
   </ItemGroup>
 
 </Project>

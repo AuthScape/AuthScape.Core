@@ -1,0 +1,228 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.ApplicationCreatedModel
+@{
+    ViewData["Title"] = "Application Created";
+}
+
+@section Styles {
+    <style>
+        .success-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 3rem;
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .success-card h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .success-card > p {
+            color: var(--gray-600);
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+        }
+
+        .secret-box {
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .secret-label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .secret-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9375rem;
+            color: var(--gray-900);
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            word-break: break-all;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-copy {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .btn-copy:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-copy.copied {
+            background: #10b981;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .warning-box strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #92400e;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .warning-box p {
+            color: #78350f;
+            font-size: 0.9375rem;
+            margin: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.15s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--gray-400);
+            background: var(--gray-50);
+            color: var(--gray-700);
+        }
+    </style>
+}
+
+<div class="admin-header">
+    <h1>Application Created Successfully</h1>
+    <p>Your OAuth application has been configured</p>
+</div>
+
+<div class="success-card">
+    <div class="success-icon">
+        <i class="fa fa-check"></i>
+    </div>
+
+    <h1>@Model.DisplayName</h1>
+    <p>Application created successfully</p>
+
+    <div class="secret-box">
+        <div class="secret-label">Client ID</div>
+        <div class="secret-value">
+            <span id="clientId">@Model.ClientId</span>
+            <button class="btn-copy" onclick="copyToClipboard('clientId', this)">
+                <i class="fa fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ClientSecret))
+    {
+        <div class="secret-box">
+            <div class="secret-label">Client Secret</div>
+            <div class="secret-value">
+                <span id="clientSecret">@Model.ClientSecret</span>
+                <button class="btn-copy" onclick="copyToClipboard('clientSecret', this)">
+                    <i class="fa fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>
+                <i class="fa fa-exclamation-triangle"></i>
+                Important: Save this secret now!
+            </strong>
+            <p>
+                This is the only time the client secret will be displayed. Make sure to copy and store it securely.
+                You won't be able to retrieve it again, but you can regenerate a new secret if needed.
+            </p>
+        </div>
+    }
+
+    <div class="action-buttons">
+        <a href="/Admin/Applications" class="btn-secondary">
+            <i class="fa fa-arrow-left"></i>
+            Back to Applications
+        </a>
+        <a href="/Admin/Applications/Edit/@Model.ApplicationId" class="btn-primary-gradient">
+            <i class="fa fa-cog"></i>
+            Configure Application
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard(elementId, button) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fa fa-check"></i> Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy to clipboard');
+            });
+        }
+    </script>
+}

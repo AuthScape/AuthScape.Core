@@ -72,6 +72,12 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
 
         public static string LanguageRegionTimezone => "LanguageRegion";
 
+        public static string EmailNotifications => "EmailNotifications";
+
+        public static string PushNotifications => "PushNotifications";
+
+        public static string SmsAlerts => "SmsAlerts";
+
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -137,6 +143,12 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public static string PassKeyAuthenticationNavClass(ViewContext viewContext) => PageNavClass(viewContext, PassKey);
+
+        public static string EmailNotificationsNavClass(ViewContext viewContext) => PageNavClass(viewContext, EmailNotifications);
+
+        public static string PushNotificationsNavClass(ViewContext viewContext) => PageNavClass(viewContext, PushNotifications);
+
+        public static string SmsAlertsNavClass(ViewContext viewContext) => PageNavClass(viewContext, SmsAlerts);
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used

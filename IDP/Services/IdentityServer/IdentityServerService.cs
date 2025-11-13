@@ -1,22 +1,26 @@
-﻿using Authscape.IdentityServer.Models;
-using CoreBackpack.Mail;
+﻿using IDP.Models.IdentityServer;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
 using Services.Context;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Threading.Tasks;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using PasswordGenerator = AuthScape.Backpack.PasswordGenerator;
+using Microsoft.AspNetCore.Identity;
 
-namespace Authscape.IdentityServer.Services
+namespace IDP.Services.IdentityServer
 {
     public interface IIdentityServerService
     {
         Task<List<OpenIddictEntityFrameworkCoreApplication>> GetApplications();
-        Task<string> CreateApplication(IdentityCreateApplication identityCreateApplication);
         Task SetupDevelopmentEnvironment();
         Task<OpenIddictEntityFrameworkCoreApplication> GetApplication(string applicationId);
 
-        // Extended admin methods
+        // Admin methods
         Task<List<ApplicationDetailsDto>> GetAllApplicationsAsync();
         Task<ApplicationDetailsDto> GetApplicationDetailsAsync(string id);
         Task<(string ClientSecret, string ApplicationId)> CreateApplicationAsync(ApplicationCreateDto dto);
@@ -50,61 +54,6 @@ namespace Authscape.IdentityServer.Services
         public async Task<OpenIddictEntityFrameworkCoreApplication> GetApplication(string applicationId)
         {
             return await databaseContext.OpenIddictApplications.Where(a => a.Id == applicationId).FirstOrDefaultAsync();
-        }
-
-        public async Task<string> CreateApplication(IdentityCreateApplication identityCreateApplication)
-        {
-            if (String.IsNullOrWhiteSpace(identityCreateApplication.ClientSecret))
-            {
-                var newClientSecret = PasswordGenerator.GenerateRandomPassword(new Microsoft.AspNetCore.Identity.PasswordOptions()
-                {
-                    RequiredLength = 32,
-                    RequiredUniqueChars = 4,
-                    RequireLowercase = true,
-                    RequireUppercase = true,
-                    RequireNonAlphanumeric = true,
-                    RequireDigit = true
-                });
-
-                identityCreateApplication.ClientSecret = newClientSecret;
-            }
-
-            if (await openIddictApplicationManager.FindByClientIdAsync(identityCreateApplication.ClientID) is null)
-            {
-                await openIddictApplicationManager.CreateAsync(new OpenIddictApplicationDescriptor
-                {
-                    ClientId = identityCreateApplication.ClientID,
-                    ClientSecret = identityCreateApplication.ClientSecret,
-                    DisplayName = identityCreateApplication.DisplayName,
-                    RedirectUris = {
-                            new Uri("http://localhost:3000/signin-oidc")
-                        },
-                    PostLogoutRedirectUris =
-                        {
-                            new Uri("http://localhost:3000/signout-oidc")
-                        },
-                    Permissions =
-                        {
-                            Permissions.Endpoints.Authorization,
-                            OpenIddictConstants.Permissions.Endpoints.EndSession,
-                            Permissions.Endpoints.Token,
-                            Permissions.GrantTypes.AuthorizationCode,
-                            Permissions.GrantTypes.RefreshToken,
-                            Permissions.ResponseTypes.Code,
-                            Permissions.Scopes.Email,
-                            Permissions.Scopes.Profile,
-                            Permissions.Scopes.Roles,
-                            Permissions.Prefixes.Scope + "api1"
-                        },
-                    Requirements =
-                        {
-                            Requirements.Features.ProofKeyForCodeExchange,
-                        }
-                });
-            }
-
-            // This is the last time you can get your secret
-            return identityCreateApplication.ClientSecret;
         }
 
         public async Task SetupDevelopmentEnvironment()

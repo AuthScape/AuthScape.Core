@@ -115,21 +115,6 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="security-questions" asp-page="./SecurityQuestions">
-            <i class="fa fa-question-circle"></i>Security questions
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="app-passwords" asp-page="./AppPasswords">
-            <i class="fa fa-lock"></i>App passwords
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="sessions" asp-page="./Sessions">
-            <i class="fa fa-desktop"></i>Session management
-        </a>
-    </li>
-    <li class="nav-item">
         <a class="nav-link @ManageNavPages.PassKeyAuthenticationNavClass(ViewContext)" id="passkey" asp-page="./PassKeyAuthentication">
             <i class="fa fa-user-secret"></i>PassKey
         </a>
@@ -170,26 +155,21 @@
             <i class="fa fa-file-text-o"></i>Billing history / Invoices
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link" id="promo-codes" asp-page="./PromoCodes">
-            <i class="fa fa-ticket"></i>Promo codes / Credits
-        </a>
-    </li>
 
     <!-- Notifications -->
     <li class="nav-section-title mt-3">Notifications</li>
     <li class="nav-item">
-        <a class="nav-link" id="email-notifications" asp-page="./EmailNotifications">
+        <a class="nav-link @ManageNavPages.EmailNotificationsNavClass(ViewContext)" id="email-notifications" asp-page="./EmailNotifications">
             <i class="fa fa-envelope-o"></i>Email notifications
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="push-notifications" asp-page="./PushNotifications">
+        <a class="nav-link @ManageNavPages.PushNotificationsNavClass(ViewContext)" id="push-notifications" asp-page="./PushNotifications">
             <i class="fa fa-mobile"></i>Push notifications
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="sms-alerts" asp-page="./SmsAlerts">
+        <a class="nav-link @ManageNavPages.SmsAlertsNavClass(ViewContext)" id="sms-alerts" asp-page="./SmsAlerts">
             <i class="fa fa-commenting-o"></i>SMS alerts
         </a>
     </li>

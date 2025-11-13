@@ -4,7 +4,12 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet add reference:*)",
       "Bash(Select-String -Pattern \"TwoFactorAuthentication|error|Build succeeded|Build FAILED\" -Context 0,2)",
-      "Bash(Select-String -Pattern \"RZ1026|error:\")"
+      "Bash(Select-String -Pattern \"RZ1026|error:\")",
+      "Bash(Select-String -Pattern \"error|Build succeeded|Build FAILED\" -Context 0,2)",
+      "Bash(dotnet remove reference:*)",
+      "Bash(Get-Content \"C:\\Development\\AuthScape\\AuthScape.Core\\IDP\\Areas\\Admin\\Pages\\Index.cshtml.cs\")",
+      "Bash(Select-String -Pattern \"Authorize\")",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

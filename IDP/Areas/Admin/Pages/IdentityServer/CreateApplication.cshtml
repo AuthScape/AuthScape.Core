@@ -1,0 +1,588 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.CreateApplicationModel
+@{
+    ViewData["Title"] = "Create Application";
+}
+
+@section Styles {
+    <style>
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .type-card {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .type-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .type-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+
+        .type-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .type-spa .type-card-icon {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .type-web .type-card-icon {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .type-native .type-card-icon {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-machine .type-card-icon {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .type-device .type-card-icon {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .type-spalegacy .type-card-icon {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .type-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .type-card p {
+            color: var(--gray-600);
+            font-size: 0.9375rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .type-card-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .type-card-features li {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .type-card-features li i {
+            color: var(--primary-color);
+            font-size: 0.75rem;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            font-size: 0.9375rem;
+        }
+
+        .form-group .form-text {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: all 0.15s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .uri-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+
+        .uri-item {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .uri-item input {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-remove:hover {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-add {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add:hover {
+            background: var(--gray-200);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .btn-cancel {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--gray-400);
+            background: var(--gray-50);
+            color: var(--gray-700);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            color: var(--primary-color);
+        }
+
+        .step.completed {
+            color: var(--gray-600);
+        }
+
+        .step i {
+            font-size: 1.25rem;
+        }
+    </style>
+}
+
+<div class="admin-header">
+    <h1>Create Application</h1>
+    <p>Configure a new OAuth 2.0 / OpenID Connect application</p>
+</div>
+
+<div class="step-indicator">
+    <div class="step active" id="step1-indicator">
+        <i class="fa fa-cube"></i>
+        <span>Select Type</span>
+    </div>
+    <i class="fa fa-arrow-right" style="color: var(--gray-300);"></i>
+    <div class="step" id="step2-indicator">
+        <i class="fa fa-cog"></i>
+        <span>Configure</span>
+    </div>
+</div>
+
+<form method="post" id="createForm">
+    @Html.AntiForgeryToken()
+
+    <!-- Step 1: Type Selection -->
+    <div id="step1">
+        <div class="type-selector">
+            <div class="type-card type-spa" onclick="selectType('Spa')">
+                <input type="radio" name="Input.ClientType" value="0" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-chrome"></i>
+                </div>
+                <h3>Single Page Application</h3>
+                <p>JavaScript apps running in the browser (React, Angular, Vue)</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Authorization Code + PKCE</li>
+                    <li><i class="fa fa-check"></i>Public client (no secret)</li>
+                    <li><i class="fa fa-check"></i>Best for modern SPAs</li>
+                </ul>
+            </div>
+
+            <div class="type-card type-web" onclick="selectType('Web')">
+                <input type="radio" name="Input.ClientType" value="1" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-globe"></i>
+                </div>
+                <h3>Web Application</h3>
+                <p>Server-side web applications (ASP.NET, Node.js, PHP)</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Authorization Code flow</li>
+                    <li><i class="fa fa-check"></i>Confidential client with secret</li>
+                    <li><i class="fa fa-check"></i>Secure backend storage</li>
+                </ul>
+            </div>
+
+            <div class="type-card type-native" onclick="selectType('Native')">
+                <input type="radio" name="Input.ClientType" value="2" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-mobile"></i>
+                </div>
+                <h3>Native Application</h3>
+                <p>Mobile and desktop apps (iOS, Android, Electron)</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Authorization Code + PKCE</li>
+                    <li><i class="fa fa-check"></i>Public client (no secret)</li>
+                    <li><i class="fa fa-check"></i>Deep linking support</li>
+                </ul>
+            </div>
+
+            <div class="type-card type-machine" onclick="selectType('Machine')">
+                <input type="radio" name="Input.ClientType" value="3" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-server"></i>
+                </div>
+                <h3>Machine to Machine</h3>
+                <p>Backend services and APIs communicating without users</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Client Credentials flow</li>
+                    <li><i class="fa fa-check"></i>Confidential client with secret</li>
+                    <li><i class="fa fa-check"></i>Service-to-service auth</li>
+                </ul>
+            </div>
+
+            <div class="type-card type-device" onclick="selectType('Device')">
+                <input type="radio" name="Input.ClientType" value="4" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-tablet"></i>
+                </div>
+                <h3>Device</h3>
+                <p>Input-constrained devices (Smart TVs, IoT devices)</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Device Authorization flow</li>
+                    <li><i class="fa fa-check"></i>User code verification</li>
+                    <li><i class="fa fa-check"></i>Limited input capability</li>
+                </ul>
+            </div>
+
+            <div class="type-card type-spalegacy" onclick="selectType('SpaLegacy')">
+                <input type="radio" name="Input.ClientType" value="5" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-history"></i>
+                </div>
+                <h3>SPA (Legacy)</h3>
+                <p>Legacy SPAs using Implicit flow (not recommended)</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-exclamation-triangle"></i>Implicit flow</li>
+                    <li><i class="fa fa-exclamation-triangle"></i>Deprecated</li>
+                    <li><i class="fa fa-exclamation-triangle"></i>Use modern SPA instead</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/Admin/Applications" class="btn-cancel">Cancel</a>
+            <button type="button" class="btn-primary-gradient" onclick="goToStep2()" id="nextBtn" disabled>
+                Next: Configuration
+                <i class="fa fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: Configuration -->
+    <div id="step2" class="hidden">
+        <div class="form-card">
+            <h2 style="margin-top: 0;">Basic Information</h2>
+
+            <div class="form-group">
+                <label for="displayName">Display Name *</label>
+                <input type="text" id="displayName" name="Input.DisplayName" class="form-control" required />
+                <small class="form-text">A friendly name for this application</small>
+                <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="clientId">Client ID *</label>
+                <input type="text" id="clientId" name="Input.ClientId" class="form-control" required />
+                <small class="form-text">A unique identifier for this application (no spaces)</small>
+                <span asp-validation-for="Input.ClientId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="Input.Description" class="form-control"></textarea>
+                <small class="form-text">Optional description of this application</small>
+            </div>
+        </div>
+
+        <div class="form-card" id="uriSection">
+            <h2 style="margin-top: 0;">Redirect URIs</h2>
+
+            <div class="form-group">
+                <label>Redirect URIs</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    URLs where users will be redirected after authentication
+                </small>
+                <div id="redirectUrisList" class="uri-list">
+                    <div class="uri-item">
+                        <input type="text" name="Input.RedirectUris" class="form-control" placeholder="https://example.com/callback" />
+                        <button type="button" class="btn-remove" onclick="removeUri(this)">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add" onclick="addRedirectUri()">
+                    <i class="fa fa-plus"></i>
+                    Add Redirect URI
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Post Logout Redirect URIs</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    URLs where users will be redirected after logout
+                </small>
+                <div id="logoutUrisList" class="uri-list">
+                    <div class="uri-item">
+                        <input type="text" name="Input.PostLogoutRedirectUris" class="form-control" placeholder="https://example.com" />
+                        <button type="button" class="btn-remove" onclick="removeUri(this)">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add" onclick="addLogoutUri()">
+                    <i class="fa fa-plus"></i>
+                    Add Logout URI
+                </button>
+            </div>
+        </div>
+
+        <div class="form-card" id="scopesSection">
+            <h2 style="margin-top: 0;">Allowed Scopes</h2>
+
+            <div class="form-group">
+                <label>Scopes</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    API scopes this application can request
+                </small>
+                <div id="scopesList" class="uri-list">
+                    <div class="uri-item">
+                        <input type="text" name="Input.AllowedScopes" class="form-control" placeholder="openid" />
+                        <button type="button" class="btn-remove" onclick="removeUri(this)">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add" onclick="addScope()">
+                    <i class="fa fa-plus"></i>
+                    Add Scope
+                </button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="goToStep1()">
+                <i class="fa fa-arrow-left"></i>
+                Back
+            </button>
+            <button type="submit" class="btn-primary-gradient">
+                <i class="fa fa-check"></i>
+                Create Application
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        let selectedType = null;
+
+        function selectType(type) {
+            selectedType = type;
+
+            // Update visual selection
+            document.querySelectorAll('.type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Update radio button
+            const radio = event.currentTarget.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+            }
+
+            // Enable next button
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function goToStep2() {
+            if (!selectedType) return;
+
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+
+            document.getElementById('step1-indicator').classList.remove('active');
+            document.getElementById('step1-indicator').classList.add('completed');
+            document.getElementById('step2-indicator').classList.add('active');
+
+            // Hide URI section for Machine type
+            if (selectedType === 'Machine') {
+                document.getElementById('uriSection').style.display = 'none';
+            }
+        }
+
+        function goToStep1() {
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+
+            document.getElementById('step1-indicator').classList.add('active');
+            document.getElementById('step1-indicator').classList.remove('completed');
+            document.getElementById('step2-indicator').classList.remove('active');
+        }
+
+        function addRedirectUri() {
+            const list = document.getElementById('redirectUrisList');
+            const item = document.createElement('div');
+            item.className = 'uri-item';
+            item.innerHTML = `
+                <input type="text" name="Input.RedirectUris" class="form-control" placeholder="https://example.com/callback" />
+                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function addLogoutUri() {
+            const list = document.getElementById('logoutUrisList');
+            const item = document.createElement('div');
+            item.className = 'uri-item';
+            item.innerHTML = `
+                <input type="text" name="Input.PostLogoutRedirectUris" class="form-control" placeholder="https://example.com" />
+                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function addScope() {
+            const list = document.getElementById('scopesList');
+            const item = document.createElement('div');
+            item.className = 'uri-item';
+            item.innerHTML = `
+                <input type="text" name="Input.AllowedScopes" class="form-control" placeholder="api1" />
+                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function removeUri(button) {
+            const item = button.closest('.uri-item');
+            const list = item.parentElement;
+            if (list.children.length > 1) {
+                item.remove();
+            }
+        }
+    </script>
+}
