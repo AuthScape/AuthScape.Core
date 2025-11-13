@@ -81,6 +81,7 @@
     margin-bottom: 0.5rem;
     position: relative;
     z-index: 1;
+    color: white;
 }
 
 .page-header p {
@@ -89,6 +90,7 @@
     margin: 0;
     position: relative;
     z-index: 1;
+    color: white;
 }
 
 .page-header-actions {
