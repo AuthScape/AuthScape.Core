@@ -7,7 +7,7 @@
 
 @section Styles {
     <style>
-        .page-header {
+        .profile-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 12px;
             padding: 2rem;
@@ -15,7 +15,7 @@
             color: white;
         }
 
-        .page-card {
+        .profile-card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -154,7 +154,7 @@
     </style>
 }
 
-<div class="page-header">
+<div class="profile-header">
     <h2 class="mb-1" style="font-size: 2rem; font-weight: 700;">Email Management</h2>
     <p class="mb-0" style="opacity: 0.9;">Update your email address and manage verification</p>
 </div>
@@ -164,7 +164,7 @@
 <form id="email-form" method="post">
     <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
 
-    <div class="page-card">
+    <div class="profile-card">
         <div class="form-section">
             <h3 class="form-section-title">Current Email</h3>
 
@@ -199,7 +199,7 @@
         </div>
     </div>
 
-    <div class="page-card">
+    <div class="profile-card">
         <div class="form-section">
             <h3 class="form-section-title">Change Email Address</h3>
 

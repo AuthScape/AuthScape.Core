@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Subscriptions";
-    ViewData["ActivePage"] = "Subscriptions";
+    ViewData["ActivePage"] = ManageNavPages.Subscriptions;
 }
 
 @Html.AntiForgeryToken()
@@ -205,9 +205,8 @@
     }
 </style>
 
-<div class="manage-container">
-    <!-- Page Header -->
-    <div class="page-header">
+<!-- Page Header -->
+<div class="page-header">
         <div class="page-header-actions">
             <div>
                 <h1>Subscriptions</h1>
@@ -258,7 +257,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <!-- New Subscription Modal -->
 <div class="modal fade" id="newSubscriptionModal" tabindex="-1" aria-hidden="true">

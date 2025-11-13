@@ -9,20 +9,18 @@
     }
 }
 
+<link href="~/css/manage-pages.css" rel="stylesheet" />
+
 @RenderSection("Styles", required: false)
 
-<div class="pt-4">
-    <h2>Manage your account</h2>
-    <div>
-        <hr />
-        <div class="row">
-            <div class="col-md-3">
-                <partial name="_ManageNav" />
-            </div>
-            <div class="col-md-9">
-                @RenderBody()
-            </div>
+<div class="row g-0" style="min-height: calc(100vh - 200px);">
+    <div class="col-md-3 col-lg-2 border-end bg-light">
+        <div class="sticky-top" style="top: 20px; padding: 2rem 1rem;">
+            <partial name="_ManageNav" />
         </div>
+    </div>
+    <div class="col-md-9 col-lg-10">
+        @RenderBody()
     </div>
 </div>
 

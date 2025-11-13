@@ -60,6 +60,10 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
 
         public static string PaymentMethods => "PaymentMethods";
 
+        public static string Subscriptions => "Subscriptions";
+
+        public static string BillingHistory => "BillingHistory";
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -82,6 +86,10 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
         public static string EmailNavClass(ViewContext viewContext) => PageNavClass(viewContext, Email);
 
         public static string PaymentMethodsClass(ViewContext viewContext) => PageNavClass(viewContext, PaymentMethods);
+
+        public static string SubscriptionsNavClass(ViewContext viewContext) => PageNavClass(viewContext, Subscriptions);
+
+        public static string BillingHistoryNavClass(ViewContext viewContext) => PageNavClass(viewContext, BillingHistory);
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used

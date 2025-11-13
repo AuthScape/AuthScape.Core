@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Billing History";
-    ViewData["ActivePage"] = "BillingHistory";
+    ViewData["ActivePage"] = ManageNavPages.BillingHistory;
 }
 
 @Html.AntiForgeryToken()
@@ -322,9 +322,8 @@
     }
 </style>
 
-<div class="manage-container">
-    <!-- Page Header -->
-    <div class="page-header">
+<!-- Page Header -->
+<div class="page-header">
         <div class="page-header-actions">
             <div>
                 <h1>Billing History</h1>
@@ -420,7 +419,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <!-- Invoice Details Modal -->
 <div class="modal fade" id="invoiceDetailsModal" tabindex="-1" aria-hidden="true">
