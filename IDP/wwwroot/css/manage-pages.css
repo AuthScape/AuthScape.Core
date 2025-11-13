@@ -628,6 +628,26 @@
 .gap-3 { gap: 1.5rem !important; }
 
 /* ========================================
+   Navigation Menu
+   ======================================== */
+
+.nav-pills .nav-link {
+    color: var(--gray-900);
+    transition: all var(--transition-fast);
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--primary-color);
+    background-color: var(--gray-50);
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    color: #fff;
+    background-color: var(--primary-color);
+}
+
+/* ========================================
    Responsive
    ======================================== */
 
