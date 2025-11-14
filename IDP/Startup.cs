@@ -1,6 +1,7 @@
 using AuthScape.IDP;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
+using AuthScape.Services;
 using AuthScape.Services.Mail.Configuration;
 using AuthScape.StripePayment.Services;
 using IDP.Services;
@@ -121,8 +122,9 @@ namespace IDP
                 services.AddScoped<IWalletResolver, WalletResolver>();
                 services.AddScoped<IIdentityServerService, IdentityServerService>();
                 services.AddScoped<ISSOProviderService, SSOProviderService>();
+                services.AddScoped<ISettingsService, SettingsService>();
 
-                //ThirdPartyAuthService.AddThirdPartyAutentication(services);
+                ThirdPartyAuthService.AddThirdPartyAutentication(services);
 
 
                 //authBuilder

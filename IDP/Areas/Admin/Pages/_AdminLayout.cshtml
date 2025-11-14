@@ -190,6 +190,12 @@
                         <i class="fa fa-users"></i>SSO Providers
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/Settings" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/Settings">
+                        <i class="fa fa-cog"></i>Settings
+                    </a>
+                </li>
 
                 <li class="admin-nav-section-title mt-3">System</li>
                 <li class="nav-item">

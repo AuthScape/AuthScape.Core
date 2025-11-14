@@ -147,7 +147,12 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             }
             catch (System.Exception ex)
             {
-                ErrorMessage = $"Error saving configuration: {ex.Message}";
+                var errorDetails = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $" Inner Exception: {ex.InnerException.Message}";
+                }
+                ErrorMessage = $"Error saving configuration: {errorDetails}";
                 return Page();
             }
         }

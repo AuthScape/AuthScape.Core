@@ -39,11 +39,16 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             try
             {
                 await ssoProviderService.ToggleProviderAsync((ThirdPartyAuthenticationType)providerType, enabled);
-                SuccessMessage = $"Provider {(enabled ? "enabled" : "disabled")} successfully";
+                SuccessMessage = $"Provider {(enabled ? "enabled" : "disabled")} successfully. Changes will take effect immediately on the login page.";
             }
             catch (System.Exception ex)
             {
-                ErrorMessage = $"Error toggling provider: {ex.Message}";
+                var errorDetails = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $" Inner Exception: {ex.InnerException.Message}";
+                }
+                ErrorMessage = $"Error toggling provider: {errorDetails}";
             }
 
             return RedirectToPage();

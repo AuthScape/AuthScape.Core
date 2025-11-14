@@ -147,11 +147,11 @@
                         <div class="toggle-section">
                             <form method="post" asp-page-handler="Toggle" class="toggle-form">
                                 <input type="hidden" name="providerType" value="@((int)provider.ProviderType)" />
-                                <input type="hidden" name="enabled" value="@(!provider.IsEnabled)" />
+                                <input type="hidden" name="enabled" class="enabled-input" value="@(!provider.IsEnabled)" />
                                 <label class="toggle-switch">
                                     <input type="checkbox"
                                            @(provider.IsEnabled ? "checked" : "")
-                                           onchange="this.form.submit()">
+                                           onchange="toggleProvider(this)">
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span class="toggle-label">@(provider.IsEnabled ? "Enabled" : "Disabled")</span>
@@ -800,6 +800,13 @@
 
 @section Scripts {
     <script>
+        function toggleProvider(checkbox) {
+            var form = checkbox.closest('form');
+            var hiddenInput = form.querySelector('.enabled-input');
+            hiddenInput.value = checkbox.checked ? 'true' : 'false';
+            form.submit();
+        }
+
         function confirmDelete(providerName, providerType) {
             document.getElementById('providerNameToDelete').textContent = providerName;
             document.getElementById('providerTypeToDelete').value = providerType;
