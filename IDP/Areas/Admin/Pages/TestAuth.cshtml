@@ -1,0 +1,65 @@
+@page
+@model IDP.Areas.Admin.Pages.TestAuthModel
+@{
+    ViewData["Title"] = "Auth Test";
+}
+
+<div class="admin-header">
+    <h1>Authorization Test</h1>
+    <p>Checking your authentication and roles</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h3>User Information</h3>
+        <dl class="row">
+            <dt class="col-sm-3">Authenticated:</dt>
+            <dd class="col-sm-9">@User.Identity.IsAuthenticated</dd>
+
+            <dt class="col-sm-3">Username:</dt>
+            <dd class="col-sm-9">@User.Identity.Name</dd>
+
+            <dt class="col-sm-3">User ID:</dt>
+            <dd class="col-sm-9">@Model.UserId</dd>
+
+            <dt class="col-sm-3">Roles:</dt>
+            <dd class="col-sm-9">
+                @if (Model.UserRoles != null && Model.UserRoles.Any())
+                {
+                    <ul>
+                        @foreach (var role in Model.UserRoles)
+                        {
+                            <li>@role</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <span class="text-danger">No roles assigned</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Is Admin:</dt>
+            <dd class="col-sm-9">
+                @if (User.IsInRole("Admin"))
+                {
+                    <span class="badge bg-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">No</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">All Claims:</dt>
+            <dd class="col-sm-9">
+                <ul>
+                    @foreach (var claim in User.Claims)
+                    {
+                        <li><strong>@claim.Type:</strong> @claim.Value</li>
+                    }
+                </ul>
+            </dd>
+        </dl>
+    </div>
+</div>

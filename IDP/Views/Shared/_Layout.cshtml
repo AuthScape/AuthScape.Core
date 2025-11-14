@@ -18,6 +18,11 @@
 
     @RenderSection("Styles", required: false)
 
+    @using Microsoft.AspNetCore.Identity
+    @using AuthScape.Models.Users
+    @inject SignInManager<AppUser> SignInManager
+    @inject UserManager<AppUser> UserManager
+
     <style>
         /* Sleek polish; no forms here */
         body {
@@ -60,9 +65,65 @@
             background: var(--bs-body-bg, #fff);
             border-top: 1px solid rgba(0,0,0,.08);
         }
+
+        .top-nav {
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,.08);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-nav .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #12d48a;
+            text-decoration: none;
+        }
+
+        .top-nav .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .top-nav .user-info {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .top-nav .btn-logout {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .top-nav .btn-logout:hover {
+            background: #c82333;
+        }
     </style>
 </head>
 <body>
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <nav class="top-nav">
+            <a href="/" class="brand">AuthScape</a>
+            <div class="nav-actions">
+                <span class="user-info">@User.Identity?.Name</span>
+                <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" style="margin: 0;">
+                    <button type="submit" class="btn-logout">
+                        <i class="fa fa-sign-out"></i> Sign Out
+                    </button>
+                </form>
+            </div>
+        </nav>
+    }
     <div class="container-fluid my-4">
         <div class="row g-4">
             <section class="col-12 col-md-12">

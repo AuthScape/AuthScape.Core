@@ -85,6 +85,11 @@
             color: #374151;
         }
 
+        .type-resourceserver {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         .application-description {
             color: var(--gray-600);
             font-size: 0.9375rem;
@@ -186,6 +191,153 @@
             align-items: center;
             margin-bottom: 2rem;
         }
+
+        /* Delete confirmation modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .delete-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.05), rgba(153, 27, 27, 0.05));
+        }
+
+        .delete-modal-header h3 {
+            margin: 0;
+            color: #dc2626;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .delete-modal-body {
+            padding: 1.5rem;
+        }
+
+        .delete-modal-body p {
+            margin: 0 0 1.5rem;
+            color: var(--gray-700);
+        }
+
+        .password-input-group {
+            margin-bottom: 1rem;
+        }
+
+        .password-input-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .password-input-group input {
+            width: 100%;
+            max-width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            box-sizing: border-box;
+        }
+
+        .password-input-group input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .delete-modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .delete-modal-footer .btn-cancel {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .delete-modal-footer .btn-cancel:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
+        }
+
+        .btn-delete {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-delete:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-delete:disabled {
+            background: var(--gray-400);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 }
 
@@ -196,7 +348,7 @@
 
 <div class="header-actions">
     <div></div>
-    <a href="/Admin/Applications/Create" class="btn-primary-gradient">
+    <a href="/Admin/IdentityServer/CreateApplication" class="btn-primary-gradient">
         <i class="fa fa-plus"></i>
         Create Application
     </a>
@@ -208,7 +360,7 @@
         <i class="fa fa-cube"></i>
         <h3>No applications yet</h3>
         <p>Create your first OAuth application to get started</p>
-        <a href="/Admin/Applications/Create" class="btn-primary-gradient">
+        <a href="/Admin/IdentityServer/CreateApplication" class="btn-primary-gradient">
             <i class="fa fa-plus"></i>
             Create Application
         </a>
@@ -253,10 +405,14 @@ else
                                     <i class="fa fa-history"></i>
                                     <span>SPA (Legacy)</span>
                                     break;
+                                case IDP.Models.IdentityServer.ClientType.ResourceServer:
+                                    <i class="fa fa-shield"></i>
+                                    <span>Resource Server</span>
+                                    break;
                             }
                         </span>
                         <div class="application-actions">
-                            <a href="/Admin/Applications/Edit/@app.Id" class="btn-icon" title="Edit">
+                            <a href="/Admin/IdentityServer/EditApplication/@app.Id" class="btn-icon" title="Edit">
                                 <i class="fa fa-pencil"></i>
                             </a>
                             <button class="btn-icon" onclick="deleteApplication('@app.Id', '@app.DisplayName')" title="Delete">
@@ -274,20 +430,30 @@ else
                 }
 
                 <div class="application-meta">
-                    <div class="application-meta-item">
-                        <i class="fa fa-link"></i>
-                        <span>@app.RedirectUris?.Count redirect URIs</span>
-                    </div>
-                    <div class="application-meta-item">
-                        <i class="fa fa-shield"></i>
-                        <span>@(app.RequirePkce ? "PKCE Required" : "No PKCE")</span>
-                    </div>
-                    @if (app.AllowOfflineAccess)
+                    @if (app.ClientType == IDP.Models.IdentityServer.ClientType.ResourceServer)
                     {
                         <div class="application-meta-item">
-                            <i class="fa fa-refresh"></i>
-                            <span>Refresh Tokens</span>
+                            <i class="fa fa-search"></i>
+                            <span>Token Introspection - Validates access tokens from other applications</span>
                         </div>
+                    }
+                    else
+                    {
+                        <div class="application-meta-item">
+                            <i class="fa fa-link"></i>
+                            <span>@app.RedirectUris?.Count redirect URIs</span>
+                        </div>
+                        <div class="application-meta-item">
+                            <i class="fa fa-shield"></i>
+                            <span>@(app.RequirePkce ? "PKCE Required" : "No PKCE")</span>
+                        </div>
+                        @if (app.AllowOfflineAccess)
+                        {
+                            <div class="application-meta-item">
+                                <i class="fa fa-refresh"></i>
+                                <span>Refresh Tokens</span>
+                            </div>
+                        }
                     }
                 </div>
             </div>
@@ -295,27 +461,102 @@ else
     </div>
 }
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="delete-modal-content">
+        <div class="delete-modal-header">
+            <h3>
+                <i class="fa fa-exclamation-triangle"></i>
+                Confirm Deletion
+            </h3>
+        </div>
+        <form id="deleteForm">
+            @Html.AntiForgeryToken()
+            <div class="delete-modal-body">
+                <p id="deleteMessage"></p>
+                <div class="password-input-group">
+                    <label for="deletePassword">Enter your password to confirm:</label>
+                    <input type="password" id="deletePassword" name="password" class="form-control" required autocomplete="current-password" />
+                    <div id="passwordError" class="error-message"></div>
+                </div>
+            </div>
+            <div class="delete-modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="btn-delete" id="confirmDeleteBtn">
+                    <i class="fa fa-trash"></i> Delete Application
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        let applicationToDelete = null;
+
         function deleteApplication(id, name) {
-            if (confirm(`Are you sure you want to delete the application "${name}"?\n\nThis action cannot be undone.`)) {
-                fetch(`/Admin/Applications/Delete/${id}`, {
+            applicationToDelete = { id, name };
+            document.getElementById('deleteMessage').textContent = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
+            document.getElementById('deletePassword').value = '';
+            document.getElementById('passwordError').classList.remove('show');
+            document.getElementById('deleteModal').classList.add('show');
+            setTimeout(() => document.getElementById('deletePassword').focus(), 100);
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            applicationToDelete = null;
+        }
+
+        document.getElementById('deleteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('deletePassword').value;
+            const errorDiv = document.getElementById('passwordError');
+            const submitBtn = document.getElementById('confirmDeleteBtn');
+
+            if (!applicationToDelete) return;
+
+            errorDiv.classList.remove('show');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('id', applicationToDelete.id);
+                formData.append('password', password);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                const response = await fetch('?handler=Delete', {
                     method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        alert('Failed to delete application');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while deleting the application');
+                    body: formData
                 });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeDeleteModal();
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = result.error || 'Failed to delete application';
+                    errorDiv.classList.add('show');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa fa-trash"></i> Delete Application';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred while deleting the application';
+                errorDiv.classList.add('show');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa fa-trash"></i> Delete Application';
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
             }
         }
     </script>

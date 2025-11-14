@@ -30,6 +30,11 @@ namespace IDP.Models.IdentityServer
         /// <summary>
         /// Single Page Application (Legacy) - Implicit Flow
         /// </summary>
-        SpaLegacy
+        SpaLegacy,
+
+        /// <summary>
+        /// Resource Server - For token introspection
+        /// </summary>
+        ResourceServer
     }
 }

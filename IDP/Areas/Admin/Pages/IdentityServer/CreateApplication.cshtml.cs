@@ -25,6 +25,8 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
+        public List<ScopeDto> AvailableScopes { get; set; } = new();
+
         public class InputModel
         {
             [Required]
@@ -48,14 +50,16 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             public List<string> AllowedScopes { get; set; } = new();
         }
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
+            AvailableScopes = await identityServerService.GetAllScopesAsync();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
             {
+                AvailableScopes = await identityServerService.GetAllScopesAsync();
                 return Page();
             }
 

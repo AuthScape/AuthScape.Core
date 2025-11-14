@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using PasswordGenerator = AuthScape.Backpack.PasswordGenerator;
@@ -22,6 +23,7 @@ namespace IDP.Services.IdentityServer
 
         // Admin methods
         Task<List<ApplicationDetailsDto>> GetAllApplicationsAsync();
+        Task<List<ApplicationDetailsDto>> GetResourceServerApplicationsAsync();
         Task<ApplicationDetailsDto> GetApplicationDetailsAsync(string id);
         Task<(string ClientSecret, string ApplicationId)> CreateApplicationAsync(ApplicationCreateDto dto);
         Task UpdateApplicationAsync(ApplicationUpdateDto dto);
@@ -147,6 +149,23 @@ namespace IDP.Services.IdentityServer
             return result;
         }
 
+        public async Task<List<ApplicationDetailsDto>> GetResourceServerApplicationsAsync()
+        {
+            var applications = await databaseContext.OpenIddictApplications.ToListAsync();
+            var result = new List<ApplicationDetailsDto>();
+
+            foreach (var app in applications)
+            {
+                var permissions = await openIddictApplicationManager.GetPermissionsAsync(app);
+                if (permissions.Contains(OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Introspection))
+                {
+                    result.Add(await MapToApplicationDetailsDto(app));
+                }
+            }
+
+            return result;
+        }
+
         public async Task<ApplicationDetailsDto> GetApplicationDetailsAsync(string id)
         {
             var app = await openIddictApplicationManager.FindByIdAsync(id);
@@ -179,6 +198,12 @@ namespace IDP.Services.IdentityServer
                 ClientSecret = clientSecret,
                 DisplayName = dto.DisplayName
             };
+
+            // Add description if provided
+            if (!string.IsNullOrEmpty(dto.Description))
+            {
+                descriptor.Properties["Description"] = JsonSerializer.SerializeToElement(dto.Description);
+            }
 
             // Add redirect URIs
             foreach (var uri in dto.RedirectUris)
@@ -219,6 +244,16 @@ namespace IDP.Services.IdentityServer
             // Update basic info
             descriptor.DisplayName = dto.DisplayName;
 
+            // Update description (handle both set and clear cases)
+            if (string.IsNullOrEmpty(dto.Description))
+            {
+                descriptor.Properties.Remove("Description");
+            }
+            else
+            {
+                descriptor.Properties["Description"] = JsonSerializer.SerializeToElement(dto.Description);
+            }
+
             // Update redirect URIs
             descriptor.RedirectUris.Clear();
             foreach (var uri in dto.RedirectUris)
@@ -246,6 +281,19 @@ namespace IDP.Services.IdentityServer
             foreach (var scope in dto.AllowedScopes)
             {
                 descriptor.Permissions.Add(Permissions.Prefixes.Scope + scope);
+            }
+
+            // Update AllowOfflineAccess permission
+            if (dto.AllowOfflineAccess)
+            {
+                if (!descriptor.Permissions.Contains(Permissions.GrantTypes.RefreshToken))
+                {
+                    descriptor.Permissions.Add(Permissions.GrantTypes.RefreshToken);
+                }
+            }
+            else
+            {
+                descriptor.Permissions.Remove(Permissions.GrantTypes.RefreshToken);
             }
 
             await openIddictApplicationManager.UpdateAsync(app, descriptor);
@@ -342,11 +390,20 @@ namespace IDP.Services.IdentityServer
             var redirectUris = await openIddictApplicationManager.GetRedirectUrisAsync(app);
             var postLogoutUris = await openIddictApplicationManager.GetPostLogoutRedirectUrisAsync(app);
 
+            // Get properties to extract Description
+            var properties = await openIddictApplicationManager.GetPropertiesAsync(app);
+            string description = null;
+            if (properties != null && properties.TryGetValue("Description", out var descElement))
+            {
+                description = descElement.GetString();
+            }
+
             var dto = new ApplicationDetailsDto
             {
                 Id = await openIddictApplicationManager.GetIdAsync(app) as string,
                 ClientId = clientId,
                 DisplayName = displayName,
+                Description = description,
                 ClientSecret = "••••••••••••••••", // Always masked
                 RedirectUris = redirectUris.Select(u => u.ToString()).ToList(),
                 PostLogoutRedirectUris = postLogoutUris.Select(u => u.ToString()).ToList(),
@@ -391,6 +448,11 @@ namespace IDP.Services.IdentityServer
             bool hasAuthCode = permissions.Contains(Permissions.GrantTypes.AuthorizationCode);
             bool hasClientCredentials = permissions.Contains(Permissions.GrantTypes.ClientCredentials);
             bool hasDeviceCode = permissions.Contains(Permissions.GrantTypes.DeviceCode);
+            bool hasIntrospection = permissions.Contains(Permissions.Endpoints.Introspection);
+
+            // Resource Server: has introspection permission only, no grant types
+            if (hasIntrospection && !hasClientCredentials && !hasAuthCode && !hasDeviceCode)
+                return ClientType.ResourceServer;
 
             if (hasClientCredentials)
                 return ClientType.Machine;
@@ -480,6 +542,10 @@ namespace IDP.Services.IdentityServer
                     descriptor.Permissions.Add(Permissions.ResponseTypes.IdToken);
                     descriptor.Permissions.Add(Permissions.ResponseTypes.Token);
                     descriptor.Permissions.Add(Permissions.ResponseTypes.IdTokenToken);
+                    break;
+
+                case ClientType.ResourceServer:
+                    descriptor.Permissions.Add(Permissions.Endpoints.Introspection);
                     break;
             }
 

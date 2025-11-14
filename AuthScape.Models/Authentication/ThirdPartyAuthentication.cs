@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace AuthScape.Models.Authentication
 {
@@ -6,10 +7,16 @@ namespace AuthScape.Models.Authentication
     {
         [Key]
         public ThirdPartyAuthenticationType ThirdPartyAuthenticationType { get; set; }
+        public string ProviderName { get; set; }
+        public bool IsEnabled { get; set; }
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
         public string RedirectUri { get; set; }
-        public string ProviderName { get; set; }
+        public string Scopes { get; set; }
+        public string AdditionalSettings { get; set; } // JSON for provider-specific settings
+        public int DisplayOrder { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 
     public enum ThirdPartyAuthenticationType
@@ -42,5 +49,6 @@ namespace AuthScape.Models.Authentication
         Yahoo = 26,
         MailChimp = 27,
         Twitch = 28,
+        Twitter = 29,
     }
 }

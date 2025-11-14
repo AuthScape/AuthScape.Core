@@ -79,6 +79,12 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
         {
             public IFormFile Photo { get; set; }
 
+            [Display(Name = "First name")]
+            public string FirstName { get; set; }
+
+            [Display(Name = "Last name")]
+            public string LastName { get; set; }
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -109,6 +115,8 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
 
             Input = new InputModel
             {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
                 PhoneNumber = phoneNumber
             };
         }
@@ -143,6 +151,18 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
 
             //photo.
 
+            // Update first name
+            if (Input.FirstName != user.FirstName)
+            {
+                user.FirstName = Input.FirstName;
+            }
+
+            // Update last name
+            if (Input.LastName != user.LastName)
+            {
+                user.LastName = Input.LastName;
+            }
+
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)
             {
@@ -152,6 +172,14 @@ namespace mvcTest.Areas.Identity.Pages.Account.Manage
                     StatusMessage = "Unexpected error when trying to set phone number.";
                     return RedirectToPage();
                 }
+            }
+
+            // Save all changes to the user
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                StatusMessage = "Unexpected error when trying to update profile.";
+                return RedirectToPage();
             }
 
             //await _signInManager.RefreshSignInAsync(user);
