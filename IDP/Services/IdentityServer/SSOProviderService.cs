@@ -31,7 +31,7 @@ namespace IDP.Services.IdentityServer
         public async Task<List<SSOProviderDto>> GetAllProvidersAsync()
         {
             var allProviders = Enum.GetValues<ThirdPartyAuthenticationType>()
-                .Where(p => p != ThirdPartyAuthenticationType.Custom)
+                .Where(p => p != ThirdPartyAuthenticationType.Custom && p != ThirdPartyAuthenticationType.Twitter)
                 .ToList();
 
             var configured = await dbContext.ThirdPartyAuthentications.ToListAsync();
@@ -121,8 +121,9 @@ namespace IDP.Services.IdentityServer
                     IsEnabled = dto.IsEnabled,
                     ClientId = dto.ClientId,
                     ClientSecret = dto.ClientSecret,
-                    Scopes = dto.Scopes,
-                    AdditionalSettings = additionalSettings.Count > 0 ? JsonSerializer.Serialize(additionalSettings) : null,
+                    RedirectUri = $"/signin-{dto.ProviderType.ToString().ToLower()}",
+                    Scopes = dto.Scopes ?? string.Empty,
+                    AdditionalSettings = additionalSettings.Count > 0 ? JsonSerializer.Serialize(additionalSettings) : "{}",
                     DisplayOrder = (int)dto.ProviderType,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -133,8 +134,9 @@ namespace IDP.Services.IdentityServer
                 existing.IsEnabled = dto.IsEnabled;
                 existing.ClientId = dto.ClientId;
                 existing.ClientSecret = dto.ClientSecret;
-                existing.Scopes = dto.Scopes;
-                existing.AdditionalSettings = additionalSettings.Count > 0 ? JsonSerializer.Serialize(additionalSettings) : null;
+                existing.RedirectUri = $"/signin-{dto.ProviderType.ToString().ToLower()}";
+                existing.Scopes = dto.Scopes ?? string.Empty;
+                existing.AdditionalSettings = additionalSettings.Count > 0 ? JsonSerializer.Serialize(additionalSettings) : "{}";
                 existing.UpdatedAt = DateTime.UtcNow;
             }
 

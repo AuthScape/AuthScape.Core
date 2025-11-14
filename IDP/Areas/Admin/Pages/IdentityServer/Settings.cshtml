@@ -1,0 +1,882 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.SettingsModel
+@{
+    ViewData["Title"] = "Platform Settings";
+    Layout = "_AdminLayout";
+}
+
+<div class="settings-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Platform Settings</h1>
+            <p class="page-subtitle">Configure platform features and behavior</p>
+        </div>
+        <button type="button" class="btn-add" onclick="showCreateModal()">
+            <i class="fa fa-plus"></i> Add Setting
+        </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-total">
+                <i class="fa fa-cog"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Settings</div>
+                <div class="stat-value">@Model.Settings.Count</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-enabled">
+                <i class="fa fa-toggle-on"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Enabled</div>
+                <div class="stat-value">@Model.Settings.Count(s => s.Value == "1" || s.Value.Equals("true", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-disabled">
+                <i class="fa fa-toggle-off"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Disabled</div>
+                <div class="stat-value">@Model.Settings.Count(s => s.Value == "0" || s.Value.Equals("false", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Table -->
+    <div class="settings-table-container">
+        <table class="settings-table">
+            <thead>
+                <tr>
+                    <th>Setting Name</th>
+                    <th>Value</th>
+                    <th>Type</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var setting in Model.Settings)
+                {
+                    var isBooleanSetting = setting.Value == "0" || setting.Value == "1" ||
+                                          setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                          setting.Value.Equals("false", StringComparison.OrdinalIgnoreCase);
+                    var isEnabled = setting.Value == "1" || setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase);
+
+                    <tr class="setting-row">
+                        <td>
+                            <div class="setting-name">
+                                <i class="fa fa-cog setting-icon"></i>
+                                <span>@setting.Name</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (isBooleanSetting)
+                            {
+                                <span class="value-badge value-boolean">@(isEnabled ? "Enabled" : "Disabled")</span>
+                            }
+                            else
+                            {
+                                <code class="value-text">@setting.Value</code>
+                            }
+                        </td>
+                        <td>
+                            <span class="type-badge">Type @setting.SettingTypeId</span>
+                        </td>
+                        <td class="text-center">
+                            @if (isBooleanSetting)
+                            {
+                                <form method="post" asp-page-handler="Toggle" class="toggle-form">
+                                    <input type="hidden" name="name" value="@setting.Name" />
+                                    <input type="hidden" name="currentValue" value="@setting.Value" />
+                                    <label class="toggle-switch">
+                                        <input type="checkbox"
+                                               @(isEnabled ? "checked" : "")
+                                               onchange="this.form.submit()">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="action-buttons">
+                                <button type="button" class="btn-action btn-edit" onclick="showEditModal('@setting.Name', '@setting.Value', @setting.SettingTypeId)">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn-action btn-delete" onclick="confirmDelete('@setting.Name')">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Setting Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-icon-wrapper modal-icon-create">
+                    <i class="fa fa-plus"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title" id="createModalLabel">Create New Setting</h5>
+                    <p class="modal-subtitle">Add a new platform setting</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="createName" class="form-label">Setting Name</label>
+                        <input type="text" class="form-control" id="createName" name="name" required placeholder="e.g., azureContainerName/0/1">
+                    </div>
+                    <div class="form-group">
+                        <label for="createValue" class="form-label">Value</label>
+                        <input type="text" class="form-control" id="createValue" name="value" required placeholder="Enter value (0/1 for boolean)">
+                    </div>
+                    <div class="form-group">
+                        <label for="createSettingTypeId" class="form-label">Setting Type ID</label>
+                        <input type="number" class="form-control" id="createSettingTypeId" name="settingTypeId" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-plus"></i> Create Setting
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Setting Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-icon-wrapper modal-icon-edit">
+                    <i class="fa fa-edit"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title" id="editModalLabel">Edit Setting</h5>
+                    <p class="modal-subtitle">Update setting value</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editName" class="form-label">Setting Name</label>
+                        <input type="text" class="form-control" id="editName" name="name" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="editValue" class="form-label">Value</label>
+                        <input type="text" class="form-control" id="editValue" name="value" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-save"></i> Update Setting
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-icon-wrapper modal-icon-danger">
+                    <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Setting</h5>
+                    <p class="modal-subtitle">This action cannot be undone</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to delete the setting <strong id="settingNameToDelete"></strong>?</p>
+                <p class="text-muted small mb-0">This will remove the setting from the database.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm" style="display: inline;">
+                    <input type="hidden" name="name" id="nameToDelete" />
+                    <button type="submit" class="btn-modern btn-danger">
+                        <i class="fa fa-trash"></i> Delete Setting
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --danger-color: #dc2626;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    .settings-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .page-subtitle {
+        color: var(--gray-500);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .stat-icon-total {
+        background: var(--primary-gradient);
+    }
+
+    .stat-icon-enabled {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .stat-icon-disabled {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        line-height: 1;
+    }
+
+    /* Settings Table */
+    .settings-table-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .settings-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .settings-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .settings-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray-600);
+    }
+
+    .settings-table tbody tr {
+        border-bottom: 1px solid var(--gray-200);
+        transition: background-color 0.15s ease;
+    }
+
+    .settings-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+
+    .settings-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .settings-table td {
+        padding: 1rem 1.5rem;
+    }
+
+    .setting-name {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .setting-icon {
+        color: var(--gray-400);
+        font-size: 1rem;
+    }
+
+    .value-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .value-boolean {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .value-text {
+        background: var(--gray-100);
+        border: 1px solid var(--gray-200);
+        padding: 0.375rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+        color: var(--gray-700);
+    }
+
+    .type-badge {
+        display: inline-flex;
+        padding: 0.25rem 0.625rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Toggle Switch */
+    .toggle-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--gray-300);
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .toggle-slider {
+        background: var(--primary-gradient);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .btn-edit {
+        background: white;
+        color: #667eea;
+        border: 1px solid #e0e7ff;
+    }
+
+    .btn-edit:hover {
+        background: #e0e7ff;
+        border-color: #667eea;
+    }
+
+    .btn-delete {
+        background: white;
+        color: var(--danger-color);
+        border: 1px solid #fecaca;
+    }
+
+    .btn-delete:hover {
+        background: #fee2e2;
+        border-color: var(--danger-color);
+    }
+
+    /* Modal Styles */
+    .modal {
+        z-index: 1050;
+        display: none;
+    }
+
+    .modal.show {
+        display: block;
+    }
+
+    .modal-backdrop {
+        z-index: 1040;
+        background-color: rgba(17, 24, 39, 0.75);
+        backdrop-filter: blur(4px);
+    }
+
+    .modern-modal {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modern-modal .modal-header {
+        border-bottom: none;
+        padding: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        flex-wrap: nowrap;
+    }
+
+    .modern-modal .modal-header > div:nth-child(2) {
+        flex: 1;
+    }
+
+    .modal-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .modal-icon-create {
+        background: white;
+        color: #065f46;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    #createModal .modal-header {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+
+    .modal-icon-edit {
+        background: white;
+        color: #1e40af;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    #editModal .modal-header {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+
+    .modal-icon-danger {
+        background: white;
+        color: var(--danger-color);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
+    #deleteModal .modal-header {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    }
+
+    .modal-title {
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    #createModal .modal-title {
+        color: #065f46;
+    }
+
+    #editModal .modal-title {
+        color: #1e40af;
+    }
+
+    #deleteModal .modal-title {
+        color: #991b1b;
+    }
+
+    .modal-subtitle {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin: 0.25rem 0 0 0;
+    }
+
+    #createModal .modal-subtitle {
+        color: #065f46;
+        opacity: 0.8;
+    }
+
+    #editModal .modal-subtitle {
+        color: #1e40af;
+        opacity: 0.8;
+    }
+
+    #deleteModal .modal-subtitle {
+        color: #991b1b;
+        opacity: 0.8;
+    }
+
+    .btn-close-custom {
+        background: white;
+        border: 1px solid var(--gray-200);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gray-600);
+        margin-left: auto;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close-custom:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .modern-modal .modal-body {
+        padding: 0 2rem 2rem 2rem;
+        background: white;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-control[readonly] {
+        background: var(--gray-50);
+        color: var(--gray-600);
+    }
+
+    .modern-modal .modal-footer {
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        padding: 1.5rem 2rem;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modern.btn-secondary {
+        background: white;
+        color: var(--gray-700);
+        border: 2px solid var(--gray-200);
+    }
+
+    .btn-modern.btn-secondary:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .btn-modern.btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-modern.btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-modern.btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-modern.btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Alerts */
+    .alert {
+        border-radius: 12px;
+        border: none;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .settings-table-container {
+            overflow-x: auto;
+        }
+
+        .settings-table {
+            min-width: 600px;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function showCreateModal() {
+            var createModal = new bootstrap.Modal(document.getElementById('createModal'));
+            createModal.show();
+        }
+
+        function showEditModal(name, value, settingTypeId) {
+            document.getElementById('editName').value = name;
+            document.getElementById('editValue').value = value;
+            var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            editModal.show();
+        }
+
+        function confirmDelete(name) {
+            document.getElementById('settingNameToDelete').textContent = name;
+            document.getElementById('nameToDelete').value = name;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+}

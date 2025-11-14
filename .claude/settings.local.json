@@ -11,7 +11,11 @@
       "Bash(Select-String -Pattern \"Authorize\")",
       "Bash(dir:*)",
       "Bash(dotnet run:*)",
-      "Bash(Select-String -Pattern \"EditApplication|error\" -Context 2,2)"
+      "Bash(Select-String -Pattern \"EditApplication|error\" -Context 2,2)",
+      "Bash(dotnet restore:*)",
+      "Bash(Select-String -Pattern \"Settings\")",
+      "Bash(Select-String -Pattern \"\\.cs$\")",
+      "Bash(Select-Object -First 10)"
     ],
     "deny": [],
     "ask": []

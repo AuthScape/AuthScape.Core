@@ -7,6 +7,7 @@ using AuthScape.Models.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Services.Context;
 using System.Collections.Generic;
@@ -20,11 +21,13 @@ namespace mvcTest.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<AppUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        readonly DatabaseContext databaseContext;
 
         public LoginModel(SignInManager<AppUser> signInManager, ILogger<LoginModel> logger, DatabaseContext databaseContext) : base(databaseContext)
         {
             _signInManager = signInManager;
             _logger = logger;
+            this.databaseContext = databaseContext;
         }
 
         /// <summary>
@@ -92,13 +95,24 @@ namespace mvcTest.Areas.Identity.Pages.Account
 
             returnUrl ??= Url.Content("~/");
 
-            // enables private 
+            // enables private
             await EnablePrivateLabelExperience(returnUrl);
 
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            // Get all registered authentication schemes
+            var allSchemes = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            // Filter based on enabled providers in database
+            var enabledProviders = await databaseContext.ThirdPartyAuthentications
+                .Where(p => p.IsEnabled)
+                .Select(p => p.ProviderName)
+                .ToListAsync();
+
+            ExternalLogins = allSchemes
+                .Where(scheme => enabledProviders.Contains(scheme.Name))
+                .ToList();
 
             ReturnUrl = returnUrl;
         }
@@ -107,7 +121,18 @@ namespace mvcTest.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
 
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            // Get all registered authentication schemes
+            var allSchemes = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            // Filter based on enabled providers in database
+            var enabledProviders = await databaseContext.ThirdPartyAuthentications
+                .Where(p => p.IsEnabled)
+                .Select(p => p.ProviderName)
+                .ToListAsync();
+
+            ExternalLogins = allSchemes
+                .Where(scheme => enabledProviders.Contains(scheme.Name))
+                .ToList();
 
             if (ModelState.IsValid)
             {
