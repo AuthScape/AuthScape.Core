@@ -1,6 +1,7 @@
 using AuthScape.IDP;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
+using AuthScape.Services.Mail.Configuration;
 using AuthScape.StripePayment.Services;
 using IDP.Services;
 using IDP.Services.IdentityServer;
@@ -109,12 +110,17 @@ namespace IDP
             {
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<ISendGridService, SendGridService>();
+
+                // Add universal email service
+                services.AddEmailService(Configuration);
+
                 services.AddScoped<IStripePayService, StripePayService>();
                 services.AddScoped<IStripeSubscriptionService, StripeSubscriptionService>();
                 services.AddScoped<IStripeInvoiceService, StripeInvoiceService>();
                 services.AddScoped<IInviteService, InviteService>();
                 services.AddScoped<IWalletResolver, WalletResolver>();
                 services.AddScoped<IIdentityServerService, IdentityServerService>();
+                services.AddScoped<ISSOProviderService, SSOProviderService>();
 
                 //ThirdPartyAuthService.AddThirdPartyAutentication(services);
 

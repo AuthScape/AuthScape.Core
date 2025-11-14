@@ -49,7 +49,7 @@
         .admin-content {
             flex: 1;
             margin-left: 280px;
-            padding: 2rem;
+            padding: 3rem;
             max-width: 1400px;
         }
 
@@ -182,6 +182,12 @@
                     <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/Scopes" ? "active" : "")"
                        asp-area="Admin" asp-page="/IdentityServer/Scopes">
                         <i class="fa fa-tag"></i>API Scopes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/SSOProviders" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/SSOProviders">
+                        <i class="fa fa-users"></i>SSO Providers
                     </a>
                 </li>
 

@@ -75,6 +75,11 @@
             color: #374151;
         }
 
+        .type-resourceserver .type-card-icon {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         .type-card h3 {
             font-size: 1.25rem;
             font-weight: 600;
@@ -266,6 +271,36 @@
         .step i {
             font-size: 1.25rem;
         }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-primary-gradient:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+        }
     </style>
 }
 
@@ -292,7 +327,7 @@
     <!-- Step 1: Type Selection -->
     <div id="step1">
         <div class="type-selector">
-            <div class="type-card type-spa" onclick="selectType('Spa')">
+            <div class="type-card type-spa" onclick="selectType('Spa', event)">
                 <input type="radio" name="Input.ClientType" value="0" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-chrome"></i>
@@ -306,7 +341,7 @@
                 </ul>
             </div>
 
-            <div class="type-card type-web" onclick="selectType('Web')">
+            <div class="type-card type-web" onclick="selectType('Web', event)">
                 <input type="radio" name="Input.ClientType" value="1" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-globe"></i>
@@ -320,7 +355,7 @@
                 </ul>
             </div>
 
-            <div class="type-card type-native" onclick="selectType('Native')">
+            <div class="type-card type-native" onclick="selectType('Native', event)">
                 <input type="radio" name="Input.ClientType" value="2" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-mobile"></i>
@@ -334,7 +369,7 @@
                 </ul>
             </div>
 
-            <div class="type-card type-machine" onclick="selectType('Machine')">
+            <div class="type-card type-machine" onclick="selectType('Machine', event)">
                 <input type="radio" name="Input.ClientType" value="3" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-server"></i>
@@ -348,7 +383,7 @@
                 </ul>
             </div>
 
-            <div class="type-card type-device" onclick="selectType('Device')">
+            <div class="type-card type-device" onclick="selectType('Device', event)">
                 <input type="radio" name="Input.ClientType" value="4" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-tablet"></i>
@@ -362,7 +397,7 @@
                 </ul>
             </div>
 
-            <div class="type-card type-spalegacy" onclick="selectType('SpaLegacy')">
+            <div class="type-card type-spalegacy" onclick="selectType('SpaLegacy', event)">
                 <input type="radio" name="Input.ClientType" value="5" style="display: none;" />
                 <div class="type-card-icon">
                     <i class="fa fa-history"></i>
@@ -375,10 +410,24 @@
                     <li><i class="fa fa-exclamation-triangle"></i>Use modern SPA instead</li>
                 </ul>
             </div>
+
+            <div class="type-card type-resourceserver" onclick="selectType('ResourceServer', event)">
+                <input type="radio" name="Input.ClientType" value="6" style="display: none;" />
+                <div class="type-card-icon">
+                    <i class="fa fa-shield"></i>
+                </div>
+                <h3>Resource Server</h3>
+                <p>API servers that validate tokens using introspection</p>
+                <ul class="type-card-features">
+                    <li><i class="fa fa-check"></i>Token introspection</li>
+                    <li><i class="fa fa-check"></i>Confidential client with secret</li>
+                    <li><i class="fa fa-check"></i>Validates access tokens</li>
+                </ul>
+            </div>
         </div>
 
         <div class="form-actions">
-            <a href="/Admin/Applications" class="btn-cancel">Cancel</a>
+            <a href="/Admin/IdentityServer/Applications" class="btn-cancel">Cancel</a>
             <button type="button" class="btn-primary-gradient" onclick="goToStep2()" id="nextBtn" disabled>
                 Next: Configuration
                 <i class="fa fa-arrow-right"></i>
@@ -460,11 +509,30 @@
             <div class="form-group">
                 <label>Scopes</label>
                 <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
-                    API scopes this application can request
+                    Select the API scopes this application can request
                 </small>
                 <div id="scopesList" class="uri-list">
                     <div class="uri-item">
-                        <input type="text" name="Input.AllowedScopes" class="form-control" placeholder="openid" />
+                        <select name="Input.AllowedScopes" class="form-control">
+                            <option value="">-- Select Scope --</option>
+                            <optgroup label="OpenID Connect Scopes">
+                                <option value="openid">openid - OpenID Connect authentication</option>
+                                <option value="profile">profile - User profile information</option>
+                                <option value="email">email - User email address</option>
+                                <option value="address">address - User address information</option>
+                                <option value="phone">phone - User phone number</option>
+                                <option value="offline_access">offline_access - Refresh tokens</option>
+                            </optgroup>
+                            @if (Model.AvailableScopes != null && Model.AvailableScopes.Any())
+                            {
+                                <optgroup label="Custom API Scopes">
+                                    @foreach (var scope in Model.AvailableScopes)
+                                    {
+                                        <option value="@scope.Name">@scope.Name - @scope.DisplayName</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
                         <button type="button" class="btn-remove" onclick="removeUri(this)">
                             <i class="fa fa-times"></i>
                         </button>
@@ -494,7 +562,7 @@
     <script>
         let selectedType = null;
 
-        function selectType(type) {
+        function selectType(type, event) {
             selectedType = type;
 
             // Update visual selection
@@ -523,10 +591,104 @@
             document.getElementById('step1-indicator').classList.add('completed');
             document.getElementById('step2-indicator').classList.add('active');
 
-            // Hide URI section for Machine type
-            if (selectedType === 'Machine') {
+            // Hide URI and Scopes sections for Machine and ResourceServer types
+            if (selectedType === 'Machine' || selectedType === 'ResourceServer') {
                 document.getElementById('uriSection').style.display = 'none';
+                document.getElementById('scopesSection').style.display = 'none';
+            } else {
+                document.getElementById('uriSection').style.display = 'block';
+                document.getElementById('scopesSection').style.display = 'block';
+
+                // Pre-populate scopes based on application type
+                populateScopesForType(selectedType);
             }
+        }
+
+        function generateScopeSelectHTML(selectedValue = '') {
+            const availableScopes = @Html.Raw(Model.AvailableScopes != null ? Json.Serialize(Model.AvailableScopes.Select(s => new { s.Name, s.DisplayName })) : "[]");
+
+            let optionsHTML = '';
+
+            // Only add placeholder if no value is selected
+            if (!selectedValue) {
+                optionsHTML = '<option value="">-- Select Scope --</option>';
+            }
+
+            // OpenID Connect Scopes
+            optionsHTML += '<optgroup label="OpenID Connect Scopes">';
+            const oidcScopes = [
+                { value: 'openid', label: 'openid - OpenID Connect authentication' },
+                { value: 'profile', label: 'profile - User profile information' },
+                { value: 'email', label: 'email - User email address' },
+                { value: 'address', label: 'address - User address information' },
+                { value: 'phone', label: 'phone - User phone number' },
+                { value: 'offline_access', label: 'offline_access - Refresh tokens' }
+            ];
+
+            oidcScopes.forEach(scope => {
+                const selected = scope.value === selectedValue ? 'selected' : '';
+                optionsHTML += `<option value="${scope.value}" ${selected}>${scope.label}</option>`;
+            });
+            optionsHTML += '</optgroup>';
+
+            // Custom API Scopes
+            if (availableScopes.length > 0) {
+                optionsHTML += '<optgroup label="Custom API Scopes">';
+                availableScopes.forEach(scope => {
+                    const selected = scope.name === selectedValue ? 'selected' : '';
+                    optionsHTML += `<option value="${scope.name}" ${selected}>${scope.name} - ${scope.displayName}</option>`;
+                });
+                optionsHTML += '</optgroup>';
+            }
+
+            return `
+                <div class="uri-item">
+                    <select name="Input.AllowedScopes" class="form-control">
+                        ${optionsHTML}
+                    </select>
+                    <button type="button" class="btn-remove" onclick="removeUri(this)">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function populateScopesForType(type) {
+            const scopesList = document.getElementById('scopesList');
+            let defaultScopes = [];
+
+            switch(type) {
+                case 'Spa':
+                    // Single Page Application - typically needs OpenID Connect scopes
+                    defaultScopes = ['openid', 'profile', 'email'];
+                    break;
+                case 'Web':
+                    // Web Application - OpenID Connect + offline access for refresh tokens
+                    defaultScopes = ['openid', 'profile', 'email', 'offline_access'];
+                    break;
+                case 'Native':
+                    // Native Application - OpenID Connect + offline access
+                    defaultScopes = ['openid', 'profile', 'email', 'offline_access'];
+                    break;
+                case 'Device':
+                    // Device - OpenID Connect scopes
+                    defaultScopes = ['openid', 'profile'];
+                    break;
+                case 'SpaLegacy':
+                    // Legacy SPA - OpenID Connect scopes (no offline_access for implicit flow)
+                    defaultScopes = ['openid', 'profile', 'email'];
+                    break;
+                default:
+                    defaultScopes = ['openid', 'profile'];
+            }
+
+            // Clear existing scopes
+            scopesList.innerHTML = '';
+
+            // Add default scopes using dropdown
+            defaultScopes.forEach(scope => {
+                scopesList.innerHTML += generateScopeSelectHTML(scope);
+            });
         }
 
         function goToStep1() {
@@ -566,15 +728,7 @@
 
         function addScope() {
             const list = document.getElementById('scopesList');
-            const item = document.createElement('div');
-            item.className = 'uri-item';
-            item.innerHTML = `
-                <input type="text" name="Input.AllowedScopes" class="form-control" placeholder="api1" />
-                <button type="button" class="btn-remove" onclick="removeUri(this)">
-                    <i class="fa fa-times"></i>
-                </button>
-            `;
-            list.appendChild(item);
+            list.innerHTML += generateScopeSelectHTML();
         }
 
         function removeUri(button) {

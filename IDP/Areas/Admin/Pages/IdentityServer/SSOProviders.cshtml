@@ -1,0 +1,819 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.SSOProvidersModel
+@{
+    ViewData["Title"] = "SSO Providers";
+    Layout = "_AdminLayout";
+}
+
+<div class="sso-providers-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">SSO Providers</h1>
+            <p class="page-subtitle">Configure third-party authentication providers for seamless sign-in</p>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-total">
+                <i class="fa fa-puzzle-piece"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Providers</div>
+                <div class="stat-value">@Model.Providers.Count</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-configured">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Configured</div>
+                <div class="stat-value">@Model.Providers.Count(p => p.IsConfigured)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-enabled">
+                <i class="fa fa-toggle-on"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Active</div>
+                <div class="stat-value">@Model.Providers.Count(p => p.IsEnabled)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Providers Grid -->
+    <div class="providers-grid">
+        @foreach (var provider in Model.Providers)
+        {
+            <div class="provider-card @(provider.IsConfigured ? "provider-configured" : "") @(provider.IsEnabled ? "provider-enabled" : "")">
+                <!-- Provider Header -->
+                <div class="provider-header">
+                    <div class="provider-icon-wrapper" style="background: @provider.BrandColor;">
+                        <i class="fa @provider.Icon"></i>
+                    </div>
+                    <div class="provider-title-section">
+                        <h3 class="provider-name">@provider.DisplayName</h3>
+                        <div class="provider-badges">
+                            @if (provider.IsConfigured)
+                            {
+                                <span class="status-badge status-configured">
+                                    <i class="fa fa-check"></i> Configured
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-not-configured">
+                                    Not Configured
+                                </span>
+                            }
+
+                            @if (provider.IsEnabled)
+                            {
+                                <span class="status-badge status-active">
+                                    <i class="fa fa-circle"></i> Active
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Provider Description -->
+                <p class="provider-description">@provider.Description</p>
+
+                <!-- Provider Details (if configured) -->
+                @if (provider.IsConfigured)
+                {
+                    <div class="provider-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Client ID</span>
+                            <code class="detail-value">@(string.IsNullOrEmpty(provider.ClientId) ? "" : provider.ClientId.Substring(0, Math.Min(20, provider.ClientId.Length)))...</code>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(provider.Scopes))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Scopes</span>
+                                <div class="scope-tags">
+                                    @foreach (var scope in provider.Scopes.Split(',').Take(3))
+                                    {
+                                        <span class="scope-tag">@scope.Trim()</span>
+                                    }
+                                    @if (provider.Scopes.Split(',').Length > 3)
+                                    {
+                                        <span class="scope-tag">+@(provider.Scopes.Split(',').Length - 3) more</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (provider.UpdatedAt.HasValue || provider.CreatedAt.HasValue)
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">
+                                    <i class="fa fa-clock-o"></i>
+                                    @(provider.UpdatedAt.HasValue ? "Updated" : "Created")
+                                    @((provider.UpdatedAt ?? provider.CreatedAt).Value.ToString("MMM dd, yyyy"))
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Provider Actions -->
+                <div class="provider-actions">
+                    @if (provider.IsConfigured)
+                    {
+                        <div class="toggle-section">
+                            <form method="post" asp-page-handler="Toggle" class="toggle-form">
+                                <input type="hidden" name="providerType" value="@((int)provider.ProviderType)" />
+                                <input type="hidden" name="enabled" value="@(!provider.IsEnabled)" />
+                                <label class="toggle-switch">
+                                    <input type="checkbox"
+                                           @(provider.IsEnabled ? "checked" : "")
+                                           onchange="this.form.submit()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">@(provider.IsEnabled ? "Enabled" : "Disabled")</span>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="toggle-section toggle-disabled">
+                            <i class="fa fa-info-circle"></i>
+                            <span class="toggle-label">Configure to enable</span>
+                        </div>
+                    }
+
+                    <div class="action-buttons">
+                        <a href="/Admin/IdentityServer/ConfigureSSOProvider?providerType=@((int)provider.ProviderType)"
+                           class="btn-action btn-configure">
+                            <i class="fa fa-cog"></i>
+                            @(provider.IsConfigured ? "Edit" : "Configure")
+                        </a>
+
+                        @if (provider.IsConfigured)
+                        {
+                            <button type="button"
+                                    class="btn-action btn-delete"
+                                    onclick="confirmDelete('@provider.DisplayName', @((int)provider.ProviderType))">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-icon-wrapper">
+                    <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Configuration</h5>
+                    <p class="modal-subtitle">This action cannot be undone</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to delete the configuration for <strong id="providerNameToDelete"></strong>?</p>
+                <p class="text-muted small mb-0">You will need to reconfigure this provider to use it again.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm" style="display: inline;">
+                    <input type="hidden" name="providerType" id="providerTypeToDelete" />
+                    <button type="submit" class="btn-modern btn-danger">
+                        <i class="fa fa-trash"></i> Delete Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sso-providers-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .stat-icon-total {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .stat-icon-configured {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .stat-icon-enabled {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+    }
+
+    /* Providers Grid */
+    .providers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Provider Card */
+    .provider-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 2px solid #e5e7eb;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .provider-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #e5e7eb 0%, #e5e7eb 100%);
+        transition: all 0.3s ease;
+    }
+
+    .provider-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        transform: translateY(-4px);
+    }
+
+    .provider-card.provider-configured::before {
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+
+    .provider-card.provider-enabled::before {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .provider-card.provider-enabled:hover {
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.25);
+    }
+
+    /* Provider Header */
+    .provider-header {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .provider-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.75rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .provider-card:hover .provider-icon-wrapper {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .provider-title-section {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .provider-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .provider-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .status-configured {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-not-configured {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .status-active {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-active i {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Provider Description */
+    .provider-description {
+        color: #6b7280;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin: 0 0 1rem 0;
+    }
+
+    /* Provider Details */
+    .provider-details {
+        background: #f9fafb;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .detail-item {
+        margin-bottom: 0.75rem;
+    }
+
+    .detail-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+        background: white;
+        border: 1px solid #e5e7eb;
+        padding: 0.375rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+        color: #374151;
+        display: inline-block;
+    }
+
+    .scope-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .scope-tag {
+        background: white;
+        border: 1px solid #e5e7eb;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    /* Provider Actions */
+    .provider-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .toggle-section {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .toggle-disabled {
+        color: #9ca3af;
+        font-size: 0.875rem;
+    }
+
+    .toggle-form {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        margin: 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #d1d5db;
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+
+    .toggle-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-configure {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-configure:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-delete {
+        background: white;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .btn-delete:hover {
+        background: #fee2e2;
+        border-color: #dc2626;
+    }
+
+    /* Modal Improvements */
+    .modern-modal {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modern-modal .modal-header {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border-bottom: none;
+        padding: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .modal-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #dc2626;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    }
+
+    .modal-title {
+        font-weight: 700;
+        color: #991b1b;
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    .modal-subtitle {
+        font-size: 0.875rem;
+        color: #991b1b;
+        margin: 0.25rem 0 0 0;
+        opacity: 0.8;
+    }
+
+    .btn-close-custom {
+        background: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #991b1b;
+        margin-left: auto;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close-custom:hover {
+        background: #fee2e2;
+        transform: scale(1.05);
+    }
+
+    .modern-modal .modal-body {
+        padding: 2rem;
+        background: white;
+    }
+
+    .modern-modal .modal-body p {
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .modern-modal .modal-footer {
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        padding: 1.5rem 2rem;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-modern.btn-secondary {
+        background: white;
+        color: #374151;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn-modern.btn-secondary:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+    }
+
+    .btn-modern.btn-danger {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-modern.btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    .modal-backdrop {
+        background-color: rgba(17, 24, 39, 0.75);
+        backdrop-filter: blur(4px);
+    }
+
+    /* Alert Improvements */
+    .alert {
+        border-radius: 12px;
+        border: none;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .providers-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .provider-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .action-buttons {
+            width: 100%;
+        }
+
+        .btn-action {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function confirmDelete(providerName, providerType) {
+            document.getElementById('providerNameToDelete').textContent = providerName;
+            document.getElementById('providerTypeToDelete').value = providerType;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+}

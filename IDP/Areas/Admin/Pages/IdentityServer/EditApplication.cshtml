@@ -1,0 +1,577 @@
+@page "{id}"
+@model IDP.Areas.Admin.Pages.IdentityServer.EditApplicationModel
+@{
+    ViewData["Title"] = "Edit Application";
+}
+
+@section Styles {
+    <style>
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+        }
+
+        .text-danger {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .uri-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .uri-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .uri-item .form-control {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .btn-add {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px dashed var(--gray-300);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .btn-add:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-400);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+
+        .btn-cancel {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-cancel:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .application-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .type-spa {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .type-web {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .type-native {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-machine {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .type-device {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .type-spalegacy {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .type-resourceserver {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .readonly-field {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            cursor: not-allowed;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+            border: 2px solid var(--gray-200);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="admin-header">
+    <h1>Edit Application</h1>
+    <p>Update OAuth 2.0 / OpenID Connect application configuration</p>
+</div>
+
+@if (Model.Application != null)
+{
+    <div style="margin-bottom: 1rem;">
+        <span class="application-type-badge type-@(Model.Application.ClientType.ToString().ToLower())">
+            @switch (Model.Application.ClientType)
+            {
+                case IDP.Models.IdentityServer.ClientType.Spa:
+                    <i class="fa fa-chrome"></i>
+                    <span>Single Page Application</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.Web:
+                    <i class="fa fa-globe"></i>
+                    <span>Web Application</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.Native:
+                    <i class="fa fa-mobile"></i>
+                    <span>Native Application</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.Machine:
+                    <i class="fa fa-server"></i>
+                    <span>Machine to Machine</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.Device:
+                    <i class="fa fa-tablet"></i>
+                    <span>Device Application</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.SpaLegacy:
+                    <i class="fa fa-history"></i>
+                    <span>SPA (Legacy)</span>
+                    break;
+                case IDP.Models.IdentityServer.ClientType.ResourceServer:
+                    <i class="fa fa-shield"></i>
+                    <span>Resource Server</span>
+                    break;
+            }
+        </span>
+    </div>
+}
+
+<form method="post" id="editForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Input.Id" />
+
+    <div class="form-card">
+        <h2 style="margin-top: 0;">Basic Information</h2>
+
+        <div class="form-group">
+            <label>Client ID</label>
+            <input type="text" value="@Model.Application?.ClientId" class="form-control readonly-field" readonly />
+            <small class="form-text">Client ID cannot be changed</small>
+        </div>
+
+        <div class="form-group">
+            <label for="displayName">Display Name *</label>
+            <input type="text" id="displayName" asp-for="Input.DisplayName" class="form-control" required />
+            <small class="form-text">A friendly name for this application</small>
+            <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" asp-for="Input.Description" class="form-control" rows="3"></textarea>
+            <small class="form-text">Optional description of this application</small>
+        </div>
+    </div>
+
+    @if (Model.Application?.ClientType != IDP.Models.IdentityServer.ClientType.Machine &&
+         Model.Application?.ClientType != IDP.Models.IdentityServer.ClientType.ResourceServer)
+    {
+        <div class="form-card">
+            <h2 style="margin-top: 0;">Redirect URIs</h2>
+
+            <div class="form-group">
+                <label>Redirect URIs</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    URLs where users will be redirected after authentication
+                </small>
+                <div id="redirectUrisList" class="uri-list">
+                    @if (Model.Input?.RedirectUris != null && Model.Input.RedirectUris.Any())
+                    {
+                        @foreach (var uri in Model.Input.RedirectUris)
+                        {
+                            <div class="uri-item">
+                                <input type="text" name="Input.RedirectUris" class="form-control" value="@uri" placeholder="https://example.com/callback" />
+                                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="uri-item">
+                            <input type="text" name="Input.RedirectUris" class="form-control" placeholder="https://example.com/callback" />
+                            <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn-add" onclick="addRedirectUri()">
+                    <i class="fa fa-plus"></i>
+                    Add Redirect URI
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Post Logout Redirect URIs</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    URLs where users will be redirected after logout
+                </small>
+                <div id="logoutUrisList" class="uri-list">
+                    @if (Model.Input?.PostLogoutRedirectUris != null && Model.Input.PostLogoutRedirectUris.Any())
+                    {
+                        @foreach (var uri in Model.Input.PostLogoutRedirectUris)
+                        {
+                            <div class="uri-item">
+                                <input type="text" name="Input.PostLogoutRedirectUris" class="form-control" value="@uri" placeholder="https://example.com" />
+                                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="uri-item">
+                            <input type="text" name="Input.PostLogoutRedirectUris" class="form-control" placeholder="https://example.com" />
+                            <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn-add" onclick="addLogoutUri()">
+                    <i class="fa fa-plus"></i>
+                    Add Logout URI
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (Model.Application?.ClientType != IDP.Models.IdentityServer.ClientType.Machine &&
+         Model.Application?.ClientType != IDP.Models.IdentityServer.ClientType.ResourceServer)
+    {
+        <div class="form-card">
+            <h2 style="margin-top: 0;">Allowed Scopes</h2>
+
+            <div class="form-group">
+                <label>Scopes</label>
+                <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                    Select the API scopes this application can request
+                </small>
+                <div id="scopesList" class="uri-list">
+                    @if (Model.Input?.AllowedScopes != null && Model.Input.AllowedScopes.Any())
+                    {
+                        @foreach (var scope in Model.Input.AllowedScopes)
+                        {
+                            <div class="uri-item">
+                                <select name="Input.AllowedScopes" class="form-control">
+                                    <option value="">-- Select Scope --</option>
+                                    <optgroup label="OpenID Connect Scopes">
+                                        <option value="openid" selected="@(scope == "openid")">openid - OpenID Connect authentication</option>
+                                        <option value="profile" selected="@(scope == "profile")">profile - User profile information</option>
+                                        <option value="email" selected="@(scope == "email")">email - User email address</option>
+                                        <option value="address" selected="@(scope == "address")">address - User address information</option>
+                                        <option value="phone" selected="@(scope == "phone")">phone - User phone number</option>
+                                        <option value="offline_access" selected="@(scope == "offline_access")">offline_access - Refresh tokens</option>
+                                    </optgroup>
+                                    @if (Model.AvailableScopes != null && Model.AvailableScopes.Any())
+                                    {
+                                        <optgroup label="Custom API Scopes">
+                                            @foreach (var customScope in Model.AvailableScopes)
+                                            {
+                                                <option value="@customScope.Name" selected="@(scope == customScope.Name)">@customScope.Name - @customScope.DisplayName</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="uri-item">
+                            <select name="Input.AllowedScopes" class="form-control">
+                                <option value="">-- Select Scope --</option>
+                                <optgroup label="OpenID Connect Scopes">
+                                    <option value="openid">openid - OpenID Connect authentication</option>
+                                    <option value="profile">profile - User profile information</option>
+                                    <option value="email">email - User email address</option>
+                                    <option value="address">address - User address information</option>
+                                    <option value="phone">phone - User phone number</option>
+                                    <option value="offline_access">offline_access - Refresh tokens</option>
+                                </optgroup>
+                                @if (Model.AvailableScopes != null && Model.AvailableScopes.Any())
+                                {
+                                    <optgroup label="Custom API Scopes">
+                                        @foreach (var customScope in Model.AvailableScopes)
+                                        {
+                                            <option value="@customScope.Name">@customScope.Name - @customScope.DisplayName</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                            <button type="button" class="btn-remove" onclick="removeUri(this)">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn-add" onclick="addScope()">
+                    <i class="fa fa-plus"></i>
+                    Add Scope
+                </button>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h2 style="margin-top: 0;">Advanced Settings</h2>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="allowOfflineAccess" asp-for="Input.AllowOfflineAccess" />
+                <label for="allowOfflineAccess">
+                    <strong>Allow Offline Access</strong><br />
+                    <small class="form-text">Enable refresh tokens for this application</small>
+                </label>
+            </div>
+        </div>
+    }
+
+    <div class="form-actions">
+        <a href="/Admin/IdentityServer/Applications" class="btn-cancel">
+            <i class="fa fa-arrow-left"></i>
+            Cancel
+        </a>
+        <button type="submit" class="btn-primary-gradient">
+            <i class="fa fa-save"></i>
+            Save Changes
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        const availableScopes = @Html.Raw(Model.AvailableScopes != null ? Json.Serialize(Model.AvailableScopes.Select(s => new { s.Name, s.DisplayName })) : "[]");
+
+        function generateScopeSelectHTML(selectedValue = '') {
+            let optionsHTML = '';
+
+            // Only add placeholder if no value is selected
+            if (!selectedValue) {
+                optionsHTML = '<option value="">-- Select Scope --</option>';
+            }
+
+            // OpenID Connect Scopes
+            optionsHTML += '<optgroup label="OpenID Connect Scopes">';
+            const oidcScopes = [
+                { value: 'openid', label: 'openid - OpenID Connect authentication' },
+                { value: 'profile', label: 'profile - User profile information' },
+                { value: 'email', label: 'email - User email address' },
+                { value: 'address', label: 'address - User address information' },
+                { value: 'phone', label: 'phone - User phone number' },
+                { value: 'offline_access', label: 'offline_access - Refresh tokens' }
+            ];
+
+            oidcScopes.forEach(scope => {
+                const selected = scope.value === selectedValue ? 'selected' : '';
+                optionsHTML += `<option value="${scope.value}" ${selected}>${scope.label}</option>`;
+            });
+            optionsHTML += '</optgroup>';
+
+            // Custom API Scopes
+            if (availableScopes.length > 0) {
+                optionsHTML += '<optgroup label="Custom API Scopes">';
+                availableScopes.forEach(scope => {
+                    const selected = scope.name === selectedValue ? 'selected' : '';
+                    optionsHTML += `<option value="${scope.name}" ${selected}>${scope.name} - ${scope.displayName}</option>`;
+                });
+                optionsHTML += '</optgroup>';
+            }
+
+            return `
+                <div class="uri-item">
+                    <select name="Input.AllowedScopes" class="form-control">
+                        ${optionsHTML}
+                    </select>
+                    <button type="button" class="btn-remove" onclick="removeUri(this)">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function addRedirectUri() {
+            const list = document.getElementById('redirectUrisList');
+            const item = document.createElement('div');
+            item.className = 'uri-item';
+            item.innerHTML = `
+                <input type="text" name="Input.RedirectUris" class="form-control" placeholder="https://example.com/callback" />
+                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function addLogoutUri() {
+            const list = document.getElementById('logoutUrisList');
+            const item = document.createElement('div');
+            item.className = 'uri-item';
+            item.innerHTML = `
+                <input type="text" name="Input.PostLogoutRedirectUris" class="form-control" placeholder="https://example.com" />
+                <button type="button" class="btn-remove" onclick="removeUri(this)">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function addScope() {
+            const list = document.getElementById('scopesList');
+            list.innerHTML += generateScopeSelectHTML();
+        }
+
+        function removeUri(button) {
+            const item = button.closest('.uri-item');
+            const list = item.parentElement;
+            if (list.children.length > 1) {
+                item.remove();
+            }
+        }
+    </script>
+}

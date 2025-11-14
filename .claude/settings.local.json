@@ -9,7 +9,9 @@
       "Bash(dotnet remove reference:*)",
       "Bash(Get-Content \"C:\\Development\\AuthScape\\AuthScape.Core\\IDP\\Areas\\Admin\\Pages\\Index.cshtml.cs\")",
       "Bash(Select-String -Pattern \"Authorize\")",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(dotnet run:*)",
+      "Bash(Select-String -Pattern \"EditApplication|error\" -Context 2,2)"
     ],
     "deny": [],
     "ask": []

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IDP.Areas.Admin.Pages.IdentityServer
@@ -21,13 +22,15 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
         }
 
         public List<ScopeDto> Scopes { get; set; } = new();
+        public List<ApplicationDetailsDto> ResourceServers { get; set; } = new();
 
         public async Task OnGetAsync()
         {
             Scopes = await identityServerService.GetAllScopesAsync();
+            ResourceServers = await identityServerService.GetResourceServerApplicationsAsync();
         }
 
-        public async Task<IActionResult> OnPostCreateAsync(string scopeName, string scopeDisplayName, string? scopeDescription)
+        public async Task<IActionResult> OnPostCreateAsync(string scopeName, string scopeDisplayName, string? scopeDescription, List<string>? resources)
         {
             try
             {
@@ -35,7 +38,8 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 {
                     Name = scopeName,
                     DisplayName = scopeDisplayName,
-                    Description = scopeDescription
+                    Description = scopeDescription,
+                    Resources = resources?.Where(r => !string.IsNullOrWhiteSpace(r)).ToList() ?? new List<string>()
                 };
 
                 await identityServerService.CreateScopeAsync(createDto);
@@ -49,7 +53,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             }
         }
 
-        public async Task<IActionResult> OnPostEditAsync(string scopeId, string scopeName, string scopeDisplayName, string? scopeDescription)
+        public async Task<IActionResult> OnPostEditAsync(string scopeId, string scopeName, string scopeDisplayName, string? scopeDescription, List<string>? resources)
         {
             try
             {
@@ -57,7 +61,8 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 {
                     Id = scopeId,
                     DisplayName = scopeDisplayName,
-                    Description = scopeDescription
+                    Description = scopeDescription,
+                    Resources = resources?.Where(r => !string.IsNullOrWhiteSpace(r)).ToList() ?? new List<string>()
                 };
 
                 await identityServerService.UpdateScopeAsync(updateDto);

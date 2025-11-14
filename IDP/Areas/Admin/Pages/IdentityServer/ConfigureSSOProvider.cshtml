@@ -1,0 +1,1025 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.ConfigureSSOProviderModel
+@{
+    ViewData["Title"] = $"Configure {Model.Provider.DisplayName}";
+    Layout = "_AdminLayout";
+}
+
+<div class="configure-sso-container">
+    <!-- Modern Header -->
+    <div class="page-header-section">
+        <nav aria-label="breadcrumb" class="modern-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="/Admin/IdentityServer/SSOProviders">
+                        <i class="fa fa-arrow-left"></i> SSO Providers
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">@Model.Provider.DisplayName</li>
+            </ol>
+        </nav>
+
+        <div class="provider-header-card">
+            <div class="provider-icon-large" style="background: @Model.Provider.BrandColor;">
+                <i class="fa @Model.Provider.Icon"></i>
+            </div>
+            <div class="provider-header-content">
+                <h1 class="provider-title">Configure @Model.Provider.DisplayName</h1>
+                <p class="provider-subtitle">@Model.Provider.Description</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger-modern" role="alert">
+            <div class="alert-icon">
+                <i class="fa fa-exclamation-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Error</strong>
+                <p>@Model.ErrorMessage</p>
+            </div>
+            <button type="button" class="alert-close" onclick="this.parentElement.remove()">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    }
+
+    <div class="configure-content-grid">
+        <div class="main-content">
+            <!-- Configuration Form -->
+            <div class="config-card">
+                <div class="config-card-header">
+                    <div class="config-header-icon">
+                        <i class="fa fa-cog"></i>
+                    </div>
+                    <h2 class="config-card-title">Provider Configuration</h2>
+                </div>
+
+                <form method="post" class="config-form">
+                    <input type="hidden" asp-for="Input.ProviderType" />
+
+                    <!-- Enable Toggle Section -->
+                    <div class="enable-section">
+                        <div class="enable-header">
+                            <label class="toggle-container">
+                                <input type="checkbox" asp-for="Input.IsEnabled" id="enableToggle" class="toggle-input">
+                                <span class="toggle-switch-modern"></span>
+                            </label>
+                            <div class="enable-label-group">
+                                <span class="enable-title">Enable this provider</span>
+                                <span class="enable-description">When enabled, users can sign in using @Model.Provider.DisplayName</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <!-- Dynamic Fields Based on Provider -->
+                    @foreach (var field in Model.Provider.RequiredFields)
+                    {
+                        <div class="form-field-group">
+                            <label for="@field.Name" class="field-label">
+                                @field.Label
+                                @if (field.Required)
+                                {
+                                    <span class="required-indicator">*</span>
+                                }
+                            </label>
+
+                            @if (field.Type == "textarea")
+                            {
+                                @if (field.Name == "ClientSecret" || field.Name == "PrivateKey")
+                                {
+                                    <textarea class="field-input field-textarea"
+                                              id="@field.Name"
+                                              name="Input.@field.Name"
+                                              rows="6"
+                                              placeholder="@field.Placeholder"
+                                              required="@field.Required">@(field.Name == "ClientSecret" ? Model.Input.ClientSecret :
+                                              field.Name == "PrivateKey" ? Model.Input.PrivateKey : "")</textarea>
+                                }
+                                else
+                                {
+                                    <textarea class="field-input field-textarea"
+                                              id="@field.Name"
+                                              name="Input.@field.Name"
+                                              rows="6"
+                                              placeholder="@field.Placeholder"
+                                              required="@field.Required"></textarea>
+                                }
+                            }
+                            else if (field.Type == "password")
+                            {
+                                <div class="password-field-wrapper">
+                                    @if (field.Name == "ClientSecret")
+                                    {
+                                        <input type="password"
+                                               class="field-input field-password"
+                                               id="@field.Name"
+                                               name="Input.@field.Name"
+                                               value="@Model.Input.ClientSecret"
+                                               placeholder="@field.Placeholder"
+                                               required="@field.Required">
+                                    }
+                                    else
+                                    {
+                                        <input type="password"
+                                               class="field-input field-password"
+                                               id="@field.Name"
+                                               name="Input.@field.Name"
+                                               placeholder="@field.Placeholder"
+                                               required="@field.Required">
+                                    }
+                                    <button class="password-toggle-btn" type="button" onclick="togglePassword('@field.Name')">
+                                        <i class="fa fa-eye" id="@field.Name-icon"></i>
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                @if (field.Name == "ClientId")
+                                {
+                                    <input type="text"
+                                           class="field-input field-monospace"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.ClientId"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "Scopes")
+                                {
+                                    <input type="text"
+                                           class="field-input"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.Scopes"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "TenantId")
+                                {
+                                    <input type="text"
+                                           class="field-input field-monospace"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.TenantId"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "TeamId")
+                                {
+                                    <input type="text"
+                                           class="field-input field-monospace"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.TeamId"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "KeyId")
+                                {
+                                    <input type="text"
+                                           class="field-input field-monospace"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.KeyId"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "EnterpriseDomain")
+                                {
+                                    <input type="text"
+                                           class="field-input"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.EnterpriseDomain"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else if (field.Name == "Region")
+                                {
+                                    <input type="text"
+                                           class="field-input"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.Region"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                                else
+                                {
+                                    <input type="text"
+                                           class="field-input"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
+                            }
+
+                            @if (!string.IsNullOrEmpty(field.HelpText))
+                            {
+                                <div class="field-help">
+                                    <i class="fa fa-info-circle"></i> @field.HelpText
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-modern btn-save">
+                            <i class="fa fa-save"></i>
+                            <span>Save Configuration</span>
+                        </button>
+                        <a href="/Admin/IdentityServer/SSOProviders" class="btn-modern btn-cancel">
+                            <i class="fa fa-arrow-left"></i>
+                            <span>Back to Providers</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Help Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <i class="fa fa-question-circle"></i>
+                    <h3>Setup Instructions</h3>
+                </div>
+                <div class="sidebar-card-body">
+                    @if (Model.Provider.ProviderType == AuthScape.Models.Authentication.ThirdPartyAuthenticationType.Facebook)
+                    {
+                        <ol class="instructions-list">
+                            <li>Go to <a href="https://developers.facebook.com" target="_blank" class="external-link">Facebook Developers <i class="fa fa-external-link"></i></a></li>
+                            <li>Create a new app or select an existing one</li>
+                            <li>Add "Facebook Login" product</li>
+                            <li>Copy the App ID and App Secret</li>
+                            <li>Configure Valid OAuth Redirect URIs</li>
+                        </ol>
+                    }
+                    else if (Model.Provider.ProviderType == AuthScape.Models.Authentication.ThirdPartyAuthenticationType.Google)
+                    {
+                        <ol class="instructions-list">
+                            <li>Go to <a href="https://console.cloud.google.com" target="_blank" class="external-link">Google Cloud Console <i class="fa fa-external-link"></i></a></li>
+                            <li>Create a new project or select existing</li>
+                            <li>Enable Google+ API</li>
+                            <li>Create OAuth 2.0 credentials</li>
+                            <li>Add authorized redirect URIs</li>
+                            <li>Copy Client ID and Client Secret</li>
+                        </ol>
+                    }
+                    else if (Model.Provider.ProviderType == AuthScape.Models.Authentication.ThirdPartyAuthenticationType.Microsoft)
+                    {
+                        <ol class="instructions-list">
+                            <li>Go to <a href="https://portal.azure.com" target="_blank" class="external-link">Azure Portal <i class="fa fa-external-link"></i></a></li>
+                            <li>Navigate to Azure Active Directory</li>
+                            <li>Register a new application</li>
+                            <li>Add a redirect URI</li>
+                            <li>Create a client secret</li>
+                            <li>Copy Application (client) ID and secret</li>
+                        </ol>
+                    }
+                    else if (Model.Provider.ProviderType == AuthScape.Models.Authentication.ThirdPartyAuthenticationType.Apple)
+                    {
+                        <ol class="instructions-list">
+                            <li>Go to <a href="https://developer.apple.com" target="_blank" class="external-link">Apple Developer <i class="fa fa-external-link"></i></a></li>
+                            <li>Create a Services ID</li>
+                            <li>Enable "Sign in with Apple"</li>
+                            <li>Create a private key (.p8 file)</li>
+                            <li>Note your Team ID and Key ID</li>
+                            <li>Configure return URLs</li>
+                        </ol>
+                    }
+                    else if (Model.Provider.ProviderType == AuthScape.Models.Authentication.ThirdPartyAuthenticationType.Github)
+                    {
+                        <ol class="instructions-list">
+                            <li>Go to <a href="https://github.com/settings/developers" target="_blank" class="external-link">GitHub Developer Settings <i class="fa fa-external-link"></i></a></li>
+                            <li>Create a new OAuth App</li>
+                            <li>Set the Authorization callback URL</li>
+                            <li>Copy Client ID and generate Client Secret</li>
+                        </ol>
+                    }
+                    else
+                    {
+                        <p class="instructions-text">
+                            Visit the @Model.Provider.DisplayName developer portal to create an OAuth application
+                            and obtain your credentials. Make sure to configure the correct redirect URI.
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <!-- Redirect URI Card -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <i class="fa fa-link"></i>
+                    <h3>Redirect URI</h3>
+                </div>
+                <div class="sidebar-card-body">
+                    <p class="redirect-description">Use this redirect URI in your provider's configuration:</p>
+                    <div class="redirect-uri-wrapper">
+                        <input type="text"
+                               class="redirect-uri-input"
+                               id="redirectUri"
+                               value="@(Request.Scheme)://@(Request.Host)/signin-@(Model.Provider.ProviderName?.ToLower())"
+                               readonly>
+                        <button class="copy-btn" type="button" onclick="copyRedirectUri()" title="Copy to clipboard">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="redirect-note">
+                        <i class="fa fa-info-circle"></i> This must match exactly in your provider settings
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    /* Container */
+    .configure-sso-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Modern Breadcrumb */
+    .modern-breadcrumb {
+        margin-bottom: 1.5rem;
+    }
+
+    .modern-breadcrumb .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .modern-breadcrumb .breadcrumb-item a {
+        color: var(--gray-600);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .modern-breadcrumb .breadcrumb-item a:hover {
+        color: #667eea;
+    }
+
+    .modern-breadcrumb .breadcrumb-item.active {
+        color: var(--gray-800);
+        font-weight: 600;
+    }
+
+    /* Provider Header Card */
+    .provider-header-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 2px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .provider-header-card:hover {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        border-color: #667eea;
+    }
+
+    .provider-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.5rem;
+        flex-shrink: 0;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .provider-header-content {
+        flex: 1;
+    }
+
+    .provider-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0 0 0.5rem 0;
+        line-height: 1.2;
+    }
+
+    .provider-subtitle {
+        font-size: 1rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Alert Modern */
+    .alert-danger-modern {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: #fee2e2;
+        border: 2px solid #fecaca;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #dc2626;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-content strong {
+        display: block;
+        color: #991b1b;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .alert-content p {
+        color: #991b1b;
+        margin: 0;
+        font-size: 0.9375rem;
+    }
+
+    .alert-close {
+        background: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #991b1b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .alert-close:hover {
+        background: #fecaca;
+        transform: scale(1.05);
+    }
+
+    /* Content Grid */
+    .configure-content-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 2rem;
+    }
+
+    /* Main Content */
+    .main-content {
+        min-width: 0;
+    }
+
+    /* Config Card */
+    .config-card {
+        background: white;
+        border-radius: 16px;
+        border: 2px solid var(--gray-200);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .config-card-header {
+        background: var(--primary-gradient);
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .config-header-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.125rem;
+    }
+
+    .config-card-title {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    /* Form */
+    .config-form {
+        padding: 2rem;
+    }
+
+    /* Enable Section */
+    .enable-section {
+        background: var(--gray-50);
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .enable-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .toggle-container {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 28px;
+        flex-shrink: 0;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .toggle-input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-switch-modern {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--gray-300);
+        transition: 0.3s;
+        border-radius: 28px;
+    }
+
+    .toggle-switch-modern:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-input:checked + .toggle-switch-modern {
+        background: var(--primary-gradient);
+    }
+
+    .toggle-input:checked + .toggle-switch-modern:before {
+        transform: translateX(24px);
+    }
+
+    .enable-label-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .enable-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .enable-description {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        line-height: 1.5;
+    }
+
+    /* Form Divider */
+    .form-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 2rem 0;
+    }
+
+    /* Form Field Group */
+    .form-field-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .field-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .required-indicator {
+        color: #dc2626;
+        margin-left: 0.25rem;
+    }
+
+    .field-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        color: var(--gray-900);
+        background: white;
+        transition: all 0.2s ease;
+        outline: none;
+    }
+
+    .field-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .field-input::placeholder {
+        color: var(--gray-400);
+    }
+
+    .field-monospace {
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+        font-size: 0.875rem;
+    }
+
+    .field-textarea {
+        resize: vertical;
+        min-height: 120px;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+        line-height: 1.6;
+    }
+
+    /* Password Field Wrapper */
+    .password-field-wrapper {
+        position: relative;
+    }
+
+    .field-password {
+        padding-right: 3rem;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-500);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .password-toggle-btn:hover {
+        background: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    /* Field Help */
+    .field-help {
+        margin-top: 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.375rem;
+        line-height: 1.5;
+    }
+
+    .field-help i {
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 2rem;
+    }
+
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-save {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-700);
+        border: 2px solid var(--gray-300);
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+        transform: translateY(-2px);
+    }
+
+    /* Sidebar Content */
+    .sidebar-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .sidebar-card {
+        background: white;
+        border-radius: 16px;
+        border: 2px solid var(--gray-200);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-card-header {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-card-header i {
+        color: #667eea;
+        font-size: 1.125rem;
+    }
+
+    .sidebar-card-header h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .sidebar-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Instructions List */
+    .instructions-list {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        line-height: 1.6;
+    }
+
+    .instructions-list li {
+        margin-bottom: 0.75rem;
+    }
+
+    .instructions-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    .external-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .external-link:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    .external-link i {
+        font-size: 0.75rem;
+        margin-left: 0.25rem;
+    }
+
+    .instructions-text {
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Redirect URI */
+    .redirect-description {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin: 0 0 1rem 0;
+    }
+
+    .redirect-uri-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: var(--gray-50);
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .redirect-uri-wrapper:focus-within {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .redirect-uri-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0.875rem 1rem;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+        font-size: 0.8125rem;
+        color: var(--gray-900);
+        outline: none;
+    }
+
+    .copy-btn {
+        background: #667eea;
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        margin: 0.25rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+        background: #764ba2;
+        transform: scale(1.05);
+    }
+
+    .copy-btn:active {
+        transform: scale(0.95);
+    }
+
+    .redirect-note {
+        margin-top: 0.75rem;
+        font-size: 0.8125rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .redirect-note i {
+        margin-top: 0.125rem;
+        color: #667eea;
+    }
+
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .configure-content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar-content {
+            grid-row: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .provider-header-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .provider-icon-large {
+            width: 64px;
+            height: 64px;
+            font-size: 2rem;
+        }
+
+        .provider-title {
+            font-size: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-modern {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePassword(fieldName) {
+            const input = document.getElementById(fieldName);
+            const icon = document.getElementById(fieldName + '-icon');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function copyRedirectUri() {
+            const input = document.getElementById('redirectUri');
+            input.select();
+            document.execCommand('copy');
+
+            // Show temporary feedback
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fa fa-check"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        }
+    </script>
+}

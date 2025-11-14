@@ -92,32 +92,243 @@
             padding: 0;
             border-radius: 12px;
             width: 90%;
-            max-width: 600px;
+            max-width: 700px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @@keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-header {
-            padding: 1.5rem;
+            padding: 2rem;
             border-bottom: 1px solid var(--gray-200);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
         }
 
         .modal-header h2 {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
             color: var(--gray-900);
         }
 
         .modal-body {
-            padding: 1.5rem;
+            padding: 2rem;
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         .modal-footer {
-            padding: 1.5rem;
+            padding: 1.5rem 2rem;
             border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .uri-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .uri-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .uri-item .form-control {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .btn-add {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px dashed var(--gray-300);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .btn-add:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-400);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            font-size: 0.9375rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control[readonly] {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            cursor: not-allowed;
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .btn-cancel {
+            background: white;
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
+        }
+
+        .application-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--gray-900);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
         }
     </style>
 }
@@ -159,7 +370,7 @@ else
                         <div class="scope-name">@scope.Name</div>
                     </div>
                     <div class="application-actions">
-                        <button class="btn-icon" onclick="openEditModal('@scope.Id', '@scope.Name', '@scope.DisplayName', '@scope.Description')" title="Edit">
+                        <button class="btn-icon" onclick='openEditModal(@Html.Raw(Json.Serialize(new { id = scope.Id, name = scope.Name, displayName = scope.DisplayName, description = scope.Description, resources = scope.Resources })))' title="Edit">
                             <i class="fa fa-pencil"></i>
                         </button>
                         <button class="btn-icon" onclick="deleteScope('@scope.Id', '@scope.Name')" title="Delete">
@@ -221,6 +432,41 @@ else
                               placeholder="Allows read access to the API"></textarea>
                     <small class="form-text">Optional description of what this scope grants access to</small>
                 </div>
+
+                <div class="form-group">
+                    <label>Resources</label>
+                    <small class="form-text" style="display: block; margin-bottom: 0.5rem;">
+                        Resource servers (client IDs) that can validate this scope
+                    </small>
+                    @if (Model.ResourceServers != null && Model.ResourceServers.Any())
+                    {
+                        <div id="resourcesList" class="uri-list">
+                            <div class="uri-item">
+                                <select name="resources" class="form-control">
+                                    <option value="">-- Select Resource Server --</option>
+                                    @foreach (var rs in Model.ResourceServers)
+                                    {
+                                        <option value="@rs.ClientId">@rs.DisplayName (@rs.ClientId)</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn-remove" onclick="removeResource(this)">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add" onclick="addResource()">
+                            <i class="fa fa-plus"></i>
+                            Add Resource
+                        </button>
+                    }
+                    else
+                    {
+                        <div style="padding: 1rem; background: var(--gray-100); border-radius: 8px; color: var(--gray-600); text-align: center;">
+                            <i class="fa fa-info-circle"></i>
+                            No Resource Server applications found. Create a Resource Server application first.
+                        </div>
+                    }
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -236,6 +482,9 @@ else
 
 @section Scripts {
     <script>
+        // Store resource servers for JavaScript
+        const resourceServers = @Html.Raw(Model.ResourceServers != null ? Json.Serialize(Model.ResourceServers.Select(rs => new { rs.ClientId, rs.DisplayName })) : "[]");
+
         function openCreateModal() {
             document.getElementById('modalTitle').textContent = 'Create Scope';
             document.getElementById('submitBtn').innerHTML = '<i class="fa fa-check"></i> Create Scope';
@@ -245,23 +494,85 @@ else
             document.getElementById('scopeName').readOnly = false;
             document.getElementById('scopeDisplayName').value = '';
             document.getElementById('scopeDescription').value = '';
+
+            // Reset resources list
+            const resourcesList = document.getElementById('resourcesList');
+            if (resourceServers.length > 0) {
+                resourcesList.innerHTML = generateResourceSelectHTML();
+            }
+
             document.getElementById('scopeModal').classList.add('show');
         }
 
-        function openEditModal(id, name, displayName, description) {
+        function generateResourceSelectHTML(selectedValue = '') {
+            let optionsHTML = '';
+
+            // Only add placeholder option if no value is selected
+            if (!selectedValue) {
+                optionsHTML = '<option value="">-- Select Resource Server --</option>';
+            }
+
+            resourceServers.forEach(rs => {
+                const selected = rs.clientId === selectedValue ? 'selected' : '';
+                optionsHTML += `<option value="${rs.clientId}" ${selected}>${rs.clientId}</option>`;
+            });
+
+            return `
+                <div class="uri-item">
+                    <select name="resources" class="form-control">
+                        ${optionsHTML}
+                    </select>
+                    <button type="button" class="btn-remove" onclick="removeResource(this)">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function openEditModal(scope) {
             document.getElementById('modalTitle').textContent = 'Edit Scope';
             document.getElementById('submitBtn').innerHTML = '<i class="fa fa-check"></i> Save Changes';
             document.getElementById('scopeForm').action = '?handler=Edit';
-            document.getElementById('scopeId').value = id;
-            document.getElementById('scopeName').value = name;
+            document.getElementById('scopeId').value = scope.id;
+            document.getElementById('scopeName').value = scope.name;
             document.getElementById('scopeName').readOnly = true;
-            document.getElementById('scopeDisplayName').value = displayName;
-            document.getElementById('scopeDescription').value = description || '';
+            document.getElementById('scopeDisplayName').value = scope.displayName;
+            document.getElementById('scopeDescription').value = scope.description || '';
+
+            // Populate resources list
+            const resourcesList = document.getElementById('resourcesList');
+            resourcesList.innerHTML = '';
+
+            if (resourceServers.length > 0) {
+                if (scope.resources && scope.resources.length > 0) {
+                    scope.resources.forEach(resource => {
+                        resourcesList.innerHTML += generateResourceSelectHTML(resource);
+                    });
+                } else {
+                    resourcesList.innerHTML = generateResourceSelectHTML();
+                }
+            }
+
             document.getElementById('scopeModal').classList.add('show');
         }
 
         function closeModal() {
             document.getElementById('scopeModal').classList.remove('show');
+        }
+
+        function addResource() {
+            const list = document.getElementById('resourcesList');
+            if (resourceServers.length > 0) {
+                list.innerHTML += generateResourceSelectHTML();
+            }
+        }
+
+        function removeResource(button) {
+            const item = button.closest('.uri-item');
+            const list = item.parentElement;
+            if (list.children.length > 1) {
+                item.remove();
+            }
         }
 
         function deleteScope(id, name) {
