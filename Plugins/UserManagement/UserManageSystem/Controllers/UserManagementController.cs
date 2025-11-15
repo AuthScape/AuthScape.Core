@@ -26,7 +26,7 @@ namespace AuthScape.UserManageSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> GetUsers(GetUsersParam param)
         {
-            var users = await userManagementSystemService.GetUsers(param.offset, param.length, param.searchByName, param.searchByCompanyId, param.searchByRoleId, param.IsActive);
+            var users = await userManagementSystemService.GetUsers(param.offset, param.length, param.searchByName, param.searchByCompanyId, param.searchByRoleId, param.IsActive, param.EmailConfirmed);
 
             return Ok(new ReactDataTable()
             {
@@ -438,6 +438,7 @@ namespace AuthScape.UserManageSystem.Controllers
         public long? searchByRoleId { get; set; }
 
         public bool IsActive { get; set; }
+        public bool? EmailConfirmed { get; set; }
     }
 
     public class GetLocationParam

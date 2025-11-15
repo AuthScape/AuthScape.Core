@@ -148,46 +148,36 @@
         <p>Define and manage API scopes for fine-grained access control. Control what resources your applications can access.</p>
     </a>
 
-    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
-        <div class="dashboard-card-icon">
-            <i class="fa fa-users"></i>
-        </div>
-        <h3>Users & Roles</h3>
-        <p>Manage user accounts, roles, and permissions. Control who has access to your applications and resources.</p>
-    </div>
-
-    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
-        <div class="dashboard-card-icon">
-            <i class="fa fa-bar-chart"></i>
-        </div>
-        <h3>Analytics</h3>
-        <p>View authentication statistics, monitor API usage, and track application performance metrics.</p>
-    </div>
-
-    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+    <a href="/Admin/IdentityServer/Roles" class="dashboard-card">
         <div class="dashboard-card-icon">
             <i class="fa fa-shield"></i>
         </div>
-        <h3>Security</h3>
-        <p>Configure security policies, review audit logs, and manage security settings for your identity server.</p>
-    </div>
+        <h3>Roles</h3>
+        <p>Manage application roles for access control. Create, edit, and delete roles to organize user permissions.</p>
+    </a>
 
-    <div class="dashboard-card" style="opacity: 0.6; cursor: not-allowed;">
+    <a href="/Admin/IdentityServer/Permissions" class="dashboard-card">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-key"></i>
+        </div>
+        <h3>Permissions</h3>
+        <p>Define and manage permissions for fine-grained access control. Control what actions users can perform in your applications.</p>
+    </a>
+
+    <a href="/Admin/IdentityServer/SSOProviders" class="dashboard-card">
+        <div class="dashboard-card-icon">
+            <i class="fa fa-users"></i>
+        </div>
+        <h3>SSO Providers</h3>
+        <p>Configure single sign-on providers. Enable authentication through Google, Microsoft, GitHub, and other identity providers.</p>
+    </a>
+
+    <a href="/Admin/IdentityServer/Settings" class="dashboard-card">
         <div class="dashboard-card-icon">
             <i class="fa fa-cog"></i>
         </div>
         <h3>Settings</h3>
-        <p>Configure global settings, customize branding, and manage system-wide preferences.</p>
-    </div>
+        <p>Configure platform settings and global preferences. Manage system-wide configuration and customization options.</p>
+    </a>
 </div>
 
-@section Scripts {
-    <script>
-        // Disable clicks on coming soon cards
-        document.querySelectorAll('.dashboard-card[style*="opacity"]').forEach(card => {
-            card.addEventListener('click', (e) => {
-                e.preventDefault();
-            });
-        });
-    </script>
-}

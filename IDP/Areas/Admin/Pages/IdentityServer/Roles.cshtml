@@ -1,19 +1,19 @@
 @page
-@model IDP.Areas.Admin.Pages.IdentityServer.SettingsModel
+@model IDP.Areas.Admin.Pages.IdentityServer.RolesModel
 @{
-    ViewData["Title"] = "Platform Settings";
+    ViewData["Title"] = "Roles";
     Layout = "_AdminLayout";
 }
 
-<div class="settings-container">
+<div class="roles-container">
     <!-- Header -->
     <div class="page-header">
         <div>
-            <h1 class="page-title">Platform Settings</h1>
-            <p class="page-subtitle">Configure platform features and behavior</p>
+            <h1 class="page-title">Roles</h1>
+            <p class="page-subtitle">Manage application roles for access control</p>
         </div>
         <button type="button" class="btn-add" onclick="showCreateModal()">
-            <i class="fa fa-plus"></i> Add Setting
+            <i class="fa fa-plus"></i> Add Role
         </button>
     </div>
 
@@ -38,110 +38,102 @@
     <div class="stats-bar">
         <div class="stat-card">
             <div class="stat-icon stat-icon-total">
-                <i class="fa fa-cog"></i>
+                <i class="fa fa-shield"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Total Settings</div>
-                <div class="stat-value">@Model.Settings.Count</div>
+                <div class="stat-label">Total Roles</div>
+                <div class="stat-value">@Model.Roles.Count</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon stat-icon-enabled">
-                <i class="fa fa-toggle-on"></i>
+            <div class="stat-icon stat-icon-active">
+                <i class="fa fa-users"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Enabled</div>
-                <div class="stat-value">@Model.Settings.Count(s => s.Value == "1" || s.Value.Equals("true", StringComparison.OrdinalIgnoreCase))</div>
+                <div class="stat-label">Roles with Users</div>
+                <div class="stat-value">@Model.Roles.Count(r => r.UserCount > 0)</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon stat-icon-disabled">
-                <i class="fa fa-toggle-off"></i>
+            <div class="stat-icon stat-icon-empty">
+                <i class="fa fa-inbox"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Disabled</div>
-                <div class="stat-value">@Model.Settings.Count(s => s.Value == "0" || s.Value.Equals("false", StringComparison.OrdinalIgnoreCase))</div>
+                <div class="stat-label">Empty Roles</div>
+                <div class="stat-value">@Model.Roles.Count(r => r.UserCount == 0)</div>
             </div>
         </div>
     </div>
 
-    <!-- Settings Table -->
-    <div class="settings-table-container">
-        <table class="settings-table">
+    <!-- Roles Table -->
+    <div class="roles-table-container">
+        <table class="roles-table">
             <thead>
                 <tr>
-                    <th>Setting Name</th>
-                    <th>Value</th>
-                    <th>Type</th>
-                    <th class="text-center">Status</th>
+                    <th>Role Name</th>
+                    <th class="text-center">Assigned Users</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var setting in Model.Settings)
+                @if (Model.Roles.Count == 0)
                 {
-                    var isBooleanSetting = setting.Value == "0" || setting.Value == "1" ||
-                                          setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                                          setting.Value.Equals("false", StringComparison.OrdinalIgnoreCase);
-                    var isEnabled = setting.Value == "1" || setting.Value.Equals("true", StringComparison.OrdinalIgnoreCase);
-
-                    <tr class="setting-row">
-                        <td>
-                            <div class="setting-name">
-                                <i class="fa fa-cog setting-icon"></i>
-                                <span>@setting.Name</span>
+                    <tr>
+                        <td colspan="3" class="text-center empty-state">
+                            <div class="empty-icon">
+                                <i class="fa fa-shield"></i>
                             </div>
-                        </td>
-                        <td>
-                            @if (isBooleanSetting)
-                            {
-                                <span class="value-badge value-boolean">@(isEnabled ? "Enabled" : "Disabled")</span>
-                            }
-                            else
-                            {
-                                <code class="value-text">@setting.Value</code>
-                            }
-                        </td>
-                        <td>
-                            <span class="type-badge">Type @setting.SettingTypeId</span>
-                        </td>
-                        <td class="text-center">
-                            @if (isBooleanSetting)
-                            {
-                                <form method="post" asp-page-handler="Toggle" class="toggle-form">
-                                    <input type="hidden" name="name" value="@setting.Name" />
-                                    <input type="hidden" name="currentValue" value="@setting.Value" />
-                                    <label class="toggle-switch">
-                                        <input type="checkbox"
-                                               @(isEnabled ? "checked" : "")
-                                               onchange="this.form.submit()">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </form>
-                            }
-                            else
-                            {
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td class="text-end">
-                            <div class="action-buttons">
-                                <button type="button" class="btn-action btn-edit" onclick="showEditModal('@setting.Name', '@setting.Value', @setting.SettingTypeId)">
-                                    <i class="fa fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn-action btn-delete" onclick="confirmDelete('@setting.Name')">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </div>
+                            <div class="empty-title">No roles yet</div>
+                            <div class="empty-subtitle">Create your first role to get started</div>
                         </td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var role in Model.Roles)
+                    {
+                        <tr class="role-row">
+                            <td>
+                                <div class="role-name">
+                                    <i class="fa fa-shield role-icon"></i>
+                                    <span>@role.Name</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                @if (role.UserCount > 0)
+                                {
+                                    <span class="user-count-badge">
+                                        <i class="fa fa-user"></i> @role.UserCount
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-action btn-edit"
+                                            onclick="showEditModal(@role.Id, '@role.Name')"
+                                            title="Edit role">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete"
+                                            onclick="confirmDelete(@role.Id, '@role.Name', @role.UserCount)"
+                                            title="Delete role">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Create Setting Modal -->
+<!-- Create Role Modal -->
 <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modern-modal">
@@ -150,8 +142,8 @@
                     <i class="fa fa-plus"></i>
                 </div>
                 <div>
-                    <h5 class="modal-title" id="createModalLabel">Create New Setting</h5>
-                    <p class="modal-subtitle">Add a new platform setting</p>
+                    <h5 class="modal-title" id="createModalLabel">Create New Role</h5>
+                    <p class="modal-subtitle">Add a new role for access control</p>
                 </div>
                 <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
                     <i class="fa fa-times"></i>
@@ -160,16 +152,12 @@
             <form method="post" asp-page-handler="Create">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="createName" class="form-label">Setting Name</label>
-                        <input type="text" class="form-control" id="createName" name="name" required placeholder="e.g., azureContainerName/0/1">
-                    </div>
-                    <div class="form-group">
-                        <label for="createValue" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="createValue" name="value" required placeholder="Enter value (0/1 for boolean)">
-                    </div>
-                    <div class="form-group">
-                        <label for="createSettingTypeId" class="form-label">Setting Type ID</label>
-                        <input type="number" class="form-control" id="createSettingTypeId" name="settingTypeId" value="0">
+                        <label for="createName" class="form-label">Role Name</label>
+                        <input type="text" class="form-control" id="createName" name="name" required
+                               placeholder="e.g., Manager, Developer, Support">
+                        <div class="form-hint">
+                            <i class="fa fa-info-circle"></i> Choose a descriptive name for this role
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -177,7 +165,7 @@
                         <i class="fa fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn-modern btn-primary">
-                        <i class="fa fa-plus"></i> Create Setting
+                        <i class="fa fa-plus"></i> Create Role
                     </button>
                 </div>
             </form>
@@ -185,7 +173,7 @@
     </div>
 </div>
 
-<!-- Edit Setting Modal -->
+<!-- Edit Role Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modern-modal">
@@ -194,8 +182,8 @@
                     <i class="fa fa-edit"></i>
                 </div>
                 <div>
-                    <h5 class="modal-title" id="editModalLabel">Edit Setting</h5>
-                    <p class="modal-subtitle">Update setting value</p>
+                    <h5 class="modal-title" id="editModalLabel">Edit Role</h5>
+                    <p class="modal-subtitle">Update role name</p>
                 </div>
                 <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
                     <i class="fa fa-times"></i>
@@ -203,13 +191,10 @@
             </div>
             <form method="post" asp-page-handler="Update">
                 <div class="modal-body">
+                    <input type="hidden" id="editId" name="id" />
                     <div class="form-group">
-                        <label for="editName" class="form-label">Setting Name</label>
-                        <input type="text" class="form-control" id="editName" name="name" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="editValue" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="editValue" name="value" required>
+                        <label for="editName" class="form-label">Role Name</label>
+                        <input type="text" class="form-control" id="editName" name="name" required>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -217,7 +202,7 @@
                         <i class="fa fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn-modern btn-primary">
-                        <i class="fa fa-save"></i> Update Setting
+                        <i class="fa fa-save"></i> Update Role
                     </button>
                 </div>
             </form>
@@ -234,7 +219,7 @@
                     <i class="fa fa-exclamation-triangle"></i>
                 </div>
                 <div>
-                    <h5 class="modal-title" id="deleteModalLabel">Delete Setting</h5>
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Role</h5>
                     <p class="modal-subtitle">This action cannot be undone</p>
                 </div>
                 <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
@@ -242,17 +227,19 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure you want to delete the setting <strong id="settingNameToDelete"></strong>?</p>
-                <p class="text-muted small mb-0">This will remove the setting from the database.</p>
+                <p class="mb-2">Are you sure you want to delete the role <strong id="roleNameToDelete"></strong>?</p>
+                <p class="text-danger small mb-0" id="warningMessage" style="display: none;">
+                    <i class="fa fa-exclamation-triangle"></i> This role has users assigned and cannot be deleted.
+                </p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
                 <form method="post" asp-page-handler="Delete" id="deleteForm" style="display: inline;">
-                    <input type="hidden" name="name" id="nameToDelete" />
-                    <button type="submit" class="btn-modern btn-danger">
-                        <i class="fa fa-trash"></i> Delete Setting
+                    <input type="hidden" name="id" id="idToDelete" />
+                    <button type="submit" class="btn-modern btn-danger" id="confirmDeleteBtn">
+                        <i class="fa fa-trash"></i> Delete Role
                     </button>
                 </form>
             </div>
@@ -277,7 +264,7 @@
         --gray-900: #111827;
     }
 
-    .settings-container {
+    .roles-container {
         max-width: 1400px;
         margin: 0 auto;
     }
@@ -366,11 +353,11 @@
         background: var(--primary-gradient);
     }
 
-    .stat-icon-enabled {
+    .stat-icon-active {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
-    .stat-icon-disabled {
+    .stat-icon-empty {
         background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
     }
 
@@ -391,25 +378,25 @@
         line-height: 1;
     }
 
-    /* Settings Table */
-    .settings-table-container {
+    /* Roles Table */
+    .roles-table-container {
         background: white;
         border-radius: 16px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         overflow: hidden;
     }
 
-    .settings-table {
+    .roles-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .settings-table thead {
+    .roles-table thead {
         background: var(--gray-50);
         border-bottom: 2px solid var(--gray-200);
     }
 
-    .settings-table th {
+    .roles-table th {
         padding: 1rem 1.5rem;
         text-align: left;
         font-size: 0.75rem;
@@ -419,24 +406,24 @@
         color: var(--gray-600);
     }
 
-    .settings-table tbody tr {
+    .roles-table tbody tr {
         border-bottom: 1px solid var(--gray-200);
         transition: background-color 0.15s ease;
     }
 
-    .settings-table tbody tr:hover {
+    .roles-table tbody tr:hover {
         background: var(--gray-50);
     }
 
-    .settings-table tbody tr:last-child {
+    .roles-table tbody tr:last-child {
         border-bottom: none;
     }
 
-    .settings-table td {
+    .roles-table td {
         padding: 1rem 1.5rem;
     }
 
-    .setting-name {
+    .role-name {
         display: flex;
         align-items: center;
         gap: 0.75rem;
@@ -444,97 +431,44 @@
         color: var(--gray-900);
     }
 
-    .setting-icon {
+    .role-icon {
         color: var(--gray-400);
         font-size: 1rem;
     }
 
-    .value-badge {
+    .user-count-badge {
         display: inline-flex;
         align-items: center;
+        gap: 0.375rem;
         padding: 0.375rem 0.75rem;
+        background: #dbeafe;
+        color: #1e40af;
         border-radius: 6px;
         font-size: 0.875rem;
         font-weight: 600;
     }
 
-    .value-boolean {
-        background: #d1fae5;
-        color: #065f46;
+    /* Empty State */
+    .empty-state {
+        padding: 4rem 2rem !important;
     }
 
-    .value-text {
-        background: var(--gray-100);
-        border: 1px solid var(--gray-200);
-        padding: 0.375rem 0.625rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
+
+    .empty-title {
+        font-size: 1.25rem;
+        font-weight: 700;
         color: var(--gray-700);
+        margin-bottom: 0.5rem;
     }
 
-    .type-badge {
-        display: inline-flex;
-        padding: 0.25rem 0.625rem;
-        background: var(--gray-100);
-        color: var(--gray-600);
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    /* Toggle Switch */
-    .toggle-form {
-        display: inline-flex;
-        margin: 0;
-    }
-
-    .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 44px;
-        height: 24px;
-        margin: 0;
-        cursor: pointer;
-    }
-
-    .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--gray-300);
-        transition: 0.3s;
-        border-radius: 24px;
-    }
-
-    .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    input:checked + .toggle-slider {
-        background: var(--primary-gradient);
-    }
-
-    input:checked + .toggle-slider:before {
-        transform: translateX(20px);
+    .empty-subtitle {
+        font-size: 0.9375rem;
+        color: var(--gray-500);
     }
 
     /* Action Buttons */
@@ -580,21 +514,6 @@
     }
 
     /* Modal Styles */
-    .modal {
-        z-index: 1050;
-        display: none;
-    }
-
-    .modal.show {
-        display: block;
-    }
-
-    .modal-backdrop {
-        z-index: 1040;
-        background-color: rgba(17, 24, 39, 0.75);
-        backdrop-filter: blur(4px);
-    }
-
     .modern-modal {
         border-radius: 20px;
         border: none;
@@ -753,9 +672,13 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .form-control[readonly] {
-        background: var(--gray-50);
+    .form-hint {
+        margin-top: 0.5rem;
+        font-size: 0.8125rem;
         color: var(--gray-600);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.375rem;
     }
 
     .modern-modal .modal-footer {
@@ -839,11 +762,11 @@
             gap: 1rem;
         }
 
-        .settings-table-container {
+        .roles-table-container {
             overflow-x: auto;
         }
 
-        .settings-table {
+        .roles-table {
             min-width: 600px;
         }
     }
@@ -873,10 +796,10 @@
             }
         }
 
-        function showEditModal(name, value, settingTypeId) {
+        function showEditModal(id, name) {
             try {
+                document.getElementById('editId').value = id;
                 document.getElementById('editName').value = name;
-                document.getElementById('editValue').value = value;
                 var editModal = new bootstrap.Modal(document.getElementById('editModal'));
                 editModal.show();
             } catch (error) {
@@ -885,10 +808,24 @@
             }
         }
 
-        function confirmDelete(name) {
+        function confirmDelete(id, name, userCount) {
             try {
-                document.getElementById('settingNameToDelete').textContent = name;
-                document.getElementById('nameToDelete').value = name;
+                document.getElementById('roleNameToDelete').textContent = name;
+                document.getElementById('idToDelete').value = id;
+
+                var warningMessage = document.getElementById('warningMessage');
+                var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+                if (userCount > 0) {
+                    warningMessage.style.display = 'block';
+                    confirmDeleteBtn.disabled = true;
+                    confirmDeleteBtn.style.opacity = '0.5';
+                } else {
+                    warningMessage.style.display = 'none';
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.style.opacity = '1';
+                }
+
                 var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
                 deleteModal.show();
             } catch (error) {
@@ -907,11 +844,5 @@
                 }
             });
         }, 5000);
-
-        // Debug: Log Bootstrap availability on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
-            console.log('jQuery available:', typeof jQuery !== 'undefined');
-        });
     </script>
 }

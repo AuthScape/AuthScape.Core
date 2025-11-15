@@ -25,7 +25,7 @@ namespace AuthScape.UserManageSystem.Services
         Task AssignUserToRole(long roleId, long userId);
         Task RemoveUserFromRole(long roleId, long userId);
         Task<List<IdentityUserClaim<long>>> GetClaims(long userId);
-        Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true);
+        Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true, bool? emailConfirmed = null);
         Task AddPermission(string permissionName);
         Task<List<Permission>> GetPermissions();
         Task<UserEditResult?> GetUser(long userId);
@@ -278,7 +278,7 @@ namespace AuthScape.UserManageSystem.Services
             return companies;
         }
 
-        public async Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true)
+        public async Task<PagedList<AppUser>> GetUsers(int offset, int length, string? searchByName = null, long? searchByCompanyId = null, long? searchByRoleId = null, bool IsActive = true, bool? emailConfirmed = null)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
@@ -287,6 +287,11 @@ namespace AuthScape.UserManageSystem.Services
                 .Include(u => u.Company)
                 .AsQueryable()
                 .Where(z => z.IsActive == IsActive);
+
+            if (emailConfirmed.HasValue)
+            {
+                usersQuery = usersQuery.Where(u => u.EmailConfirmed == emailConfirmed.Value);
+            }
 
             if (searchByCompanyId != null)
             {
@@ -631,6 +636,7 @@ namespace AuthScape.UserManageSystem.Services
                 LocationId = user.LocationId,
                 Email = user.UserName,
                 IsActive = user.IsActive,
+                EmailConfirmed = user.EmailConfirmed,
                 Roles = manageUserRole,
                 Permissions = manageUserPermissions,
                 CustomFields = userCustomFields,
@@ -697,6 +703,12 @@ namespace AuthScape.UserManageSystem.Services
                 {
                     usr.IsActive = user.IsActive;
                     responseItems.Add(new UpdatedResponseItem("IsActive", user.IsActive.ToString()));
+                }
+
+                if (user.EmailConfirmed != usr.EmailConfirmed)
+                {
+                    usr.EmailConfirmed = user.EmailConfirmed;
+                    responseItems.Add(new UpdatedResponseItem("EmailConfirmed", user.EmailConfirmed.ToString()));
                 }
 
                 if (user.PhoneNumber != usr.PhoneNumber)
