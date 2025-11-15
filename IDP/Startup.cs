@@ -123,6 +123,8 @@ namespace IDP
                 services.AddScoped<IIdentityServerService, IdentityServerService>();
                 services.AddScoped<ISSOProviderService, SSOProviderService>();
                 services.AddScoped<ISettingsService, SettingsService>();
+                services.AddScoped<IRoleService, AuthScape.Services.RoleService>();
+                services.AddScoped<IPermissionService, PermissionService>();
 
                 ThirdPartyAuthService.AddThirdPartyAutentication(services);
 

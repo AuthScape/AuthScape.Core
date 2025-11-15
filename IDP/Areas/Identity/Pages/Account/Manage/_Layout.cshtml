@@ -13,11 +13,59 @@
 
 @RenderSection("Styles", required: false)
 
+<style>
+    :root {
+        --primary-color: #667eea;
+        --primary-dark: #764ba2;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    .profile-sidebar {
+        background: white;
+        border-right: 1px solid var(--gray-200);
+        padding: 2rem 1rem;
+        min-height: calc(100vh - 200px);
+    }
+
+    .profile-brand {
+        padding: 0 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .profile-brand h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+    }
+
+    .profile-brand p {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+        margin: 0.25rem 0 0;
+    }
+</style>
+
 <div class="row g-0" style="min-height: calc(100vh - 200px);">
-    <div class="col-md-3 col-lg-2 border-end bg-light">
-        <div class="sticky-top" style="top: 20px; padding: 2rem 1rem;">
-            <partial name="_ManageNav" />
+    <div class="col-md-3 col-lg-2 profile-sidebar">
+        <div class="profile-brand">
+            <h2>My Account</h2>
+            <p>Profile Settings</p>
         </div>
+        <partial name="_ManageNav" />
     </div>
     <div class="col-md-9 col-lg-10">
         @RenderBody()

@@ -15,7 +15,14 @@
       "Bash(dotnet restore:*)",
       "Bash(Select-String -Pattern \"Settings\")",
       "Bash(Select-String -Pattern \"\\.cs$\")",
-      "Bash(Select-Object -First 10)"
+      "Bash(Select-Object -First 10)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(dotnet ef database update:*)",
+      "Bash(Select-String -Pattern \"error\" -Context 0,2)",
+      "Bash(taskkill:*)",
+      "Bash(Stop-Process -Name iisexpress -Force -ErrorAction SilentlyContinue)"
     ],
     "deny": [],
     "ask": []
