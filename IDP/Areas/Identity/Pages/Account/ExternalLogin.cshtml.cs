@@ -124,16 +124,143 @@ namespace mvcTest.Areas.Identity.Pages.Account
             }
             else
             {
-                // If the user does not have an account, then ask the user to create an account.
+                // If the user does not have an account, check if we can auto-register
                 ReturnUrl = returnUrl;
                 ProviderDisplayName = info.ProviderDisplayName;
+
+                // Try to get email from external provider claims
+                string email = null;
                 if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
                 {
-                    Input = new InputModel
-                    {
-                        Email = info.Principal.FindFirstValue(ClaimTypes.Email)
-                    };
+                    email = info.Principal.FindFirstValue(ClaimTypes.Email);
                 }
+
+                // Auto-register if we have a valid email from the provider
+                if (!string.IsNullOrWhiteSpace(email) && new EmailAddressAttribute().IsValid(email))
+                {
+                    // Check if email is already in use
+                    var existingUser = await _userManager.FindByEmailAsync(email);
+                    if (existingUser == null)
+                    {
+                        // Extract first and last name from OAuth claims
+                        string firstName = null;
+                        string lastName = null;
+
+                        // Try to get first name from various claim types
+                        if (info.Principal.HasClaim(c => c.Type == ClaimTypes.GivenName))
+                        {
+                            firstName = info.Principal.FindFirstValue(ClaimTypes.GivenName);
+                        }
+                        else if (info.Principal.HasClaim(c => c.Type == "given_name"))
+                        {
+                            firstName = info.Principal.FindFirstValue("given_name");
+                        }
+
+                        // Try to get last name from various claim types
+                        if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Surname))
+                        {
+                            lastName = info.Principal.FindFirstValue(ClaimTypes.Surname);
+                        }
+                        else if (info.Principal.HasClaim(c => c.Type == "family_name"))
+                        {
+                            lastName = info.Principal.FindFirstValue("family_name");
+                        }
+
+                        // If we don't have first/last name, try to parse from full name
+                        if (string.IsNullOrWhiteSpace(firstName) && string.IsNullOrWhiteSpace(lastName))
+                        {
+                            string fullName = null;
+                            if (info.Principal.HasClaim(c => c.Type == ClaimTypes.Name))
+                            {
+                                fullName = info.Principal.FindFirstValue(ClaimTypes.Name);
+                            }
+                            else if (info.Principal.HasClaim(c => c.Type == "name"))
+                            {
+                                fullName = info.Principal.FindFirstValue("name");
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(fullName))
+                            {
+                                var nameParts = fullName.Split(' ', 2);
+                                firstName = nameParts[0];
+                                if (nameParts.Length > 1)
+                                {
+                                    lastName = nameParts[1];
+                                }
+                            }
+                        }
+
+                        // Ensure we have at least some values for required fields
+                        if (string.IsNullOrWhiteSpace(firstName))
+                        {
+                            firstName = email.Split('@')[0]; // Use email username as fallback
+                        }
+                        if (string.IsNullOrWhiteSpace(lastName))
+                        {
+                            lastName = "User"; // Default last name
+                        }
+
+                        // Auto-create the account
+                        var user = CreateUser();
+                        await _userStore.SetUserNameAsync(user, email, CancellationToken.None);
+                        await _emailStore.SetEmailAsync(user, email, CancellationToken.None);
+
+                        // Set additional user properties
+                        user.FirstName = firstName;
+                        user.LastName = lastName;
+                        user.Created = DateTimeOffset.Now;
+                        user.LastLoggedIn = DateTimeOffset.Now;
+                        user.IsActive = true;
+
+                        var createResult = await _userManager.CreateAsync(user);
+                        if (createResult.Succeeded)
+                        {
+                            var addLoginResult = await _userManager.AddLoginAsync(user, info);
+                            if (addLoginResult.Succeeded)
+                            {
+                                _logger.LogInformation("User created an account using {Name} provider with auto-registration.", info.LoginProvider);
+
+                                var userId = await _userManager.GetUserIdAsync(user);
+                                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                                var callbackUrl = Url.Page(
+                                    "/Account/ConfirmEmail",
+                                    pageHandler: null,
+                                    values: new { area = "Identity", userId = userId, code = code },
+                                    protocol: Request.Scheme);
+
+                                await _emailSender.SendEmailAsync(email, "Confirm your email",
+                                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                                // If account confirmation is required, redirect to confirmation page
+                                if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                                {
+                                    return RedirectToPage("./RegisterConfirmation", new { Email = email });
+                                }
+
+                                // Sign in the user immediately
+                                await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                                return LocalRedirect(returnUrl);
+                            }
+                        }
+
+                        // If auto-registration failed, log errors and fall through to manual confirmation
+                        foreach (var error in createResult.Errors)
+                        {
+                            _logger.LogWarning("Auto-registration failed: {Error}", error.Description);
+                        }
+                    }
+                }
+
+                // Fall back to manual confirmation if:
+                // - No email provided by provider
+                // - Email is invalid
+                // - Email already exists
+                // - Auto-registration failed
+                Input = new InputModel
+                {
+                    Email = email
+                };
                 return Page();
             }
         }

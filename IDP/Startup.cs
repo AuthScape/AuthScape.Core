@@ -126,6 +126,9 @@ namespace IDP
                 services.AddScoped<IRoleService, AuthScape.Services.RoleService>();
                 services.AddScoped<IPermissionService, PermissionService>();
 
+                // Setup service for first-time configuration
+                services.AddScoped<ISetupService, SetupService>();
+
                 ThirdPartyAuthService.AddThirdPartyAutentication(services);
 
 

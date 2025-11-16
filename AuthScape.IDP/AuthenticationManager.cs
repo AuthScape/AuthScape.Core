@@ -177,6 +177,8 @@ namespace AuthScape.IDP
             // Note: in a real world application, this step should be part of a setup script.
             services.AddHostedService<IDPHostedService>();
 
+            // Register setup service for first-time configuration
+            services.AddScoped<ISetupService, SetupService>();
 
             services.AddTransient<ICorsPolicyProvider, CorsPolicyManager>();
 
@@ -209,6 +211,10 @@ namespace AuthScape.IDP
             app.UseSession();
 
             app.UseStaticFiles();
+
+            // Setup middleware - redirect to setup wizard if initial setup is required
+            // Must be after UseStaticFiles so CSS/JS can load, but before UseRouting
+            app.UseMiddleware<global::IDP.Middleware.SetupMiddleware>();
 
             app.UseStatusCodePagesWithReExecute("/error");
 

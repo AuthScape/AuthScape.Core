@@ -216,6 +216,12 @@ namespace Services.Context
 
         #endregion
 
+        #region PushNotifications
+
+        public DbSet<AuthScape.Models.Notifications.DeviceRegistration> DeviceRegistrations { get; set; }
+
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             TicketContextSetup.OnModelCreating(builder);

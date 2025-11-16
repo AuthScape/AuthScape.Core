@@ -1,28 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build:*)",
-      "Bash(dotnet add reference:*)",
-      "Bash(Select-String -Pattern \"TwoFactorAuthentication|error|Build succeeded|Build FAILED\" -Context 0,2)",
-      "Bash(Select-String -Pattern \"RZ1026|error:\")",
-      "Bash(Select-String -Pattern \"error|Build succeeded|Build FAILED\" -Context 0,2)",
-      "Bash(dotnet remove reference:*)",
-      "Bash(Get-Content \"C:\\Development\\AuthScape\\AuthScape.Core\\IDP\\Areas\\Admin\\Pages\\Index.cshtml.cs\")",
-      "Bash(Select-String -Pattern \"Authorize\")",
-      "Bash(dir:*)",
-      "Bash(dotnet run:*)",
-      "Bash(Select-String -Pattern \"EditApplication|error\" -Context 2,2)",
-      "Bash(dotnet restore:*)",
-      "Bash(Select-String -Pattern \"Settings\")",
-      "Bash(Select-String -Pattern \"\\.cs$\")",
-      "Bash(Select-Object -First 10)",
-      "Bash(dotnet ef migrations add:*)",
-      "Bash(tasklist:*)",
-      "Bash(findstr:*)",
-      "Bash(dotnet ef database update:*)",
-      "Bash(Select-String -Pattern \"error\" -Context 0,2)",
-      "Bash(taskkill:*)",
-      "Bash(Stop-Process -Name iisexpress -Force -ErrorAction SilentlyContinue)"
+      "Bash(Select-Object -First 10 ProcessName,Id)"
     ],
     "deny": [],
     "ask": []

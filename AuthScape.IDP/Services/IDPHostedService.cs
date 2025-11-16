@@ -20,6 +20,20 @@ namespace IDP.Services
             var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
             await context.Database.EnsureCreatedAsync();
 
+            // Check if initial setup is required
+            // If setup is not complete, skip creating default applications and scopes
+            // This will be handled after the setup wizard completes
+            var setupService = scope.ServiceProvider.GetService<ISetupService>();
+            if (setupService != null)
+            {
+                var setupRequired = await setupService.IsSetupRequiredAsync();
+                if (setupRequired)
+                {
+                    // Skip initialization - will be done after setup
+                    return;
+                }
+            }
+
             await CreateApplicationsAsync();
             await CreateScopesAsync();
 
