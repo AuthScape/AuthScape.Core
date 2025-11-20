@@ -71,18 +71,6 @@ namespace AuthScape.UserManageSystem.Controllers
             return Ok(userId);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetRoles()
-        {
-            return Ok(await userManagementSystemService.GetAllRoles());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddRole(AddRoleParam param)
-        {
-            await userManagementSystemService.AddRole(param.Role);
-            return Ok();
-        }
 
         [HttpPost]
         public async Task<IActionResult> AssignUserToRole(AssignUserToRoleParam param)
@@ -95,19 +83,6 @@ namespace AuthScape.UserManageSystem.Controllers
         public async Task<IActionResult> RemoveUserFromRole(AssignUserToRoleParam param)
         {
             await userManagementSystemService.RemoveUserFromRole(param.RoleId, param.UserId);
-            return Ok();
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetPermissions()
-        {
-            return Ok(await userManagementSystemService.GetPermissions());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddPermission(AddPermissionParam param)
-        {
-            await userManagementSystemService.AddPermission(param.Name);
             return Ok();
         }
 
