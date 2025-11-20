@@ -216,7 +216,7 @@ namespace IDP.Controllers
             var challenge = WebEncoders.Base64UrlDecode(base64Challenge);
 
             // 2. Get stored credential
-            var credentialIdBytes = Convert.FromBase64String(response.Id);
+            var credentialIdBytes = WebEncoders.Base64UrlDecode(response.Id);
             var credential = await _databaseContext.Fido2Credentials
                 .FirstOrDefaultAsync(c => c.CredentialId.SequenceEqual(credentialIdBytes));
 
