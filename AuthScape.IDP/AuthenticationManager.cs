@@ -26,7 +26,7 @@ namespace AuthScape.IDP
     public class AuthenticationManager
     {
         public void RegisterConfigureServices(IConfiguration Configuration, IServiceCollection services, IWebHostEnvironment _currentEnvironment, Action<AppSettings> databaseConnection, Action<AuthenticationBuilder> authBuilder,
-            string symmetricSecurityKey, string certificateThumbprint)
+            string signingCertificateThumbprint, string encyptionCertificateThumbprint)
         {
             var appSettings = Configuration.GetSection("AppSettings");
             services.Configure<AppSettings>(appSettings);
@@ -38,9 +38,6 @@ namespace AuthScape.IDP
             {
                 options.Cookie.SameSite = SameSiteMode.None;
             });
-
-
-
 
             // Configure Identity to use the same JWT claims as OpenIddict instead
             // of the legacy WS-Federation claims it uses by default (ClaimTypes),
@@ -98,28 +95,15 @@ namespace AuthScape.IDP
                     //f
                     // Note: in a real world application, this encryption key should be
                     // stored in a safe place (e.g in Azure KeyVault, stored as a secret).
-                    options.AddEncryptionKey(new SymmetricSecurityKey(
-                        Convert.FromBase64String(symmetricSecurityKey)));
-
                     if (_currentEnvironment.IsDevelopment())
                     {
-                        // Register the signing credentials.
+                        options.AddDevelopmentEncryptionCertificate();
                         options.AddDevelopmentSigningCertificate();
                     }
                     else
                     {
-                        var certs = new X509Certificate2Collection();
-                        var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-                        store.Open(OpenFlags.ReadOnly);
-                        certs = store.Certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
-                        if (certs.Count() != 0)
-                        {
-                            options.AddSigningCertificate(certs[0]);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Error: No certificate found containing thumbprint");
-                        }
+                        options.AddEncryptionCertificate(encyptionCertificateThumbprint);
+                        options.AddSigningCertificate(signingCertificateThumbprint);
                     }
 
                     // Register the ASP.NET Core host and configure the ASP.NET Core-specific options.
@@ -182,6 +166,7 @@ namespace AuthScape.IDP
 
 
             #region Experimental MultiFactor Authentication
+
             services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, AdditionalUserClaimsPrincipalFactory>();
             services.AddAuthorization(options => options.AddPolicy("TwoFactorEnabled", x => x.RequireClaim("amr", "mfa")));
 
