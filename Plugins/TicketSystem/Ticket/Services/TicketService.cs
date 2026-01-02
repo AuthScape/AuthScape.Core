@@ -1,4 +1,5 @@
-﻿using AuthScape.Models.Mail;
+﻿using AuthScape.Models.Exceptions;
+using AuthScape.Models.Mail;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.Services;
@@ -37,6 +38,11 @@ namespace AuthScape.TicketSystem.Services
         Task UpdateStatus(long ticketId, int TicketStatusId);
         Task UpdateTicketType(long ticketId, int ticketTypeId);
         Task UpdateTicketPriority(long ticketId, PriorityLevel priorityLevel);
+        Task UpdateDescription(long ticketId, string description);
+        Task UpdateCompany(long ticketId, long? companyId, string? companyName);
+        Task UpdateLocation(long ticketId, long? locationId, string? locationName);
+        Task<TicketAttachment> AddAttachment(long ticketId, IFormFile file);
+        Task DeleteAttachment(long attachmentId);
     }
 
     public class TicketService : ITicketService
@@ -123,7 +129,7 @@ namespace AuthScape.TicketSystem.Services
         public async Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20)
         {
             var user = await userManagementService.GetSignedInUser();
-
+            var userLocale = !string.IsNullOrEmpty(user.locale) ? user.locale : "America/New_York";
 
             return await databaseContext.TicketMessages
                 .AsNoTracking()
@@ -131,7 +137,7 @@ namespace AuthScape.TicketSystem.Services
                 .Select(t => new TicketMessageQuery()
                 {
                     FirstName = t.Name,
-                    Created = (t.Created.Convert(user.locale).ToShortDateString() + t.Created.Convert(user.locale).ToShortTimeString()),
+                    Created = (t.Created.Convert(userLocale).ToShortDateString() + t.Created.Convert(userLocale).ToShortTimeString()),
                     Message = t.Message,
                 })
                 .ToPagedResultAsync(pageNumber - 1, pageSize);
@@ -217,6 +223,7 @@ namespace AuthScape.TicketSystem.Services
         public async Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null)
         {
             var user = await userManagementService.GetSignedInUser();
+            var userLocale = !string.IsNullOrEmpty(user.locale) ? user.locale : "America/New_York";
 
             var tickets = databaseContext.Tickets
                 .Include(t => t.TicketStatus)
@@ -258,9 +265,10 @@ namespace AuthScape.TicketSystem.Services
                     Email = t.Email,
                     CompanyName = t.CompanyName,
                     LocationName = t.LocationName,
-                    Created = (t.Created.Convert(user.locale).ToShortDateString() + " " + t.Created.Convert(user.locale).ToShortTimeString()),
+                    Created = (t.Created.Convert(userLocale).ToShortDateString() + " " + t.Created.Convert(userLocale).ToShortTimeString()),
                     TicketParticipants = t.TicketParticipants.Count(),
-                    Messages = t.TicketMessages.Count()
+                    Messages = t.TicketMessages.Count(),
+                    PriorityLevel = (int)t.PriorityLevel
                 })
                 .OrderByDescending(o => o.Id)
                 .ToPagedResultAsync(pageNumber, pageSize);
@@ -269,6 +277,7 @@ namespace AuthScape.TicketSystem.Services
         public async Task<TicketViewModel> GetTicket(long ticketId)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
+            var userLocale = !string.IsNullOrEmpty(signedInUser.locale) ? signedInUser.locale : "America/New_York";
 
             var ticket = await databaseContext.Tickets
                 .Include(t => t.TicketStatus)
@@ -283,8 +292,8 @@ namespace AuthScape.TicketSystem.Services
             var ticketTypes = await databaseContext.TicketTypes.ToListAsync();
 
 
-            var created = ticket.Created.Convert(signedInUser.locale);
-            var lastUpdated = ticket.LastUpdated.Convert(signedInUser.locale);
+            var created = ticket.Created.Convert(userLocale);
+            var lastUpdated = ticket.LastUpdated.Convert(userLocale);
 
             var createdBy = await databaseContext.Users.AsNoTracking().Where(u => u.Id == ticket.CreatedById).FirstOrDefaultAsync();
 
@@ -327,7 +336,10 @@ namespace AuthScape.TicketSystem.Services
                 Created = created.ToShortDateString() + " " + created.ToShortTimeString(),
                 LastUpdated = lastUpdated.ToShortDateString() + " " + lastUpdated.ToShortTimeString(),
                 Id = ticket.Id,
+                CompanyId = ticket.CompanyId,
                 CompanyName = ticket.CompanyName,
+                LocationId = ticket.LocationId,
+                LocationName = ticket.LocationName,
                 PriorityLevel = ticket.PriorityLevel,
                 TicketStatuses = ticketStatus,
                 CustomTabPayload = ticket.CustomTabPayload,
@@ -360,6 +372,11 @@ namespace AuthScape.TicketSystem.Services
         public async Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
+
+            if (!await databaseContext.TicketStatuses.Where(z => z.Id == ticketStatusId).AnyAsync())
+            {
+                throw new BadRequestException("Ticket Status " + ticketStatusId + " not found");
+            }
 
             var newTicket = new Ticket()
             {
@@ -592,6 +609,107 @@ namespace AuthScape.TicketSystem.Services
             if (ticket != null)
             {
                 ticket.PriorityLevel = priorityLevel;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task<TicketAttachment> AddAttachment(long ticketId, IFormFile file)
+        {
+            var ticket = await databaseContext.Tickets.Where(t => t.Id == ticketId).FirstOrDefaultAsync();
+            if (ticket == null)
+            {
+                throw new BadRequestException("Ticket not found");
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                throw new BadRequestException("No file provided");
+            }
+
+            FileInfo fi = new FileInfo(file.FileName);
+            var uniqueFileName = ticketId + "-" + Guid.NewGuid().ToString() + fi.Extension;
+
+            await blobStorage.UploadBlob(
+                appSettings.Ticketing.Attachments.AzureConnectionString,
+                appSettings.Ticketing.Attachments.Container,
+                uniqueFileName,
+                file.OpenReadStream(),
+                true,
+                contentType: file.ContentType);
+
+            var attachment = new TicketAttachment()
+            {
+                TicketId = ticketId,
+                FileName = file.FileName,
+                Name = file.FileName,
+                ContentType = file.ContentType,
+                URL = appSettings.Ticketing.Attachments.BaseUri + "/" + appSettings.Ticketing.Attachments.Container + "/" + uniqueFileName,
+            };
+
+            await databaseContext.TicketAttachments.AddAsync(attachment);
+            await databaseContext.SaveChangesAsync();
+
+            ticket.LastUpdated = SystemTime.Now;
+            await databaseContext.SaveChangesAsync();
+
+            return attachment;
+        }
+
+        public async Task DeleteAttachment(long attachmentId)
+        {
+            var attachment = await databaseContext.TicketAttachments.Where(a => a.Id == attachmentId).FirstOrDefaultAsync();
+            if (attachment == null)
+            {
+                throw new BadRequestException("Attachment not found");
+            }
+
+            // Extract blob name from URL
+            var uri = new Uri(attachment.URL);
+            var blobName = uri.Segments.LastOrDefault();
+
+            if (!string.IsNullOrEmpty(blobName))
+            {
+                await blobStorage.DeleteBlob(
+                    appSettings.Ticketing.Attachments.AzureConnectionString,
+                    appSettings.Ticketing.Attachments.Container,
+                    blobName);
+            }
+
+            databaseContext.TicketAttachments.Remove(attachment);
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateDescription(long ticketId, string description)
+        {
+            var ticket = await databaseContext.Tickets.Where(t => t.Id == ticketId).FirstOrDefaultAsync();
+            if (ticket != null)
+            {
+                ticket.Description = description;
+                ticket.LastUpdated = SystemTime.Now;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task UpdateCompany(long ticketId, long? companyId, string? companyName)
+        {
+            var ticket = await databaseContext.Tickets.Where(t => t.Id == ticketId).FirstOrDefaultAsync();
+            if (ticket != null)
+            {
+                ticket.CompanyId = companyId;
+                ticket.CompanyName = companyName;
+                ticket.LastUpdated = SystemTime.Now;
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task UpdateLocation(long ticketId, long? locationId, string? locationName)
+        {
+            var ticket = await databaseContext.Tickets.Where(t => t.Id == ticketId).FirstOrDefaultAsync();
+            if (ticket != null)
+            {
+                ticket.LocationId = locationId;
+                ticket.LocationName = locationName;
+                ticket.LastUpdated = SystemTime.Now;
                 await databaseContext.SaveChangesAsync();
             }
         }

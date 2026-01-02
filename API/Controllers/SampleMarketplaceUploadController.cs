@@ -44,6 +44,10 @@ namespace API.Controllers
         //}
 
         [HttpPost]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(10L * 1024L * 1024L * 1024L)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 10L * 1024L * 1024L * 1024L)]
+        [DisableRequestSizeLimit]
         public async Task<IActionResult> Post([FromForm] ProductCatalog catalog)
         {
             var productCsv = new List<ProductCsv>();
@@ -59,6 +63,9 @@ namespace API.Controllers
             foreach (var productCsvItem in productCsv)
             {
                 Console.WriteLine("Processing ");
+                // Parse price from string to double
+                double.TryParse(productCsvItem.Price, out double parsedPrice);
+
                 productImports.Add(new ProductImport()
                 {
                     Availability = productCsvItem.Availability,
@@ -70,7 +77,7 @@ namespace API.Controllers
                     EAN = productCsvItem.EAN,
                     Index = productCsvItem.Index,
                     Name = productCsvItem.Name,
-                    Price = productCsvItem.Price,
+                    Price = parsedPrice,
                     Size = productCsvItem.Size,
                     Stock = productCsvItem.Stock,
                     Score = 0,
@@ -120,21 +127,26 @@ namespace API.Controllers
         public string Name { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.TextField)]
         public string Description { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+
+        // Order property controls filter display order (lower numbers appear first)
+        [MarketplaceIndex(ProductCardCategoryType.StringField, Order = 2)]
         public string Brand { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.StringField)]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, Order = 1)]
         public string Category { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
-        public string Price { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        [MarketplaceIndex(ProductCardCategoryType.DoubleField)]
+        public double Price { get; set; }
+        [MarketplaceIndex(ProductCardCategoryType.StringField)]
         public string Currency { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string Stock { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string EAN { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        // ColorField displays as color swatches with optional color picker
+        // Standard CSS color names are automatically mapped to hex values
+        // For custom colors, use ColorHexMapping: "{\"Navy Blue\": \"#001f3f\", \"Mint\": \"#98FF98\"}"
+        [MarketplaceIndex(ProductCardCategoryType.ColorField, Order = 3)]
         public string Color { get; set; }
-        [MarketplaceIndex(ProductCardCategoryType.None)]
+        [MarketplaceIndex(ProductCardCategoryType.StringField, Order = 4)]
         public string Size { get; set; }
         [MarketplaceIndex(ProductCardCategoryType.None)]
         public string Availability { get; set; }

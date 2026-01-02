@@ -22,7 +22,9 @@
       "Bash(dotnet ef database update:*)",
       "Bash(Select-String -Pattern \"error\" -Context 0,2)",
       "Bash(taskkill:*)",
-      "Bash(Stop-Process -Name iisexpress -Force -ErrorAction SilentlyContinue)"
+      "Bash(Stop-Process -Name iisexpress -Force -ErrorAction SilentlyContinue)",
+      "Bash(find:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

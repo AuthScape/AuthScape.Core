@@ -20,7 +20,10 @@ namespace AuthScape.TicketSystem.Models
 
 
         // assigned to
+        public long? CompanyId { get; set; }
         public string? CompanyName { get; set; }
+        public long? LocationId { get; set; }
+        public string? LocationName { get; set; }
         public string? CustomTabPayload { get; set; }
 
         public PriorityLevel PriorityLevel { get; set; }

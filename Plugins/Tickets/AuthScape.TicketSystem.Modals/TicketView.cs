@@ -15,5 +15,6 @@
 
         public int TicketParticipants { get; set; }
         public int Messages { get; set; }
+        public int PriorityLevel { get; set; }
     }
 }

@@ -29,9 +29,24 @@ namespace AuthScape.Marketplace.Services
     public interface IMarketplaceService
     {
         Task<SearchResult2> SearchProducts(SearchParams searchParams);
-        Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null);
+
+        /// <summary>
+        /// Record a click on a product using the tracking ID from SearchProducts response
+        /// </summary>
+        Task Clicked(Guid trackingId, string productOrServiceId);
+
         Task GenerateMLModel<T>(List<T> documents, int platformId = 1, long? privateLabelCompanyId = null, string? cachePath = null) where T : new();
         Task RemoveAllFilesInFolder(string containerName, string folderName);
+
+        /// <summary>
+        /// Get paginated/searchable filter options for a specific category (e.g., load more brands)
+        /// </summary>
+        Task<FilterOptionsResponse> GetFilterOptions(FilterOptionsRequest request);
+
+        /// <summary>
+        /// Get analytics data including click-through rates, popular products, and search trends
+        /// </summary>
+        Task<MarketplaceAnalytics> GetAnalytics(int platformId, long? oemCompanyId = null, int days = 30);
     }
 
     public class MarketplaceService : IMarketplaceService
@@ -76,6 +91,13 @@ namespace AuthScape.Marketplace.Services
             if (!System.IO.Directory.Exists(cachePath))
                 System.IO.Directory.CreateDirectory(cachePath);
 
+            // Pre-load all category metadata ONCE to avoid N+1 queries
+            var categoryMetadata = await databaseContext.ProductCardCategories
+                .AsNoTracking()
+                .Where(c => c.PlatformId == searchParams.PlatformId
+                         && c.CompanyId == searchParams.OemCompanyId)
+                .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+
             using (var cacheDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
             using (var azureDirectory = new AzureDirectory(searchParams.StorageConnectionString, containerLocation, cacheDirectory))
             using (var reader = DirectoryReader.Open(azureDirectory))
@@ -87,43 +109,87 @@ namespace AuthScape.Marketplace.Services
                 var sortCriteria = new Sort(new SortField("Score", SortFieldType.INT64, true));
 
 
-                var allCats = await databaseContext.ProductCardCategories
-                    .AsNoTracking()
-                    .Where(c => c.PlatformId == searchParams.PlatformId
-                             && c.CompanyId == searchParams.OemCompanyId)
-                    .ToListAsync();
-
-
                 // 🔍 Add text search (if present)
-                //if (!string.IsNullOrWhiteSpace(searchParams.TextSearch))
-                //{
-                //    var textTerms = searchParams.TextSearch
-                //        .ToLowerInvariant()
-                //        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (!string.IsNullOrWhiteSpace(searchParams.TextSearch))
+                {
+                    var textTerms = searchParams.TextSearch
+                        .ToLowerInvariant()
+                        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                //    var fields = new[] { "Name" }; // Adjust based on your indexed fields
+                    var fields = new[] { "Name", "Description" }; // Search across Name and Description fields
 
-                //    var fuzzyTextQuery = new BooleanQuery();
+                    var textSearchQuery = new BooleanQuery();
 
-                //    foreach (var field in fields)
-                //    {
-                //        var fieldQuery = new BooleanQuery();
+                    foreach (var field in fields)
+                    {
+                        var fieldQuery = new BooleanQuery();
 
-                //        foreach (var term in textTerms)
-                //        {
-                //            // Fuzziness: max 2 edits (Levenshtein distance)
-                //            var fuzzy = new FuzzyQuery(new Term(field, term), maxEdits: 2);
-                //            fieldQuery.Add(fuzzy, Occur.SHOULD); // OR within field
-                //        }
+                        foreach (var term in textTerms)
+                        {
+                            // Scale fuzziness based on term length to avoid irrelevant matches
+                            // Short words need exact or near-exact matches
+                            int maxEdits;
+                            if (term.Length <= 2)
+                            {
+                                maxEdits = 0; // Exact match for very short terms
+                            }
+                            else if (term.Length <= 5)
+                            {
+                                maxEdits = 1; // Allow 1 typo for short terms (3-5 chars)
+                            }
+                            else
+                            {
+                                maxEdits = 2; // Allow 2 typos for longer terms (6+ chars)
+                            }
 
-                //        fuzzyTextQuery.Add(fieldQuery, Occur.SHOULD); // OR across fields
-                //    }
+                            if (maxEdits > 0)
+                            {
+                                var fuzzy = new FuzzyQuery(new Term(field, term), maxEdits: maxEdits);
+                                fieldQuery.Add(fuzzy, Occur.SHOULD);
+                            }
+                            else
+                            {
+                                // Exact match for very short terms
+                                fieldQuery.Add(new TermQuery(new Term(field, term)), Occur.SHOULD);
+                            }
 
-                //    booleanQuery.Add(fuzzyTextQuery, Occur.MUST);
-                //    hasFilters = true;
-                //}
+                            // Also add prefix query for partial matches (e.g., "fan" matches "fantasy")
+                            var prefix = new PrefixQuery(new Term(field, term));
+                            fieldQuery.Add(prefix, Occur.SHOULD);
+                        }
+
+                        textSearchQuery.Add(fieldQuery, Occur.SHOULD); // OR across fields
+                    }
+
+                    BooleanFilterQuery.Add(textSearchQuery, Occur.MUST);
+                    hasFilters = true;
+                }
 
 
+
+                // 💰 Add price range filter
+                if (searchParams.MinPrice.HasValue || searchParams.MaxPrice.HasValue)
+                {
+                    var priceField = searchParams.PriceField ?? "Price";
+
+                    // Convert to double for Lucene range query
+                    double minPrice = searchParams.MinPrice.HasValue
+                        ? (double)searchParams.MinPrice.Value
+                        : double.MinValue;
+                    double maxPrice = searchParams.MaxPrice.HasValue
+                        ? (double)searchParams.MaxPrice.Value
+                        : double.MaxValue;
+
+                    var priceRangeQuery = NumericRangeQuery.NewDoubleRange(
+                        priceField,
+                        minPrice,
+                        maxPrice,
+                        minInclusive: true,
+                        maxInclusive: true);
+
+                    BooleanFilterQuery.Add(priceRangeQuery, Occur.MUST);
+                    hasFilters = true;
+                }
 
                 // 🧩 Add filter queries
 
@@ -173,31 +239,37 @@ namespace AuthScape.Marketplace.Services
                     { BooleanFilterQuery, Occur.MUST }    // require at least one of those SHOULDs
                 };
 
+                // Use efficient counting instead of loading all documents
+                Query queryToUse = hasFilters ? booleanQuery : new MatchAllDocsQuery();
 
+                // Get total count efficiently using TotalHits
+                var totalHitsResult = searcher.Search(queryToUse, 1);
+                int totalCount = totalHitsResult.TotalHits;
 
-                ScoreDoc[] allHits = searcher.Search(new MatchAllDocsQuery(), int.MaxValue, sortCriteria).ScoreDocs;
-                ScoreDoc[] filteredHits = hasFilters
-                    ? searcher.Search(booleanQuery, int.MaxValue, sortCriteria).ScoreDocs
-                    : allHits;
+                // Get total count for unfiltered (for filter options)
+                var allHitsResult = searcher.Search(new MatchAllDocsQuery(), 1);
+                int allHitsCount = allHitsResult.TotalHits;
 
+                // Only fetch the documents we need for the current page
                 var start = (searchParams.PageNumber - 1) * searchParams.PageSize;
-                var hits = filteredHits.Skip(start).Take(searchParams.PageSize).ToList();
+                var docsToFetch = start + searchParams.PageSize;
+
+                // Fetch only what we need with pagination
+                var filteredTopDocs = searcher.Search(queryToUse, docsToFetch, sortCriteria);
+                var pagedHits = filteredTopDocs.ScoreDocs.Skip(start).Take(searchParams.PageSize).ToList();
 
                 var listOfReferenceIds = new List<string>();
                 var records = new List<List<ProductResult>>();
 
-                foreach (var hit in hits)
+                foreach (var hit in pagedHits)
                 {
                     var doc = searcher.Doc(hit.Doc);
                     var record = new List<ProductResult>();
 
                     foreach (var field in doc.Fields)
                     {
-                        var isArray = await databaseContext.ProductCardCategories
-                            .AsNoTracking()
-                            .Where(z => z.Name == field.Name && z.CompanyId == searchParams.OemCompanyId && z.PlatformId == searchParams.PlatformId)
-                            .Select(z => z.IsArray)
-                            .FirstOrDefaultAsync();
+                        // Use pre-loaded dictionary instead of N+1 database queries
+                        var isArray = categoryMetadata.TryGetValue(field.Name, out var catMeta) && catMeta.IsArray;
 
                         if (isArray)
                         {
@@ -222,8 +294,8 @@ namespace AuthScape.Marketplace.Services
                     records.Add(record);
                 }
 
-                var filters = await GetAvailableFilters(searchParams, searcher, filteredHits, allHits, booleanQuery, searchParams.PlatformId, searchParams.OemCompanyId);
-                int totalPages = (int)Math.Ceiling((double)filteredHits.Length / searchParams.PageSize);
+                var filters = await GetAvailableFilters(searchParams, searcher, totalCount, allHitsCount, booleanQuery, searchParams.PlatformId, searchParams.OemCompanyId, categoryMetadata);
+                int totalPages = (int)Math.Ceiling((double)totalCount / searchParams.PageSize);
 
                 var selectedFilters = filters
                     .SelectMany(f => f.Options.Where(o => o.IsChecked).Select(o => new FilterTracking
@@ -245,8 +317,23 @@ namespace AuthScape.Marketplace.Services
                     Created = SystemTime.Now
                 };
 
-                await databaseContext.AnalyticsMarketplaceImpressionsClicks.AddAsync(impressionTracking);
-                await databaseContext.SaveChangesAsync();
+                // Fire-and-forget analytics tracking to avoid blocking the search response
+                var dbConnectionString = appSettings.DatabaseContext;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = new DatabaseContext(new DbContextOptionsBuilder<DatabaseContext>()
+                            .UseSqlServer(dbConnectionString)
+                            .Options);
+                        await scope.AnalyticsMarketplaceImpressionsClicks.AddAsync(impressionTracking);
+                        await scope.SaveChangesAsync();
+                    }
+                    catch
+                    {
+                        // Log error but don't fail the search
+                    }
+                });
 
                 return new SearchResult2
                 {
@@ -254,7 +341,7 @@ namespace AuthScape.Marketplace.Services
                     Filters = filters,
                     PageNumber = searchParams.PageNumber,
                     PageSize = totalPages,
-                    Total = filteredHits.Length,
+                    Total = totalCount,
                     TrackingId = impressionTracking.Id
                 };
             }
@@ -263,11 +350,12 @@ namespace AuthScape.Marketplace.Services
         public async Task<IEnumerable<CategoryFilters>> GetAvailableFilters(
                 SearchParams searchParams,
                 IndexSearcher searcher,
-                ScoreDoc[] filteredOutHits,
-                ScoreDoc[] showAllPossibleHits,
+                int filteredCount,
+                int totalCount,
                 BooleanQuery booleanQuery,
                 int platformId = 1,
-                long? companyId = null)
+                long? companyId = null,
+                Dictionary<string, ProductCardCategory> categoryMetadata = null)
         {
             var categoryOptions = new List<CategoryFilters>();
             var activeFilters = searchParams.SearchParamFilters?.ToList()
@@ -281,174 +369,418 @@ namespace AuthScape.Marketplace.Services
                             && name != "ReferenceId" && name != "Score")
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Preload all ProductCardCategories
-            var allProductCardCategories = await databaseContext.ProductCardCategories
-                .Where(p => p.CompanyId == companyId && p.PlatformId == platformId)
-                .AsNoTracking()
-                .ToListAsync();
+            // Use provided categoryMetadata or load if not provided
+            if (categoryMetadata == null)
+            {
+                categoryMetadata = await databaseContext.ProductCardCategories
+                    .Where(p => p.CompanyId == companyId && p.PlatformId == platformId)
+                    .AsNoTracking()
+                    .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+            }
+
+            // Build lookup for parent-child relationships using dictionaries for O(1) lookups
+            var childToParentLookup = categoryMetadata.Values
+                .Where(p => !string.IsNullOrEmpty(p.ParentName))
+                .ToDictionary(p => p.Name, p => p.ParentName!, StringComparer.OrdinalIgnoreCase);
+
+            var parentToChildLookup = categoryMetadata.Values
+                .Where(p => !string.IsNullOrEmpty(p.ParentName))
+                .GroupBy(p => p.ParentName!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().Name, StringComparer.OrdinalIgnoreCase);
+
+            // Group active filters by category for independent faceting
+            // This allows multi-select within the same filter category
+            var filtersByCategory = activeFilters
+                .GroupBy(f => f.Category, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            // Sample documents for facet aggregation (limit to avoid memory issues)
+            const int maxDocsForFacets = 10000;
+            const int batchSize = 1000;
+
+            // Facet data storage
+            var facetData = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+            var subcategoryData = new Dictionary<string, Dictionary<string, Dictionary<string, int>>>(StringComparer.OrdinalIgnoreCase);
+
+            // Build filter options using INDEPENDENT FACETING
+            // For each category, we use a query that excludes that category's filters
+            // This allows selecting multiple values within the same filter category
+            const int maxOptionsPerCategory = 50;
 
             foreach (var category in allCategories)
             {
-                // Skip categories of type None or TextField
-                var cardCat = allProductCardCategories
-                    .FirstOrDefault(p => p.Name.Equals(category, StringComparison.OrdinalIgnoreCase));
-                if (cardCat != null &&
+                // Skip categories of type None or TextField using dictionary lookup
+                if (categoryMetadata.TryGetValue(category, out var cardCat) &&
                     (cardCat.ProductCardCategoryType == ProductCardCategoryType.None ||
                      cardCat.ProductCardCategoryType == ProductCardCategoryType.TextField))
                 {
                     continue;
                 }
 
-                // Build a query of all active filters *excluding* this category
-                var otherFilters = activeFilters
-                    .Where(f => !f.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-                var otherFiltersQuery = await BuildOtherFiltersQuery(
-                    otherFilters, databaseContext, platformId);
+                // INDEPENDENT FACETING: Build a query that EXCLUDES this category's filters
+                // This allows the user to see ALL options in this category (for multi-select)
+                // while other categories are filtered by the selected values
+                var categoryExcludedQuery = BuildQueryExcludingCategory(filtersByCategory, category);
+                Query baseQuery = categoryExcludedQuery.Clauses.Any()
+                    ? categoryExcludedQuery
+                    : new MatchAllDocsQuery();
 
-                // Fetch all matching docs for those other filters
-                var docs = new List<Lucene.Net.Documents.Document>();
-                ScoreDoc lastDoc = null;
-                while (true)
+                // First, discover unique values in this category by sampling documents
+                var uniqueValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var subCategoryCounts = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+
+                // IMPORTANT: Track currently selected options for this category
+                // These must ALWAYS appear in the UI so users can see/unselect their filters
+                var selectedOptionsForCategory = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (filtersByCategory.TryGetValue(category, out var selectedFilters))
                 {
-                    var topDocs = searcher.SearchAfter(lastDoc, otherFiltersQuery, int.MaxValue);
+                    foreach (var filter in selectedFilters)
+                    {
+                        if (!string.IsNullOrWhiteSpace(filter.Option))
+                        {
+                            uniqueValues.Add(filter.Option);
+                            selectedOptionsForCategory.Add(filter.Option);
+                        }
+                    }
+                }
+
+                var docsProcessed = 0;
+                ScoreDoc? lastDoc = null;
+
+                while (docsProcessed < maxDocsForFacets)
+                {
+                    var toFetch = Math.Min(batchSize, maxDocsForFacets - docsProcessed);
+                    TopDocs topDocs = lastDoc == null
+                        ? searcher.Search(baseQuery, toFetch)
+                        : searcher.SearchAfter(lastDoc, baseQuery, toFetch);
+
                     if (topDocs.ScoreDocs.Length == 0) break;
+
                     foreach (var hit in topDocs.ScoreDocs)
-                        docs.Add(searcher.Doc(hit.Doc));
-                    lastDoc = topDocs.ScoreDocs[^1];
-                }
-
-                // Tally option counts
-                var filterOptions = new Dictionary<string, FilterOption>(StringComparer.OrdinalIgnoreCase);
-                foreach (var doc in docs)
-                {
-                    foreach (var val in doc.GetValues(category))
                     {
-                        if (string.IsNullOrWhiteSpace(val)) continue;
-                        if (!filterOptions.TryGetValue(val, out var opt))
+                        var doc = searcher.Doc(hit.Doc);
+                        var values = doc.GetValues(category);
+
+                        foreach (var val in values)
                         {
-                            opt = new FilterOption { Key = val, Value = 0, Subcategories = new List<FilterOption>() };
-                            filterOptions[val] = opt;
-                        }
-                        opt.Value++;
-                    }
-                }
+                            if (string.IsNullOrWhiteSpace(val)) continue;
 
-                // If this category has subcategories, tally those
-                var parentCat = allProductCardCategories
-                    .FirstOrDefault(p => !string.IsNullOrEmpty(p.ParentName)
-                                      && p.ParentName.Equals(category, StringComparison.OrdinalIgnoreCase));
-                if (parentCat != null)
-                {
-                    var subName = parentCat.Name;
-                    var parentName = parentCat.ParentName;
-                    var grouped = docs
-                        .Select(d => new { Sub = d.Get(subName), Parent = d.Get(parentName) })
-                        .Where(x => !string.IsNullOrWhiteSpace(x.Sub) && !string.IsNullOrWhiteSpace(x.Parent))
-                        .GroupBy(x => new { x.Parent, x.Sub });
-                    foreach (var g in grouped)
-                    {
-                        var parentRaw = g.Key.Parent;
-                        var subRaw = g.Key.Sub;
-                        if (filterOptions.TryGetValue(parentRaw, out var pOpt))
-                        {
-                            var existing = pOpt.Subcategories
-                                .FirstOrDefault(s => s.Key.Equals(subRaw, StringComparison.OrdinalIgnoreCase));
-                            if (existing == null)
-                                pOpt.Subcategories.Add(new FilterOption { Key = subRaw, Value = g.Count() });
-                            else
-                                existing.Value += g.Count();
-                        }
-                    }
-                }
+                            uniqueValues.Add(val);
 
-                // Only include categories that have at least one option
-                if (filterOptions.Count > 0)
-                {
-                    var catFilter = new CategoryFilters
-                    {
-                        Category = category,
-                        Options = filterOptions.Values
-                            .OrderBy(o => o.Key)
-                            .Select(o => new CategoryFilterOption
+                            // Handle subcategories if this category has children
+                            if (parentToChildLookup.TryGetValue(category, out var childFieldName))
                             {
-                                Name = o.Key,
-                                Count = o.Value,
+                                var subValues = doc.GetValues(childFieldName);
+                                foreach (var subVal in subValues)
+                                {
+                                    if (string.IsNullOrWhiteSpace(subVal)) continue;
+
+                                    if (!subCategoryCounts.TryGetValue(val, out var subDict))
+                                    {
+                                        subDict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                                        subCategoryCounts[val] = subDict;
+                                    }
+
+                                    // Just track that this subcategory exists for now
+                                    subDict.TryGetValue(subVal, out var subCount);
+                                    subDict[subVal] = subCount + 1;
+                                }
+                            }
+                        }
+                    }
+
+                    lastDoc = topDocs.ScoreDocs[^1];
+                    docsProcessed += topDocs.ScoreDocs.Length;
+                }
+
+                // Now get ACCURATE counts for each unique value using TotalHits
+                // This ensures the count matches what you'd get when selecting that filter
+                var filterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var val in uniqueValues)
+                {
+                    // Build a query that combines the base query with this specific filter value
+                    var valueQuery = new BooleanQuery();
+                    if (categoryExcludedQuery.Clauses.Any())
+                    {
+                        valueQuery.Add(categoryExcludedQuery, Occur.MUST);
+                    }
+                    valueQuery.Add(new TermQuery(new Term(category, val)), Occur.MUST);
+
+                    // Get accurate count using TotalHits
+                    var countResult = searcher.Search(valueQuery, 1);
+                    var count = countResult.TotalHits;
+
+                    // Include options that have matching products OR are currently selected
+                    // Selected options must always appear so users can see/unselect their filters
+                    if (count > 0 || selectedOptionsForCategory.Contains(val))
+                    {
+                        filterCounts[val] = count;
+                    }
+                }
+
+                // Store in facetData for reference
+                facetData[category] = filterCounts;
+                if (subCategoryCounts.Any())
+                {
+                    subcategoryData[category] = subCategoryCounts;
+                }
+
+                if (filterCounts.Count == 0) continue;
+
+                var totalOptionsCount = filterCounts.Count;
+
+                // Build all options, then sort: checked items first, then by count descending, then alphabetically
+                var allOptions = filterCounts.Select(kvp =>
+                {
+                    var isChecked = activeFilters.Any(f =>
+                        f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)
+                        && f.Option.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase));
+
+                    var option = new CategoryFilterOption
+                    {
+                        Name = kvp.Key,
+                        Count = kvp.Value,
+                        IsChecked = isChecked,
+                        Subcategories = new List<CategoryFilterOption>()
+                    };
+
+                    // Add subcategories if they exist (also limited)
+                    if (subCategoryCounts.TryGetValue(kvp.Key, out var subDict))
+                    {
+                        option.Subcategories = subDict
+                            .OrderByDescending(s => activeFilters.Any(f =>
+                                f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)
+                                && f.Subcategory.Equals(s.Key, StringComparison.OrdinalIgnoreCase)))
+                            .ThenByDescending(s => s.Value)
+                            .ThenBy(s => s.Key)
+                            .Take(maxOptionsPerCategory)
+                            .Select(s => new CategoryFilterOption
+                            {
+                                Name = s.Key,
+                                Count = s.Value,
                                 IsChecked = activeFilters.Any(f =>
                                     f.Category.Equals(category, StringComparison.OrdinalIgnoreCase)
-                                    && f.Option.Equals(o.Key, StringComparison.OrdinalIgnoreCase)),
-                                Subcategories = o.Subcategories
-                                    .OrderBy(s => s.Key)
-                                    .Select(s => new CategoryFilterOption
-                                    {
-                                        Name = s.Key,
-                                        Count = s.Value,
-                                        IsChecked = false
-                                    })
-                                    .ToList()
+                                    && f.Subcategory.Equals(s.Key, StringComparison.OrdinalIgnoreCase))
                             })
-                            .ToList()
-                    };
-                    categoryOptions.Add(catFilter);
-                }
-            }
+                            .ToList();
+                    }
 
-            return categoryOptions.OrderBy(c => c.Category);
-        }
+                    return option;
+                })
+                // Sort: checked first, then by count (most popular), then alphabetically
+                .OrderByDescending(o => o.IsChecked)
+                .ThenByDescending(o => o.Count)
+                .ThenBy(o => o.Name)
+                .Take(maxOptionsPerCategory)
+                .ToList();
 
-
-
-
-
-        private async Task<Query> BuildOtherFiltersQuery(
-                IEnumerable<SearchParamFilter> filters,
-                DatabaseContext databaseContext,
-                int platformId)
-        {
-            if (!filters.Any())
-                return new MatchAllDocsQuery();
-
-            var root = new BooleanQuery();
-
-            var grouped = filters
-                .GroupBy(f => f.Category, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var grp in grouped)
-            {
-                var categoryQ = new BooleanQuery { MinimumNumberShouldMatch = 1 };
-
-                foreach (var filter in grp)
+                // Get category type and order from metadata
+                ProductCardCategoryType? categoryType = null;
+                Dictionary<string, string>? colorHexMapping = null;
+                int categoryOrder = 0;
+                if (categoryMetadata != null && categoryMetadata.TryGetValue(category, out var catMeta))
                 {
-                    if (!string.IsNullOrWhiteSpace(filter.Subcategory))
+                    categoryType = catMeta.ProductCardCategoryType;
+                    categoryOrder = catMeta.Order;
+
+                    // Parse color hex mapping for ColorField types
+                    if (categoryType == ProductCardCategoryType.ColorField && !string.IsNullOrWhiteSpace(catMeta.ColorHexMappingJson))
                     {
-                        var pairQ = new BooleanQuery
-                    {
-                        { new TermQuery(new Term("Category",    filter.Option   )), Occur.MUST },
-                        { new TermQuery(new Term("Categories", filter.Subcategory)), Occur.MUST }
-                    };
-                        categoryQ.Add(pairQ, Occur.SHOULD);
-                    }
-                    else
-                    {
-                        categoryQ.Add(
-                            new TermQuery(new Term(filter.Category, filter.Option)),
-                            Occur.SHOULD);
+                        try
+                        {
+                            colorHexMapping = JsonConvert.DeserializeObject<Dictionary<string, string>>(catMeta.ColorHexMappingJson);
+                        }
+                        catch
+                        {
+                            // Invalid JSON, ignore
+                        }
                     }
                 }
 
-                root.Add(categoryQ, Occur.MUST);
+                categoryOptions.Add(new CategoryFilters
+                {
+                    Category = category,
+                    Options = allOptions,
+                    TotalOptionsCount = totalOptionsCount,
+                    HasMoreOptions = totalOptionsCount > maxOptionsPerCategory,
+                    CategoryType = categoryType,
+                    ColorHexMapping = colorHexMapping,
+                    Order = categoryOrder
+                });
             }
 
-            return root;
+            // Sort by Order first (0 values go last), then alphabetically
+            return categoryOptions
+                .OrderBy(c => c.Order == 0 ? int.MaxValue : c.Order)
+                .ThenBy(c => c.Category);
         }
 
+        /// <summary>
+        /// Get paginated/searchable filter options for a specific category (e.g., load more brands)
+        /// Supports independent faceting - filters from other categories are applied, but not from the requested category
+        /// </summary>
+        public async Task<FilterOptionsResponse> GetFilterOptions(FilterOptionsRequest request)
+        {
+            var containerLocation = appSettings.LuceneSearch.Container;
+            containerLocation += "/" + (request.OemCompanyId?.ToString() ?? "0");
+            containerLocation += "/" + request.PlatformId;
 
+            var versionInformation = await GetVersionFile(containerLocation);
+            containerLocation += "/" + versionInformation.ToString();
 
+            string cachePath = Path.Combine(
+                Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
+                "cache", "LuceneCache", (request.OemCompanyId?.ToString() ?? "0"), request.PlatformId.ToString(), versionInformation.ToString()
+            );
 
-        public async Task Clicked(int platformId, string productOrServiceId, long? CompanyId = null)
+            if (!System.IO.Directory.Exists(cachePath))
+                System.IO.Directory.CreateDirectory(cachePath);
+
+            using (var cacheDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
+            using (var azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, containerLocation, cacheDirectory))
+            using (var reader = DirectoryReader.Open(azureDirectory))
+            {
+                var searcher = new IndexSearcher(reader);
+
+                // INDEPENDENT FACETING: Build query excluding the requested category's filters
+                // This allows showing ALL options for this category while respecting other category filters
+                var activeFilters = request.ActiveFilters?.ToList() ?? new List<SearchParamFilter>();
+                var filtersByCategory = activeFilters
+                    .GroupBy(f => f.Category, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+                var categoryExcludedQuery = BuildQueryExcludingCategory(filtersByCategory, request.FilterCategory);
+                Query baseQuery = categoryExcludedQuery.Clauses.Any()
+                    ? categoryExcludedQuery
+                    : new MatchAllDocsQuery();
+
+                // First, discover unique values in this category by sampling documents
+                var uniqueValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // IMPORTANT: Track currently selected options for this category
+                // These must ALWAYS appear in the UI so users can see/unselect their filters
+                var selectedOptionsSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (request.SelectedOptions != null)
+                {
+                    foreach (var selectedOption in request.SelectedOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(selectedOption))
+                        {
+                            uniqueValues.Add(selectedOption);
+                            selectedOptionsSet.Add(selectedOption);
+                        }
+                    }
+                }
+
+                // Sample documents for facet aggregation (limit to avoid memory issues)
+                const int maxDocsForFacets = 50000;
+                const int batchSize = 1000;
+                var docsProcessed = 0;
+                ScoreDoc? lastDoc = null;
+
+                while (docsProcessed < maxDocsForFacets)
+                {
+                    var remaining = maxDocsForFacets - docsProcessed;
+                    var toFetch = Math.Min(batchSize, remaining);
+
+                    TopDocs topDocs = lastDoc == null
+                        ? searcher.Search(baseQuery, toFetch)
+                        : searcher.SearchAfter(lastDoc, baseQuery, toFetch);
+
+                    if (topDocs.ScoreDocs.Length == 0) break;
+
+                    foreach (var hit in topDocs.ScoreDocs)
+                    {
+                        var doc = searcher.Doc(hit.Doc);
+                        var values = doc.GetValues(request.FilterCategory);
+
+                        foreach (var val in values)
+                        {
+                            if (string.IsNullOrWhiteSpace(val)) continue;
+                            uniqueValues.Add(val);
+                        }
+                    }
+
+                    lastDoc = topDocs.ScoreDocs[^1];
+                    docsProcessed += topDocs.ScoreDocs.Length;
+                }
+
+                // Now get ACCURATE counts for each unique value using TotalHits
+                // This ensures the count matches what you'd get when selecting that filter
+                var filterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var val in uniqueValues)
+                {
+                    // Build a query that combines the base query with this specific filter value
+                    var valueQuery = new BooleanQuery();
+                    if (categoryExcludedQuery.Clauses.Any())
+                    {
+                        valueQuery.Add(categoryExcludedQuery, Occur.MUST);
+                    }
+                    valueQuery.Add(new TermQuery(new Term(request.FilterCategory, val)), Occur.MUST);
+
+                    // Get accurate count using TotalHits
+                    var countResult = searcher.Search(valueQuery, 1);
+                    var count = countResult.TotalHits;
+
+                    // Include options that have matching products OR are currently selected
+                    // Selected options must always appear so users can see/unselect their filters
+                    if (count > 0 || selectedOptionsSet.Contains(val))
+                    {
+                        filterCounts[val] = count;
+                    }
+                }
+
+                // Filter by search term if provided
+                var filteredOptions = filterCounts.AsEnumerable();
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    var searchTermLower = request.SearchTerm.ToLowerInvariant();
+                    filteredOptions = filteredOptions.Where(kvp =>
+                        kvp.Key.ToLowerInvariant().Contains(searchTermLower));
+                }
+
+                var totalCount = filteredOptions.Count();
+
+                // Build options with selected items prioritized
+                var selectedSet = request.SelectedOptions?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                var allOptions = filteredOptions
+                    .Select(kvp => new CategoryFilterOption
+                    {
+                        Name = kvp.Key,
+                        Count = kvp.Value,
+                        IsChecked = selectedSet.Contains(kvp.Key)
+                    })
+                    // Sort: checked first, then by count (most popular), then alphabetically
+                    .OrderByDescending(o => o.IsChecked)
+                    .ThenByDescending(o => o.Count)
+                    .ThenBy(o => o.Name)
+                    .ToList();
+
+                // Apply pagination
+                var skip = (request.PageNumber - 1) * request.PageSize;
+                var pagedOptions = allOptions.Skip(skip).Take(request.PageSize).ToList();
+
+                var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
+
+                return new FilterOptionsResponse
+                {
+                    Category = request.FilterCategory,
+                    Options = pagedOptions,
+                    TotalCount = totalCount,
+                    PageNumber = request.PageNumber,
+                    PageSize = request.PageSize,
+                    TotalPages = totalPages,
+                    HasMorePages = request.PageNumber < totalPages
+                };
+            }
+        }
+
+        public async Task Clicked(Guid trackingId, string productOrServiceId)
         {
             var analytics = await databaseContext.AnalyticsMarketplaceImpressionsClicks
-                .Where(s => s.Platform == platformId && s.OemCompanyId == CompanyId)
+                .Where(s => s.Id == trackingId)
                 .FirstOrDefaultAsync();
 
             if (analytics != null)
@@ -456,6 +788,91 @@ namespace AuthScape.Marketplace.Services
                 analytics.ProductOrServiceClicked = productOrServiceId;
                 await databaseContext.SaveChangesAsync();
             }
+        }
+
+        public async Task<MarketplaceAnalytics> GetAnalytics(int platformId, long? oemCompanyId = null, int days = 30)
+        {
+            var cutoffDate = DateTimeOffset.UtcNow.AddDays(-days);
+
+            var analyticsQuery = databaseContext.AnalyticsMarketplaceImpressionsClicks
+                .AsNoTracking()
+                .Where(a => a.Platform == platformId && a.Created >= cutoffDate);
+
+            if (oemCompanyId.HasValue)
+            {
+                analyticsQuery = analyticsQuery.Where(a => a.OemCompanyId == oemCompanyId);
+            }
+
+            var analyticsData = await analyticsQuery.ToListAsync();
+
+            // Calculate CTR
+            var totalImpressions = analyticsData.Count;
+            var totalClicks = analyticsData.Count(a => !string.IsNullOrEmpty(a.ProductOrServiceClicked));
+            var clickThroughRate = totalImpressions > 0 ? (double)totalClicks / totalImpressions * 100 : 0;
+
+            // Most clicked products
+            var popularProducts = analyticsData
+                .Where(a => !string.IsNullOrEmpty(a.ProductOrServiceClicked))
+                .GroupBy(a => a.ProductOrServiceClicked)
+                .Select(g => new PopularProduct
+                {
+                    ProductId = g.Key!,
+                    Clicks = g.Count()
+                })
+                .OrderByDescending(p => p.Clicks)
+                .Take(20)
+                .ToList();
+
+            // Popular filters
+            var popularFilters = analyticsData
+                .Where(a => !string.IsNullOrEmpty(a.JSONFilterSelected) && a.JSONFilterSelected != "[]")
+                .SelectMany(a =>
+                {
+                    try
+                    {
+                        var filters = JsonConvert.DeserializeObject<List<SearchParamFilter>>(a.JSONFilterSelected);
+                        return filters ?? new List<SearchParamFilter>();
+                    }
+                    catch
+                    {
+                        return new List<SearchParamFilter>();
+                    }
+                })
+                .GroupBy(f => new { f.Category, f.Option })
+                .Select(g => new PopularFilter
+                {
+                    Category = g.Key.Category,
+                    Option = g.Key.Option,
+                    Usage = g.Count()
+                })
+                .OrderByDescending(f => f.Usage)
+                .Take(20)
+                .ToList();
+
+            // Daily trends
+            var dailyTrends = analyticsData
+                .GroupBy(a => a.Created.Date)
+                .Select(g => new DailyTrend
+                {
+                    Date = g.Key,
+                    Impressions = g.Count(),
+                    Clicks = g.Count(a => !string.IsNullOrEmpty(a.ProductOrServiceClicked))
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            return new MarketplaceAnalytics
+            {
+                PlatformId = platformId,
+                OemCompanyId = oemCompanyId,
+                PeriodDays = days,
+                TotalImpressions = totalImpressions,
+                TotalClicks = totalClicks,
+                ClickThroughRate = Math.Round(clickThroughRate, 2),
+                PopularProducts = popularProducts,
+                PopularFilters = popularFilters,
+                DailyTrends = dailyTrends
+            };
         }
 
         // gets the file version from blob storage
@@ -562,6 +979,7 @@ namespace AuthScape.Marketplace.Services
                     ParentName = category != null ? category.ParentCategory : null,
                     IsArray = isArray,
                     ProductCardCategoryType = category.ProductCardCategoryType,
+                    Order = category?.Order ?? 0,
                 });
             }
             await databaseContext.SaveChangesAsync();
@@ -717,6 +1135,50 @@ namespace AuthScape.Marketplace.Services
                     doc.Fields.Add(new StringField(fieldName, value.ToString(), Field.Store.YES));
                     break;
             }
+        }
+
+        /// <summary>
+        /// Builds a Lucene query that includes filters from all categories EXCEPT the specified one.
+        /// This enables independent faceting - allowing multi-select within a single filter category.
+        /// </summary>
+        private BooleanQuery BuildQueryExcludingCategory(
+            Dictionary<string, List<SearchParamFilter>> filtersByCategory,
+            string excludeCategory)
+        {
+            var query = new BooleanQuery();
+
+            foreach (var kvp in filtersByCategory)
+            {
+                // Skip the category we want to exclude (for independent faceting)
+                if (kvp.Key.Equals(excludeCategory, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Build OR query for this category's filters (within category = OR)
+                var categoryQuery = new BooleanQuery { MinimumNumberShouldMatch = 1 };
+                foreach (var filter in kvp.Value)
+                {
+                    if (!string.IsNullOrWhiteSpace(filter.Subcategory))
+                    {
+                        // Handle parent-child filter pairs
+                        var pairQ = new BooleanQuery
+                        {
+                            { new TermQuery(new Term("Category", filter.Option)), Occur.MUST },
+                            { new TermQuery(new Term("Categories", filter.Subcategory)), Occur.MUST }
+                        };
+                        categoryQuery.Add(pairQ, Occur.SHOULD);
+                    }
+                    else
+                    {
+                        // Simple term filter
+                        categoryQuery.Add(new TermQuery(new Term(filter.Category, filter.Option)), Occur.SHOULD);
+                    }
+                }
+
+                // Across categories = AND
+                query.Add(categoryQuery, Occur.MUST);
+            }
+
+            return query;
         }
 
         public async Task RemoveAllFilesInFolder(string containerName, string folderName)

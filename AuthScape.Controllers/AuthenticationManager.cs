@@ -11,12 +11,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Scalar.AspNetCore;
 using Services;
 using Services.Context;
 using Services.Cores;
 using Services.Database;
 using Services.Tracking;
 using System;
+using System.Threading.Tasks;
 
 namespace AuthScape.Controllers
 {
@@ -58,14 +60,35 @@ namespace AuthScape.Controllers
 
 
             // clean the payload from null values
-            services.AddMvcCore().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-            })
-            .AddAuthorization();
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.MaxDepth = 64;
+                });
 
-            services.AddControllers();
-            services.AddSwaggerGen();
+            services.AddEndpointsApiExplorer();
+            services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
+                {
+                    document.Info = new()
+                    {
+                        Title = "AuthScape API",
+                        Version = "v1",
+                        Description = "AuthScape API Documentation"
+                    };
+                    return Task.CompletedTask;
+                });
+            });
+
+            // Configure the OpenAPI JSON serializer to handle circular references
+            services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+            {
+                options.SerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.SerializerOptions.MaxDepth = 128;
+            });
 
             services.AddCors();
             services.AddTransient<ICorsPolicyProvider, CorsPolicyManager>();
@@ -80,8 +103,6 @@ namespace AuthScape.Controllers
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1"));
             }
 
             if (!env.IsDevelopment())
@@ -98,6 +119,12 @@ namespace AuthScape.Controllers
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+
+                if (env.IsDevelopment())
+                {
+                    endpoints.MapOpenApi();
+                    endpoints.MapScalarApiReference();
+                }
 
                 if (useEndpoints != null)
                 {

@@ -12,6 +12,17 @@
         public bool IsArray { get; set; }
 
         public ProductCardCategoryType ProductCardCategoryType { get; set; }
+
+        /// <summary>
+        /// For ColorField type: JSON dictionary mapping color names to hex values.
+        /// </summary>
+        public string? ColorHexMappingJson { get; set; }
+
+        /// <summary>
+        /// Display order for the filter in the UI. Lower numbers appear first.
+        /// Filters without an order (0) will appear after ordered filters.
+        /// </summary>
+        public int Order { get; set; } = 0;
         //public ICollection<ProductCardField>? ProductFields { get; set; }
     }
 
@@ -37,6 +48,8 @@
 
         SortedSetDocValuesField, // Used for faceting, sorting, and grouping on multi-valued fields.
 
-        SortedDocValuesField // Used for faceting, sorting, and grouping on single-valued fields.
+        SortedDocValuesField, // Used for faceting, sorting, and grouping on single-valued fields.
+
+        ColorField, // Color filter with visual swatch display and optional color picker. Values should be CSS color names or use ColorHexMapping for custom mappings.
     }
 }

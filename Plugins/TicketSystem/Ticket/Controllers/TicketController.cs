@@ -127,6 +127,46 @@ namespace AuthScape.TicketSystem.Controllers
             await ticketService.UpdateTicketPriority(ticketPriority.Id, ticketPriority.PriorityLevel);
             return Ok();
         }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateDescription(UpdateTicketDescription ticketDescription)
+        {
+            await ticketService.UpdateDescription(ticketDescription.Id, ticketDescription.Description);
+            return Ok();
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateCompany(UpdateTicketCompany ticketCompany)
+        {
+            await ticketService.UpdateCompany(ticketCompany.Id, ticketCompany.CompanyId, ticketCompany.CompanyName);
+            return Ok();
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateLocation(UpdateTicketLocation ticketLocation)
+        {
+            await ticketService.UpdateLocation(ticketLocation.Id, ticketLocation.LocationId, ticketLocation.LocationName);
+            return Ok();
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> AddAttachment([FromForm] AddAttachmentParam param)
+        {
+            var attachment = await ticketService.AddAttachment(param.TicketId, param.File);
+            return Ok(attachment);
+        }
+
+        [HttpDelete]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> DeleteAttachment(long attachmentId)
+        {
+            await ticketService.DeleteAttachment(attachmentId);
+            return Ok();
+        }
     }
 
     public class UpdateTicketPriority
@@ -145,6 +185,26 @@ namespace AuthScape.TicketSystem.Controllers
     {
         public long Id { get; set; }
         public int TicketTypeId { get; set; }
+    }
+
+    public class UpdateTicketDescription
+    {
+        public long Id { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class UpdateTicketCompany
+    {
+        public long Id { get; set; }
+        public long? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
+    }
+
+    public class UpdateTicketLocation
+    {
+        public long Id { get; set; }
+        public long? LocationId { get; set; }
+        public string? LocationName { get; set; }
     }
 
     public class CreateTicketParam
@@ -189,5 +249,11 @@ namespace AuthScape.TicketSystem.Controllers
         public int length { get; set; } = 20;
         public int? ticketStatusId { get; set; } = null;
         public int? ticketTypeId { get; set; } = null;
+    }
+
+    public class AddAttachmentParam
+    {
+        public long TicketId { get; set; }
+        public IFormFile File { get; set; }
     }
 }

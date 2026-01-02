@@ -17,6 +17,10 @@ namespace AuthScape.Marketplace.Models
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                // Add composite index for common query pattern (CompanyId, PlatformId, Name)
+                entity.HasIndex(e => new { e.CompanyId, e.PlatformId, e.Name })
+                      .HasDatabaseName("IX_ProductCardCategory_Company_Platform_Name");
             });
 
             //builder.Entity<ProductCardField>(entity =>
