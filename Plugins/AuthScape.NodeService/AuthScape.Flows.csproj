@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="CoreBackpack" Version="1.0.42" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.0.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.1" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
