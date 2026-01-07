@@ -4,6 +4,7 @@ using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Models;
 using AuthScape.Marketplace.Models;
 using AuthScape.Models.Authentication;
+using AuthScape.Models.Invite;
 using AuthScape.Models.Logging;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
@@ -79,6 +80,13 @@ namespace Services.Context
 
         #endregion
 
+        #region Invite
+
+        public DbSet<InviteSettings> InviteSettings { get; set; }
+        public DbSet<UserInvite> UserInvites { get; set; }
+
+        #endregion
+
         #region PaymentGateway
 
         public DbSet<Plan> Plans { get; set; }
@@ -93,6 +101,13 @@ namespace Services.Context
         public DbSet<SubscriptionItem> SubscriptionItems { get; set; }
         public DbSet<StripeInvoice> StripeInvoices { get; set; }
         public DbSet<StripeInvoiceLineItem> StripeInvoiceLineItems { get; set; }
+
+        // Subscription Plan Management
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<SubscriptionPlanRole> SubscriptionPlanRoles { get; set; }
+
+        // Promo Codes
+        public DbSet<PromoCode> PromoCodes { get; set; }
 
         #endregion
 
@@ -236,6 +251,58 @@ namespace Services.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
             });
+
+            #region Invite Settings
+
+            builder.Entity<InviteSettings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                // Unique constraint: only one global (null) and one per company
+                entity.HasIndex(e => e.CompanyId)
+                    .IsUnique()
+                    .HasFilter("[CompanyId] IS NOT NULL");
+
+                // Configure foreign key without navigation property
+                entity.HasOne<Company>()
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<UserInvite>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasIndex(e => e.InvitedUserId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.InviteToken);
+
+                // Configure foreign keys without navigation properties
+                entity.HasOne<AppUser>()
+                    .WithMany()
+                    .HasForeignKey(e => e.InvitedUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<AppUser>()
+                    .WithMany()
+                    .HasForeignKey(e => e.InviterId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne<Company>()
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne<Location>()
+                    .WithMany()
+                    .HasForeignKey(e => e.LocationId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            #endregion
 
             builder.Entity<ThirdPartyAuthentication>(entity =>
             {
@@ -598,6 +665,51 @@ namespace Services.Context
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
+            // ===== SubscriptionPlan Configuration =====
+            builder.Entity<SubscriptionPlan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                entity.HasIndex(e => e.StripePriceId).IsUnique().HasFilter("[StripePriceId] IS NOT NULL");
+                entity.HasIndex(e => e.StripeProductId);
+                entity.HasIndex(e => e.IsActive);
+                entity.HasIndex(e => e.SortOrder);
+            });
+
+            builder.Entity<SubscriptionPlanRole>(entity =>
+            {
+                entity.HasKey(e => new { e.SubscriptionPlanId, e.RoleId });
+
+                entity.HasOne(e => e.SubscriptionPlan)
+                    .WithMany(sp => sp.AllowedRoles)
+                    .HasForeignKey(e => e.SubscriptionPlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Role)
+                    .WithMany()
+                    .HasForeignKey(e => e.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===== PromoCode Configuration =====
+            builder.Entity<PromoCode>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+
+                // Unique index on Code
+                entity.HasIndex(e => e.Code).IsUnique();
+
+                // Indexes for Stripe IDs
+                entity.HasIndex(e => e.StripeCouponId).HasFilter("[StripeCouponId] IS NOT NULL");
+                entity.HasIndex(e => e.StripePromotionCodeId).HasFilter("[StripePromotionCodeId] IS NOT NULL");
+
+                // Performance indexes
+                entity.HasIndex(e => e.IsActive);
+                entity.HasIndex(e => e.Scope);
+                entity.HasIndex(e => e.ExpiresAt);
+            });
 
 
             builder.Entity<SomeSheet>(entity =>

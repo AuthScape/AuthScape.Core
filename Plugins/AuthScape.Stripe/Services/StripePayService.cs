@@ -13,6 +13,7 @@ namespace AuthScape.StripePayment.Services
 {
     public interface IStripePayService
     {
+        Task<string?> GetStripePublicKey();
         Task<ConnectCustomerResponse> ConnectCustomer(SignedInUser signedInUser, PaymentRequest paymentRequest);
         Task<AuthScape.Models.PaymentGateway.Stripe.ChargeResponse> Charge(SignedInUser signedInUser, ChargeParam param);
         Task CancelPayment(string paymentIntent);
@@ -54,6 +55,7 @@ namespace AuthScape.StripePayment.Services
         Task CreateCouponAmountOff(decimal amountOff, string customerCode, CouponDuration couponDuration, long? MaxRedemptions = null);
         Task DeleteCoupon(string customerCode);
         Task<string> SetupStripeConnect(SignedInUser signedInUser, string returnBaseUrl);
+        Task<StripeConnectAccount?> GetStripeConnectStatus(SignedInUser signedInUser);
         Task<bool?> ACHNeedValidation(SignedInUser signedInUser);
         Task UpdateCustomerEmail(string paymentGatewayCustomerId, string email);
         Task UpdateCustomerAddress(string paymentGatewayCustomerId, string address, string city, string state, string postalCode, string country = "US");
@@ -82,6 +84,12 @@ namespace AuthScape.StripePayment.Services
             {
                 StripeConfiguration.ApiKey = this.appSettings.Stripe.SecretKey;
             }
+        }
+
+        public Task<string?> GetStripePublicKey()
+        {
+            // Get Stripe public key from appsettings.json
+            return Task.FromResult(appSettings.Stripe?.PublishableKey);
         }
 
         public async Task ChargeWithExistingPayment(SignedInUser signedInUser, long invoiceId, Guid walletPaymentMethodId, decimal amount)
@@ -452,7 +460,7 @@ namespace AuthScape.StripePayment.Services
             if (paymentMethodType == PaymentMethodType.Company)
             {
                 return await context.Wallets
-                    .Include(w => w.WalletPaymentMethods)
+                    .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.CompanyId == signedInUser.CompanyId)
                     .Select(w => w.WalletPaymentMethods)
                     .FirstOrDefaultAsync();
@@ -460,7 +468,7 @@ namespace AuthScape.StripePayment.Services
             else if (paymentMethodType == PaymentMethodType.User)
             {
                 return await context.Wallets
-                    .Include(w => w.WalletPaymentMethods)
+                    .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.UserId == signedInUser.Id)
                     .Select(w => w.WalletPaymentMethods)
                     .FirstOrDefaultAsync();
@@ -468,7 +476,7 @@ namespace AuthScape.StripePayment.Services
             else if (paymentMethodType == PaymentMethodType.Location)
             {
                 return await context.Wallets
-                    .Include(w => w.WalletPaymentMethods)
+                    .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.LocationId == signedInUser.LocationId)
                     .Select(w => w.WalletPaymentMethods)
                     .FirstOrDefaultAsync();
@@ -994,6 +1002,20 @@ namespace AuthScape.StripePayment.Services
             await context.SaveChangesAsync();
 
             return createService.Url;
+        }
+
+        public async Task<StripeConnectAccount?> GetStripeConnectStatus(SignedInUser signedInUser)
+        {
+            if (signedInUser?.CompanyId == null)
+            {
+                return null;
+            }
+
+            var stripeConnectAccount = await context.StripeConnectAccounts
+                .Where(s => s.CompanyId == signedInUser.CompanyId)
+                .FirstOrDefaultAsync();
+
+            return stripeConnectAccount;
         }
 
         public async Task<bool?> ACHNeedValidation(SignedInUser signedInUser)

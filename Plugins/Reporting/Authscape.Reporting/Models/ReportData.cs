@@ -7,5 +7,6 @@ namespace Authscape.Reporting.Models
         public IEnumerable<object> Content { get; set; }
         public IEnumerable<object> Columns { get; set; }
         public ReportType ReportType { get; set; }
+        public Dictionary<string, object> Options { get; set; }
     }
 }

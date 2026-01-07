@@ -1,0 +1,1836 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.SubscriptionPlansModel
+@using AuthScape.Models.PaymentGateway.Plans
+@{
+    ViewData["Title"] = "Subscription Plans";
+    Layout = "_AdminLayout";
+}
+
+<div class="plans-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Subscription Plans</h1>
+            <p class="page-subtitle">Manage subscription plans and Stripe integration</p>
+        </div>
+        <div class="header-actions">
+            <form method="post" asp-page-handler="SyncFromStripe" style="display: inline;">
+                <button type="submit" class="btn-sync">
+                    <i class="fa fa-refresh"></i> Sync from Stripe
+                </button>
+            </form>
+            <button type="button" class="btn-add" onclick="showCreateModal()">
+                <i class="fa fa-plus"></i> Add Plan
+            </button>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-total">
+                <i class="fa fa-credit-card"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Plans</div>
+                <div class="stat-value">@Model.Plans.Count</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-active">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Active Plans</div>
+                <div class="stat-value">@Model.Plans.Count(p => p.IsActive)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-inactive">
+                <i class="fa fa-pause-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Inactive Plans</div>
+                <div class="stat-value">@Model.Plans.Count(p => !p.IsActive)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-stripe">
+                <i class="fa fa-link"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Stripe Linked</div>
+                <div class="stat-value">@Model.Plans.Count(p => !string.IsNullOrEmpty(p.StripePriceId))</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="plans-table-container">
+        <table class="plans-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Price</th>
+                    <th>Interval</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Stripe</th>
+                    <th>Roles</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Plans.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center empty-state">
+                            <div class="empty-icon">
+                                <i class="fa fa-credit-card"></i>
+                            </div>
+                            <div class="empty-title">No subscription plans yet</div>
+                            <div class="empty-subtitle">Create your first plan or sync from Stripe to get started</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var plan in Model.Plans)
+                    {
+                        <tr class="plan-row">
+                            <td>
+                                <div class="plan-info">
+                                    @if (!string.IsNullOrEmpty(plan.ImageUrl))
+                                    {
+                                        <img src="@plan.ImageUrl" alt="@plan.Name" class="plan-image" />
+                                    }
+                                    else
+                                    {
+                                        <div class="plan-image-placeholder">
+                                            <i class="fa fa-credit-card"></i>
+                                        </div>
+                                    }
+                                    <div class="plan-details">
+                                        <div class="plan-name">@plan.Name</div>
+                                        @if (!string.IsNullOrEmpty(plan.Description))
+                                        {
+                                            <div class="plan-description">@plan.Description</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="price-display">
+                                    <span class="price-amount">@plan.Amount.ToString("C")</span>
+                                    <span class="price-currency">@plan.Currency.ToUpper()</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="interval-badge">
+                                    @GetIntervalDisplay(plan.Interval, plan.IntervalCount)
+                                </span>
+                                @if (plan.EnableTrial && plan.TrialPeriodDays > 0)
+                                {
+                                    <div class="trial-info">
+                                        <i class="fa fa-clock-o"></i> @plan.TrialPeriodDays day trial
+                                    </div>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <form method="post" asp-page-handler="ToggleActive" style="display: inline;">
+                                    <input type="hidden" name="id" value="@plan.Id" />
+                                    <button type="submit" class="status-toggle @(plan.IsActive ? "active" : "inactive")" title="Click to toggle">
+                                        @if (plan.IsActive)
+                                        {
+                                            <i class="fa fa-check"></i> <span>Active</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-pause"></i> <span>Inactive</span>
+                                        }
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                @if (!string.IsNullOrEmpty(plan.StripePriceId))
+                                {
+                                    <span class="stripe-linked" title="@plan.StripePriceId">
+                                        <i class="fa fa-check-circle"></i> Linked
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="stripe-unlinked">
+                                        <i class="fa fa-minus-circle"></i> Not Linked
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (plan.AllowedRoles.Any())
+                                {
+                                    <div class="roles-list">
+                                        @foreach (var role in plan.AllowedRoles.Take(2))
+                                        {
+                                            <span class="role-badge">@role.Name</span>
+                                        }
+                                        @if (plan.AllowedRoles.Count > 2)
+                                        {
+                                            <span class="role-badge role-more">+@(plan.AllowedRoles.Count - 2)</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="all-roles">All Roles</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-action btn-edit"
+                                            onclick="showEditModal('@plan.Id')"
+                                            title="Edit plan">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete"
+                                            onclick="confirmDelete('@plan.Id', '@plan.Name.Replace("'", "\\'")')"
+                                            title="Delete plan">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Plan Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-create">
+                <div class="modal-icon-wrapper modal-icon-create">
+                    <i class="fa fa-plus"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="createModalLabel">Create Subscription Plan</h5>
+                    <p class="modal-subtitle">Add a new subscription plan for your platform</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Create" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-tabs">
+                        <button type="button" class="form-tab active" onclick="showTab('create', 'basic')">Basic Info</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'pricing')">Pricing</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'stripe')">Stripe</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'access')">Access</button>
+                    </div>
+
+                    <!-- Basic Info Tab -->
+                    <div id="create-basic" class="form-tab-content active">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createName" class="form-label">Plan Name *</label>
+                                <input type="text" class="form-control" id="createName" name="name" required
+                                       placeholder="e.g., Pro Plan, Enterprise">
+                            </div>
+                            <div class="form-group" style="width: 120px;">
+                                <label for="createSortOrder" class="form-label">Sort Order</label>
+                                <input type="number" class="form-control" id="createSortOrder" name="sortOrder" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="createDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="createDescription" name="description" rows="3"
+                                      placeholder="Describe what this plan offers..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="createImageFile" class="form-label">Plan Image</label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" class="form-control" id="createImageFile" name="imageFile"
+                                       accept="image/*" onchange="previewImage(this, 'createImagePreview')">
+                                <div id="createImagePreview" class="image-preview" style="display: none;">
+                                    <img src="" alt="Preview" />
+                                    <button type="button" class="btn-remove-image" onclick="removeImage('create')">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Upload an image for the subscription plan (PNG, JPG, max 5MB)
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="createIsActive" name="isActive" value="true" checked>
+                                <label for="createIsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Tab -->
+                    <div id="create-pricing" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createAmount" class="form-label">Amount *</label>
+                                <input type="number" class="form-control" id="createAmount" name="amount"
+                                       step="0.01" min="0" value="0" required>
+                            </div>
+                            <div class="form-group" style="width: 120px;">
+                                <label for="createCurrency" class="form-label">Currency</label>
+                                <select class="form-control" id="createCurrency" name="currency">
+                                    <option value="usd">USD</option>
+                                    <option value="eur">EUR</option>
+                                    <option value="gbp">GBP</option>
+                                    <option value="cad">CAD</option>
+                                    <option value="aud">AUD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createInterval" class="form-label">Billing Interval</label>
+                                <select class="form-control" id="createInterval" name="interval">
+                                    <option value="@((int)BillingInterval.Daily)">Daily</option>
+                                    <option value="@((int)BillingInterval.Weekly)">Weekly</option>
+                                    <option value="@((int)BillingInterval.Monthly)" selected>Monthly</option>
+                                    <option value="@((int)BillingInterval.Quarterly)">Quarterly</option>
+                                    <option value="@((int)BillingInterval.Yearly)">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="width: 150px;">
+                                <label for="createIntervalCount" class="form-label">Interval Count</label>
+                                <input type="number" class="form-control" id="createIntervalCount" name="intervalCount"
+                                       min="1" value="1">
+                                <div class="form-hint">e.g., 3 for quarterly</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="createTaxCode" class="form-label">Tax Code</label>
+                            <select class="form-control" id="createTaxCode" name="taxCode">
+                                <option value="">-- No Tax Code --</option>
+                                @foreach (var taxCode in Model.TaxCodes)
+                                {
+                                    <option value="@taxCode.Id" title="@taxCode.Description">@taxCode.Name</option>
+                                }
+                            </select>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Stripe tax code for automatic tax calculation
+                            </div>
+                        </div>
+                        <div class="form-row align-items-center">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="createEnableTrial" name="enableTrial" value="true"
+                                       onchange="toggleTrialDays('create')">
+                                <label for="createEnableTrial" class="form-check-label">Enable Trial Period</label>
+                            </div>
+                            <div class="form-group trial-days-group" id="createTrialDaysGroup" style="display: none; width: 150px;">
+                                <label for="createTrialPeriodDays" class="form-label">Trial Days</label>
+                                <input type="number" class="form-control" id="createTrialPeriodDays" name="trialPeriodDays"
+                                       min="0" value="14">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stripe Tab -->
+                    <div id="create-stripe" class="form-tab-content">
+                        <!-- Stripe Mode Toggle -->
+                        <div class="stripe-mode-toggle">
+                            <button type="button" class="stripe-mode-btn active" onclick="setStripeMode('create', 'existing')">
+                                <i class="fa fa-link"></i> Link Existing Price
+                            </button>
+                            <button type="button" class="stripe-mode-btn" onclick="setStripeMode('create', 'new')">
+                                <i class="fa fa-plus"></i> Create New in Stripe
+                            </button>
+                        </div>
+
+                        <!-- Existing Price Selection -->
+                        <div id="create-stripe-existing" class="stripe-mode-content active">
+                            <div class="form-group">
+                                <label for="createStripePriceId" class="form-label">Stripe Price</label>
+                                <select class="form-control" id="createStripePriceId" name="stripePriceId" onchange="onStripePriceSelect('create')">
+                                    <option value="">-- Select Stripe Price (Optional) --</option>
+                                    @foreach (var stripePlan in Model.StripePlans)
+                                    {
+                                        <option value="@stripePlan.PriceId"
+                                                data-product-id="@stripePlan.ProductId"
+                                                data-amount="@stripePlan.Amount"
+                                                data-currency="@stripePlan.Currency"
+                                                data-interval="@stripePlan.Interval"
+                                                data-interval-count="@stripePlan.IntervalCount"
+                                                data-name="@stripePlan.ProductName"
+                                                data-description="@stripePlan.Description"
+                                                data-image="@stripePlan.ImageUrl"
+                                                data-trial="@(stripePlan.TrialPeriodDays ?? 0)">
+                                            @stripePlan.ProductName - @stripePlan.Amount.ToString("C") @stripePlan.Currency.ToUpper()/@stripePlan.Interval
+                                        </option>
+                                    }
+                                </select>
+                                <div class="form-hint">
+                                    <i class="fa fa-info-circle"></i> Selecting a Stripe price will auto-fill pricing details
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="createStripeProductId" class="form-label">Stripe Product ID</label>
+                                <input type="text" class="form-control" id="createStripeProductId" name="stripeProductId" readonly
+                                       placeholder="Auto-filled from selection above">
+                            </div>
+                            @if (!Model.StripePlans.Any())
+                            {
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle"></i> No Stripe prices found. Click "Create New in Stripe" to create a product and price.
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Create New Price -->
+                        <div id="create-stripe-new" class="stripe-mode-content">
+                            <input type="hidden" id="createStripeCreateNew" name="createStripeProduct" value="false" />
+                            <div class="alert alert-stripe">
+                                <i class="fa fa-stripe"></i>
+                                <div>
+                                    <strong>Create in Stripe</strong>
+                                    <p class="mb-0">This will create a new Product and Price in your Stripe account using the plan details from the Basic Info and Pricing tabs.</p>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">What will be created:</label>
+                                <ul class="stripe-create-list">
+                                    <li><i class="fa fa-cube"></i> <strong>Product:</strong> <span id="createStripeProductPreview">-</span></li>
+                                    <li><i class="fa fa-tag"></i> <strong>Price:</strong> <span id="createStripePricePreview">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Make sure you've filled in the plan name, amount, currency, and billing interval on the other tabs before creating.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Access Tab -->
+                    <div id="create-access" class="form-tab-content">
+                        <div class="form-group">
+                            <label class="form-label">Allowed Roles</label>
+                            <p class="form-hint mb-2">
+                                <i class="fa fa-info-circle"></i> Leave empty to allow all roles access to this plan
+                            </p>
+                            <div class="roles-checkbox-grid">
+                                @foreach (var role in Model.AvailableRoles)
+                                {
+                                    <div class="role-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="createRole_@role.Id" name="allowedRoleIds" value="@role.Id">
+                                        <label for="createRole_@role.Id" class="form-check-label">@role.Name</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Allowed Countries</label>
+                            <p class="form-hint mb-2">
+                                <i class="fa fa-info-circle"></i> Leave empty for worldwide availability
+                            </p>
+                            <div class="countries-checkbox-grid">
+                                @foreach (var locale in Model.LocaleOptions)
+                                {
+                                    <div class="country-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="createCountry_@locale.CountryCode" name="allowedCountries" value="@locale.CountryCode">
+                                        <label for="createCountry_@locale.CountryCode" class="form-check-label">@locale.Display</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-plus"></i> Create Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Plan Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-edit">
+                <div class="modal-icon-wrapper modal-icon-edit">
+                    <i class="fa fa-edit"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="editModalLabel">Edit Subscription Plan</h5>
+                    <p class="modal-subtitle">Update plan details</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Update" enctype="multipart/form-data">
+                <input type="hidden" id="editId" name="id" />
+                <input type="hidden" id="editExistingImageUrl" name="existingImageUrl" />
+                <div class="modal-body">
+                    <div class="form-tabs">
+                        <button type="button" class="form-tab active" onclick="showTab('edit', 'basic')">Basic Info</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'pricing')">Pricing</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'stripe')">Stripe</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'access')">Access</button>
+                    </div>
+
+                    <!-- Basic Info Tab -->
+                    <div id="edit-basic" class="form-tab-content active">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editName" class="form-label">Plan Name *</label>
+                                <input type="text" class="form-control" id="editName" name="name" required>
+                            </div>
+                            <div class="form-group" style="width: 120px;">
+                                <label for="editSortOrder" class="form-label">Sort Order</label>
+                                <input type="number" class="form-control" id="editSortOrder" name="sortOrder" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="editImageFile" class="form-label">Plan Image</label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" class="form-control" id="editImageFile" name="imageFile"
+                                       accept="image/*" onchange="previewImage(this, 'editImagePreview')">
+                                <div id="editImagePreview" class="image-preview" style="display: none;">
+                                    <img src="" alt="Preview" />
+                                    <button type="button" class="btn-remove-image" onclick="removeImage('edit')">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Upload a new image to replace the existing one
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="editIsActive" name="isActive" value="true">
+                                <label for="editIsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Tab -->
+                    <div id="edit-pricing" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editAmount" class="form-label">Amount *</label>
+                                <input type="number" class="form-control" id="editAmount" name="amount"
+                                       step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group" style="width: 120px;">
+                                <label for="editCurrency" class="form-label">Currency</label>
+                                <select class="form-control" id="editCurrency" name="currency">
+                                    <option value="usd">USD</option>
+                                    <option value="eur">EUR</option>
+                                    <option value="gbp">GBP</option>
+                                    <option value="cad">CAD</option>
+                                    <option value="aud">AUD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editInterval" class="form-label">Billing Interval</label>
+                                <select class="form-control" id="editInterval" name="interval">
+                                    <option value="@((int)BillingInterval.Daily)">Daily</option>
+                                    <option value="@((int)BillingInterval.Weekly)">Weekly</option>
+                                    <option value="@((int)BillingInterval.Monthly)">Monthly</option>
+                                    <option value="@((int)BillingInterval.Quarterly)">Quarterly</option>
+                                    <option value="@((int)BillingInterval.Yearly)">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="width: 150px;">
+                                <label for="editIntervalCount" class="form-label">Interval Count</label>
+                                <input type="number" class="form-control" id="editIntervalCount" name="intervalCount" min="1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTaxCode" class="form-label">Tax Code</label>
+                            <select class="form-control" id="editTaxCode" name="taxCode">
+                                <option value="">-- No Tax Code --</option>
+                                @foreach (var taxCode in Model.TaxCodes)
+                                {
+                                    <option value="@taxCode.Id" title="@taxCode.Description">@taxCode.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-row align-items-center">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="editEnableTrial" name="enableTrial" value="true"
+                                       onchange="toggleTrialDays('edit')">
+                                <label for="editEnableTrial" class="form-check-label">Enable Trial Period</label>
+                            </div>
+                            <div class="form-group trial-days-group" id="editTrialDaysGroup" style="display: none; width: 150px;">
+                                <label for="editTrialPeriodDays" class="form-label">Trial Days</label>
+                                <input type="number" class="form-control" id="editTrialPeriodDays" name="trialPeriodDays" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stripe Tab -->
+                    <div id="edit-stripe" class="form-tab-content">
+                        <div class="form-group">
+                            <label for="editStripePriceId" class="form-label">Stripe Price</label>
+                            <select class="form-control" id="editStripePriceId" name="stripePriceId" onchange="onEditStripePriceSelect()">
+                                <option value="">-- Not Linked --</option>
+                                @foreach (var stripePlan in Model.StripePlans)
+                                {
+                                    <option value="@stripePlan.PriceId"
+                                            data-product-id="@stripePlan.ProductId">
+                                        @stripePlan.ProductName - @stripePlan.Amount.ToString("C") @stripePlan.Currency.ToUpper()/@stripePlan.Interval
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStripeProductId" class="form-label">Stripe Product ID</label>
+                            <input type="text" class="form-control" id="editStripeProductId" name="stripeProductId" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Access Tab -->
+                    <div id="edit-access" class="form-tab-content">
+                        <div class="form-group">
+                            <label class="form-label">Allowed Roles</label>
+                            <p class="form-hint mb-2">
+                                <i class="fa fa-info-circle"></i> Leave empty to allow all roles
+                            </p>
+                            <div class="roles-checkbox-grid">
+                                @foreach (var role in Model.AvailableRoles)
+                                {
+                                    <div class="role-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="editRole_@role.Id" name="allowedRoleIds" value="@role.Id">
+                                        <label for="editRole_@role.Id" class="form-check-label">@role.Name</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Allowed Countries</label>
+                            <p class="form-hint mb-2">
+                                <i class="fa fa-info-circle"></i> Leave empty for worldwide availability
+                            </p>
+                            <div class="countries-checkbox-grid">
+                                @foreach (var locale in Model.LocaleOptions)
+                                {
+                                    <div class="country-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="editCountry_@locale.CountryCode" name="allowedCountries" value="@locale.CountryCode">
+                                        <label for="editCountry_@locale.CountryCode" class="form-check-label">@locale.Display</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-save"></i> Update Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-delete">
+                <div class="modal-icon-wrapper modal-icon-danger">
+                    <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Plan</h5>
+                    <p class="modal-subtitle">This action cannot be undone</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to delete the plan <strong id="planNameToDelete"></strong>?</p>
+                <p class="text-warning small mb-0">
+                    <i class="fa fa-exclamation-triangle"></i> Existing subscribers will not be affected, but no new subscriptions can be created for this plan.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm" style="display: inline;">
+                    <input type="hidden" name="id" id="idToDelete" />
+                    <button type="submit" class="btn-modern btn-danger">
+                        <i class="fa fa-trash"></i> Delete Plan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetIntervalDisplay(BillingInterval interval, int count)
+    {
+        var intervalName = interval switch
+        {
+            BillingInterval.Daily => count == 1 ? "day" : "days",
+            BillingInterval.Weekly => count == 1 ? "week" : "weeks",
+            BillingInterval.Monthly => count == 1 ? "month" : "months",
+            BillingInterval.Quarterly => count == 1 ? "quarter" : "quarters",
+            BillingInterval.Yearly => count == 1 ? "year" : "years",
+            _ => "month"
+        };
+
+        if (count == 1)
+        {
+            return interval switch
+            {
+                BillingInterval.Daily => "Daily",
+                BillingInterval.Weekly => "Weekly",
+                BillingInterval.Monthly => "Monthly",
+                BillingInterval.Quarterly => "Quarterly",
+                BillingInterval.Yearly => "Yearly",
+                _ => "Monthly"
+            };
+        }
+
+        return $"Every {count} {intervalName}";
+    }
+}
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --danger-color: #dc2626;
+        --warning-color: #f59e0b;
+        --stripe-color: #635bff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    .plans-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .page-subtitle {
+        color: var(--gray-500);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-add, .btn-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-add {
+        background: var(--primary-gradient);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-sync {
+        background: linear-gradient(135deg, var(--stripe-color) 0%, #4f46e5 100%);
+        box-shadow: 0 4px 12px rgba(99, 91, 255, 0.3);
+    }
+
+    .btn-sync:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 91, 255, 0.4);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .stat-icon-total { background: var(--primary-gradient); }
+    .stat-icon-active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-icon-inactive { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+    .stat-icon-stripe { background: linear-gradient(135deg, var(--stripe-color) 0%, #4f46e5 100%); }
+
+    .stat-content { flex: 1; }
+    .stat-label { font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--gray-900); line-height: 1; }
+
+    /* Plans Table */
+    .plans-table-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .plans-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .plans-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .plans-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray-600);
+    }
+
+    .plans-table tbody tr {
+        border-bottom: 1px solid var(--gray-200);
+        transition: background-color 0.15s ease;
+    }
+
+    .plans-table tbody tr:hover { background: var(--gray-50); }
+    .plans-table tbody tr:last-child { border-bottom: none; }
+    .plans-table td { padding: 1rem 1.5rem; vertical-align: middle; }
+
+    /* Plan Info */
+    .plan-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .plan-image, .plan-image-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .plan-image-placeholder {
+        background: var(--gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-400);
+        font-size: 1.25rem;
+    }
+
+    .plan-name {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .plan-description {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Price Display */
+    .price-display {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+    }
+
+    .price-amount {
+        font-weight: 700;
+        color: var(--gray-900);
+        font-size: 1.125rem;
+    }
+
+    .price-currency {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+
+    /* Interval Badge */
+    .interval-badge {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .trial-info {
+        font-size: 0.75rem;
+        color: var(--success-color);
+        margin-top: 0.25rem;
+    }
+
+    /* Status Toggle */
+    .status-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .status-toggle.active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-toggle.active:hover {
+        background: #a7f3d0;
+    }
+
+    .status-toggle.inactive {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    .status-toggle.inactive:hover {
+        background: var(--gray-200);
+    }
+
+    /* Stripe Status */
+    .stripe-linked {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--stripe-color);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .stripe-unlinked {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    /* Roles */
+    .roles-list {
+        display: flex;
+        gap: 0.375rem;
+        flex-wrap: wrap;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: #e0e7ff;
+        color: #3730a3;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .role-more {
+        background: var(--gray-200);
+        color: var(--gray-600);
+    }
+
+    .all-roles {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        font-style: italic;
+    }
+
+    /* Empty State */
+    .empty-state { padding: 4rem 2rem !important; }
+    .empty-icon { font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem; }
+    .empty-title { font-size: 1.25rem; font-weight: 700; color: var(--gray-700); margin-bottom: 0.5rem; }
+    .empty-subtitle { font-size: 0.9375rem; color: var(--gray-500); }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .btn-edit {
+        background: white;
+        color: #667eea;
+        border: 1px solid #e0e7ff;
+    }
+
+    .btn-edit:hover {
+        background: #e0e7ff;
+        border-color: #667eea;
+    }
+
+    .btn-delete {
+        background: white;
+        color: var(--danger-color);
+        border: 1px solid #fecaca;
+    }
+
+    .btn-delete:hover {
+        background: #fee2e2;
+        border-color: var(--danger-color);
+    }
+
+    /* Modal Styles */
+    .modern-modal {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modern-modal .modal-header {
+        border-bottom: none;
+        padding: 1.5rem 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .modal-header-text {
+        flex: 1;
+    }
+
+    .modal-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .modal-header-create { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
+    .modal-icon-create { color: #065f46; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+
+    .modal-header-edit { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+    .modal-icon-edit { color: #1e40af; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+
+    .modal-header-delete { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
+    .modal-icon-danger { color: var(--danger-color); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); }
+
+    .modal-title { font-weight: 700; color: var(--gray-900); margin: 0; font-size: 1.25rem; }
+    .modal-subtitle { font-size: 0.875rem; color: var(--gray-600); margin: 0.25rem 0 0 0; }
+
+    .btn-close-custom {
+        background: white;
+        border: 1px solid var(--gray-200);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gray-600);
+        margin-left: auto;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close-custom:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .modern-modal .modal-body {
+        padding: 1.5rem 2rem 2rem 2rem;
+        background: white;
+    }
+
+    /* Form Tabs */
+    .form-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        padding-bottom: 0.75rem;
+    }
+
+    .form-tab {
+        padding: 0.625rem 1.25rem;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .form-tab:hover { color: var(--gray-700); background: var(--gray-100); }
+    .form-tab.active { color: #667eea; background: #e0e7ff; }
+
+    .form-tab-content { display: none; padding-top: 0.5rem; }
+    .form-tab-content.active { display: block; }
+
+    /* Form Styles */
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .form-row.align-items-center {
+        align-items: center;
+    }
+
+    .flex-1 { flex: 1; }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea.form-control { resize: vertical; min-height: 80px; }
+
+    .form-hint {
+        margin-top: 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.375rem;
+    }
+
+    .form-check-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-right: 1.5rem;
+    }
+
+    .form-check-input {
+        width: 1.1rem;
+        height: 1.1rem;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        cursor: pointer;
+    }
+
+    .roles-checkbox-grid, .countries-checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 10px;
+        border: 2px solid var(--gray-200);
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .role-checkbox-item, .country-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .trial-days-group {
+        margin-left: 1rem;
+    }
+
+    /* File Upload */
+    .file-upload-wrapper {
+        position: relative;
+    }
+
+    .image-preview {
+        margin-top: 0.75rem;
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-preview img {
+        max-width: 150px;
+        max-height: 100px;
+        border-radius: 8px;
+        border: 2px solid var(--gray-200);
+    }
+
+    .btn-remove-image {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--danger-color);
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+    }
+
+    .btn-remove-image:hover {
+        background: #b91c1c;
+    }
+
+    .modern-modal .modal-footer {
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        padding: 1.25rem 2rem;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modern.btn-secondary {
+        background: white;
+        color: var(--gray-700);
+        border: 2px solid var(--gray-200);
+    }
+
+    .btn-modern.btn-secondary:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .btn-modern.btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-modern.btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-modern.btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-modern.btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Alerts */
+    .alert {
+        border-radius: 12px;
+        border: none;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-success { background: #d1fae5; color: #065f46; }
+    .alert-danger { background: #fee2e2; color: #991b1b; }
+    .alert-info { background: #dbeafe; color: #1e40af; }
+
+    /* Stripe Mode Toggle */
+    .stripe-mode-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding: 0.25rem;
+        background: var(--gray-100);
+        border-radius: 10px;
+    }
+
+    .stripe-mode-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .stripe-mode-btn:hover {
+        color: var(--gray-800);
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .stripe-mode-btn.active {
+        background: white;
+        color: var(--stripe-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .stripe-mode-content {
+        display: none;
+    }
+
+    .stripe-mode-content.active {
+        display: block;
+    }
+
+    .alert-stripe {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        background: linear-gradient(135deg, #f0f0ff 0%, #e8e8ff 100%);
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .alert-stripe i.fa-stripe {
+        font-size: 1.5rem;
+        color: var(--stripe-color);
+    }
+
+    .alert-stripe p {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        color: var(--gray-600);
+    }
+
+    .stripe-create-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        background: var(--gray-50);
+        border-radius: 10px;
+        border: 2px solid var(--gray-200);
+        padding: 1rem;
+    }
+
+    .stripe-create-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        color: var(--gray-700);
+    }
+
+    .stripe-create-list li:not(:last-child) {
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .stripe-create-list li i {
+        color: var(--stripe-color);
+        width: 20px;
+        text-align: center;
+    }
+
+    .stripe-create-list li span {
+        color: var(--gray-900);
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .plans-table-container {
+            overflow-x: auto;
+        }
+
+        .plans-table {
+            min-width: 900px;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Plan data for edit modal
+        var plansData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Plans.Select(p => new {
+            p.Id,
+            p.Name,
+            p.Description,
+            p.ImageUrl,
+            p.StripePriceId,
+            p.StripeProductId,
+            p.EnableTrial,
+            p.TrialPeriodDays,
+            Interval = (int)p.Interval,
+            p.IntervalCount,
+            p.Amount,
+            p.Currency,
+            p.TaxCode,
+            p.AllowedCountries,
+            p.IsActive,
+            p.SortOrder,
+            AllowedRoleIds = p.AllowedRoles.Select(r => r.Id)
+        })));
+
+        function showTab(prefix, tabName) {
+            // Hide all tabs
+            document.querySelectorAll('#' + prefix + 'Modal .form-tab-content').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('#' + prefix + 'Modal .form-tab').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(prefix + '-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function toggleTrialDays(prefix) {
+            var checkbox = document.getElementById(prefix + 'EnableTrial');
+            var daysGroup = document.getElementById(prefix + 'TrialDaysGroup');
+            daysGroup.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function previewImage(input, previewId) {
+            var preview = document.getElementById(previewId);
+            var img = preview.querySelector('img');
+
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    preview.style.display = 'inline-block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function removeImage(prefix) {
+            var input = document.getElementById(prefix + 'ImageFile');
+            var preview = document.getElementById(prefix + 'ImagePreview');
+            input.value = '';
+            preview.style.display = 'none';
+
+            if (prefix === 'edit') {
+                document.getElementById('editExistingImageUrl').value = '';
+            }
+        }
+
+        function onStripePriceSelect(prefix) {
+            var select = document.getElementById(prefix + 'StripePriceId');
+            var option = select.options[select.selectedIndex];
+
+            if (option.value) {
+                document.getElementById(prefix + 'StripeProductId').value = option.dataset.productId || '';
+
+                // Only auto-fill on create, not edit
+                if (prefix === 'create') {
+                    if (option.dataset.name) {
+                        document.getElementById(prefix + 'Name').value = option.dataset.name;
+                    }
+                    if (option.dataset.description) {
+                        document.getElementById(prefix + 'Description').value = option.dataset.description;
+                    }
+                    if (option.dataset.amount) {
+                        document.getElementById(prefix + 'Amount').value = option.dataset.amount;
+                    }
+                    if (option.dataset.currency) {
+                        document.getElementById(prefix + 'Currency').value = option.dataset.currency;
+                    }
+                    if (option.dataset.interval) {
+                        var intervalMap = { 'day': 1, 'week': 2, 'month': 3, 'year': 5 };
+                        var intervalValue = intervalMap[option.dataset.interval] || 3;
+                        document.getElementById(prefix + 'Interval').value = intervalValue;
+                    }
+                    if (option.dataset.intervalCount) {
+                        document.getElementById(prefix + 'IntervalCount').value = option.dataset.intervalCount;
+                    }
+                    var trialDays = parseInt(option.dataset.trial) || 0;
+                    if (trialDays > 0) {
+                        document.getElementById(prefix + 'EnableTrial').checked = true;
+                        document.getElementById(prefix + 'TrialPeriodDays').value = trialDays;
+                        toggleTrialDays(prefix);
+                    }
+                }
+            } else {
+                document.getElementById(prefix + 'StripeProductId').value = '';
+            }
+        }
+
+        function onEditStripePriceSelect() {
+            var select = document.getElementById('editStripePriceId');
+            var option = select.options[select.selectedIndex];
+            document.getElementById('editStripeProductId').value = option.value ? (option.dataset.productId || '') : '';
+        }
+
+        function setStripeMode(prefix, mode) {
+            // Update buttons
+            document.querySelectorAll('#' + prefix + '-stripe .stripe-mode-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.stripe-mode-btn').classList.add('active');
+
+            // Update content
+            document.querySelectorAll('#' + prefix + '-stripe .stripe-mode-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+            document.getElementById(prefix + '-stripe-' + mode).classList.add('active');
+
+            // Update hidden field
+            var createNewField = document.getElementById(prefix + 'StripeCreateNew');
+            if (createNewField) {
+                createNewField.value = (mode === 'new') ? 'true' : 'false';
+            }
+
+            // Clear existing selection when switching to new
+            if (mode === 'new') {
+                document.getElementById(prefix + 'StripePriceId').value = '';
+                document.getElementById(prefix + 'StripeProductId').value = '';
+                updateStripePreview(prefix);
+            }
+        }
+
+        function updateStripePreview(prefix) {
+            var name = document.getElementById(prefix + 'Name').value || '(Plan Name)';
+            var amount = parseFloat(document.getElementById(prefix + 'Amount').value) || 0;
+            var currency = document.getElementById(prefix + 'Currency').value.toUpperCase();
+            var intervalSelect = document.getElementById(prefix + 'Interval');
+            var intervalText = intervalSelect.options[intervalSelect.selectedIndex].text.toLowerCase();
+            var intervalCount = parseInt(document.getElementById(prefix + 'IntervalCount').value) || 1;
+
+            var productPreview = document.getElementById(prefix + 'StripeProductPreview');
+            var pricePreview = document.getElementById(prefix + 'StripePricePreview');
+
+            if (productPreview) {
+                productPreview.textContent = name;
+            }
+            if (pricePreview) {
+                var priceText = '$' + amount.toFixed(2) + ' ' + currency;
+                if (intervalCount === 1) {
+                    priceText += ' / ' + intervalText;
+                } else {
+                    priceText += ' every ' + intervalCount + ' ' + intervalText + 's';
+                }
+                pricePreview.textContent = priceText;
+            }
+        }
+
+        // Add event listeners to update Stripe preview when form fields change
+        document.addEventListener('DOMContentLoaded', function() {
+            ['Name', 'Amount', 'Currency', 'Interval', 'IntervalCount'].forEach(function(field) {
+                var createEl = document.getElementById('create' + field);
+                if (createEl) {
+                    createEl.addEventListener('input', function() { updateStripePreview('create'); });
+                    createEl.addEventListener('change', function() { updateStripePreview('create'); });
+                }
+            });
+        });
+
+        function showCreateModal() {
+            try {
+                // Reset form
+                document.querySelector('#createModal form').reset();
+                document.getElementById('createStripeProductId').value = '';
+                document.getElementById('createImagePreview').style.display = 'none';
+
+                // Reset tabs
+                document.querySelectorAll('#createModal .form-tab-content').forEach(function(tab) {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('#createModal .form-tab').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('create-basic').classList.add('active');
+                document.querySelector('#createModal .form-tab').classList.add('active');
+
+                // Reset trial days visibility
+                document.getElementById('createTrialDaysGroup').style.display = 'none';
+
+                // Reset Stripe mode toggle
+                document.querySelectorAll('#create-stripe .stripe-mode-btn').forEach(function(btn, idx) {
+                    btn.classList.toggle('active', idx === 0);
+                });
+                document.querySelectorAll('#create-stripe .stripe-mode-content').forEach(function(content, idx) {
+                    content.classList.toggle('active', idx === 0);
+                });
+                document.getElementById('createStripeCreateNew').value = 'false';
+
+                // Set default values
+                document.getElementById('createIsActive').checked = true;
+
+                var createModal = new bootstrap.Modal(document.getElementById('createModal'));
+                createModal.show();
+            } catch (error) {
+                console.error('Error showing create modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        function showEditModal(planId) {
+            try {
+                var plan = plansData.find(function(p) { return p.Id === planId; });
+                if (!plan) {
+                    alert('Plan not found');
+                    return;
+                }
+
+                // Fill form
+                document.getElementById('editId').value = plan.Id;
+                document.getElementById('editName').value = plan.Name || '';
+                document.getElementById('editDescription').value = plan.Description || '';
+                document.getElementById('editExistingImageUrl').value = plan.ImageUrl || '';
+                document.getElementById('editStripePriceId').value = plan.StripePriceId || '';
+                document.getElementById('editStripeProductId').value = plan.StripeProductId || '';
+                document.getElementById('editEnableTrial').checked = plan.EnableTrial;
+                document.getElementById('editTrialPeriodDays').value = plan.TrialPeriodDays || 0;
+                document.getElementById('editInterval').value = plan.Interval;
+                document.getElementById('editIntervalCount').value = plan.IntervalCount || 1;
+                document.getElementById('editAmount').value = plan.Amount || 0;
+                document.getElementById('editCurrency').value = (plan.Currency || 'usd').toLowerCase();
+                document.getElementById('editTaxCode').value = plan.TaxCode || '';
+                document.getElementById('editIsActive').checked = plan.IsActive;
+                document.getElementById('editSortOrder').value = plan.SortOrder || 0;
+
+                // Show existing image preview
+                var imagePreview = document.getElementById('editImagePreview');
+                if (plan.ImageUrl) {
+                    imagePreview.querySelector('img').src = plan.ImageUrl;
+                    imagePreview.style.display = 'inline-block';
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+
+                // Toggle trial days visibility
+                document.getElementById('editTrialDaysGroup').style.display = plan.EnableTrial ? 'block' : 'none';
+
+                // Set role checkboxes
+                document.querySelectorAll('#editModal input[name="allowedRoleIds"]').forEach(function(cb) {
+                    cb.checked = plan.AllowedRoleIds && plan.AllowedRoleIds.includes(parseInt(cb.value));
+                });
+
+                // Set country checkboxes
+                var allowedCountries = plan.AllowedCountries ? plan.AllowedCountries.split(',') : [];
+                document.querySelectorAll('#editModal input[name="allowedCountries"]').forEach(function(cb) {
+                    cb.checked = allowedCountries.includes(cb.value);
+                });
+
+                // Reset tabs
+                document.querySelectorAll('#editModal .form-tab-content').forEach(function(tab) {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('#editModal .form-tab').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('edit-basic').classList.add('active');
+                document.querySelector('#editModal .form-tab').classList.add('active');
+
+                var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                editModal.show();
+            } catch (error) {
+                console.error('Error showing edit modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        function confirmDelete(id, name) {
+            try {
+                document.getElementById('planNameToDelete').textContent = name;
+                document.getElementById('idToDelete').value = id;
+
+                var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                deleteModal.show();
+            } catch (error) {
+                console.error('Error showing delete modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    var bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+    </script>
+}

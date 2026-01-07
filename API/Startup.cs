@@ -2,6 +2,7 @@ using Authscape.IdentityServer.Services;
 using Authscape.Reporting.Services;
 using AuthScape.Analytics.Services;
 using AuthScape.AzureCloudService;
+using AuthScape.ContentManagement.Models.Hubs;
 using AuthScape.ContentManagement.Services;
 using AuthScape.Controllers;
 using AuthScape.Document.Mapping.Services;
@@ -18,6 +19,8 @@ using AuthScape.ReadMail;
 using AuthScape.SendGrid;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
+using AuthScape.Services.PromoCode;
+using AuthScape.Services.Subscription;
 using AuthScape.Spreadsheet;
 using AuthScape.Spreadsheet.Models.Hubs;
 using AuthScape.StripePayment.Services;
@@ -90,6 +93,8 @@ namespace API
                 services.AddScoped<ISendGridService, SendGridService>();
                 services.AddScoped<IUserService, UserService>();
                 services.AddScoped<IStripePayService, StripePayService>();
+                services.AddScoped<IStripeSubscriptionService, StripeSubscriptionService>();
+                services.AddScoped<IStripeInvoiceService, StripeInvoiceService>();
                 services.AddScoped<ITicketService, TicketService>();
                 services.AddScoped<IPrivateLabelService, PrivateLabelService>();
                 services.AddScoped<IAuthsomeService, AuthsomeService>();
@@ -124,6 +129,8 @@ namespace API
 
 
                 services.AddScoped<IStripeConnectService, StripeConnectService>();
+                services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
+                services.AddScoped<IPromoCodeService, PromoCodeService>();
 
 
 
@@ -245,6 +252,7 @@ namespace API
             authenticationManager.Configure(app, env, (endpoints) =>
             {
                 endpoints.MapHub<SpreadsheetHub>("/chat");
+                endpoints.MapHub<PageBuilderHub>("/pagebuilder");
             });
 
             // remove if not using wwwroot folder...

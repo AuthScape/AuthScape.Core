@@ -2,8 +2,14 @@ using AuthScape.IDP;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.Services;
+using AuthScape.Services.Azure.Storage;
 using AuthScape.Services.Mail.Configuration;
+using AuthScape.Services.Subscription;
+using AuthScape.Services.PromoCode;
+using AuthScape.Services.Invite;
 using AuthScape.StripePayment.Services;
+using CoreBackpack.Azure;
+using CoreBackpack.Services;
 using IDP.Services;
 using IDP.Services.IdentityServer;
 using Microsoft.AspNetCore.Builder;
@@ -125,6 +131,15 @@ namespace IDP
                 services.AddScoped<ISettingsService, SettingsService>();
                 services.AddScoped<IRoleService, AuthScape.Services.RoleService>();
                 services.AddScoped<IPermissionService, PermissionService>();
+                services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
+                services.AddScoped<IPromoCodeService, PromoCodeService>();
+                services.AddScoped<IInviteSettingsService, InviteSettingsService>();
+                services.AddScoped<IAzureBlobStorage, AzureBlobStorage>();
+                services.AddScoped<IBlobStorage, BlobStorage>();
+                services.AddScoped<IImageService, ImageService>();
+
+                // Add HttpClientFactory for MCP proxy calls
+                services.AddHttpClient();
 
                 ThirdPartyAuthService.AddThirdPartyAutentication(services);
 

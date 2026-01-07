@@ -17,6 +17,15 @@
         HistogramsReport = 13,
         TimelineReport = 14,
         WordTree = 15,
-        SanKey = 16
+        SanKey = 16,
+        LineChartReport = 17,
+        ComboChartReport = 18,
+        DonutChartReport = 19,
+        GanttChartReport = 20,
+        GeoChartReport = 21,
+        OrgChartReport = 22,
+        SteppedAreaChartReport = 23,
+        TreeMapChartReport = 24,
+        WaterfallChartReport = 25
     }
 }

@@ -1,5 +1,7 @@
-﻿using AuthScape.Models.Users;
+﻿using AuthScape.Models.Invite;
+using AuthScape.Models.Users;
 using AuthScape.Services;
+using AuthScape.Services.Invite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -22,8 +24,17 @@ namespace AuthScape.IDP.Controllers
         readonly AppSettings appSettings;
         readonly IUserManagementService userManagementService;
         readonly IInviteService inviteService;
+        readonly IInviteSettingsService inviteSettingsService;
 
-        public InviteController(UserManager<AppUser> userManager, DatabaseContext _applicationDbContext, IHttpContextAccessor _httpContextAccessor, IMailService mailService, IInviteService inviteService, IOptions<AppSettings> appSettings, IUserManagementService userManagementService)
+        public InviteController(
+            UserManager<AppUser> userManager,
+            DatabaseContext _applicationDbContext,
+            IHttpContextAccessor _httpContextAccessor,
+            IMailService mailService,
+            IInviteService inviteService,
+            IOptions<AppSettings> appSettings,
+            IUserManagementService userManagementService,
+            IInviteSettingsService inviteSettingsService)
         {
             _userManager = userManager;
             this._applicationDbContext = _applicationDbContext;
@@ -32,6 +43,7 @@ namespace AuthScape.IDP.Controllers
             this.appSettings = appSettings.Value;
             this.userManagementService = userManagementService;
             this.inviteService = inviteService;
+            this.inviteSettingsService = inviteSettingsService;
         }
 
         /// <summary>
@@ -40,15 +52,42 @@ namespace AuthScape.IDP.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> InviteUsers([FromBody] InviteRequested requested)
         {
-            if (requested.Requests == null)
+            if (requested.Requests == null || !requested.Requests.Any())
             {
                 return BadRequest("Invalid Request");
             }
 
-            var newUsers = await inviteService.OnInviteUser(_applicationDbContext, requested.Requests);
+            // Get current user (inviter)
+            var currentUser = await userManagementService.GetSignedInUser();
+            if (currentUser == null)
+            {
+                return Unauthorized("User must be authenticated to send invites");
+            }
+
+            // Validate each request against invite settings
+            var allErrors = new List<string>();
+            foreach (var request in requested.Requests)
+            {
+                var validation = await inviteSettingsService.ValidateInviteRequestAsync(
+                    request,
+                    currentUser.Id,
+                    currentUser.CompanyId);
+
+                if (!validation.IsValid)
+                {
+                    allErrors.AddRange(validation.Errors.Select(e => $"{request.Email}: {e}"));
+                }
+            }
+
+            if (allErrors.Any())
+            {
+                return BadRequest(new { errors = allErrors, success = false });
+            }
+
+            var newUsers = await inviteService.OnInviteUser(_applicationDbContext, requested.Requests, currentUser.Id);
 
             var errors = "";
             foreach (var user in newUsers)
@@ -170,6 +209,16 @@ namespace AuthScape.IDP.Controllers
                 var identityUser = await _userManager.ResetPasswordAsync(dbUser, inviteViewModel.ResetToken, inviteViewModel.Password);
                 if (identityUser.Succeeded)
                 {
+                    // Apply roles and permissions from the invite
+                    var pendingInvite = await _applicationDbContext.UserInvites
+                        .Where(i => i.InvitedUserId == inviteViewModel.Id && i.Status == InviteStatus.Pending)
+                        .FirstOrDefaultAsync();
+
+                    if (pendingInvite != null)
+                    {
+                        await inviteService.ApplyInviteRolesAndPermissions(inviteViewModel.Id, pendingInvite.Id);
+                    }
+
                     await inviteService.OnInviteCompleted(dbUser, inviteViewModel);
                     await _applicationDbContext.SaveChangesAsync();
 

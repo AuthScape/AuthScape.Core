@@ -31,7 +31,8 @@ namespace Authscape.Reporting.Controllers
             {
                 Columns = response.Columns,
                 Content = response.Data,
-                ReportType = response.ReportType
+                ReportType = response.ReportType,
+                Options = response.Options
             });
         }
     }

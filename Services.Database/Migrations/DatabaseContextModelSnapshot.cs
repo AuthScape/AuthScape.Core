@@ -990,6 +990,106 @@ namespace Services.Database.Migrations
                     b.ToTable("ThirdPartyAuthentications");
                 });
 
+            modelBuilder.Entity("AuthScape.Models.Invite.InviteSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<bool>("AllowSettingPermissions")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AllowSettingRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("EnableInviteToCompany")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableInviteToLocation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnforceSamePermissions")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnforceSameRole")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasFilter("[CompanyId] IS NOT NULL");
+
+                    b.ToTable("InviteSettings");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.Invite.UserInvite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<string>("AssignedPermissions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AssignedRoles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("InviteToken")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("InvitedUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("InviterId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("LocationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("InviteToken");
+
+                    b.HasIndex("InvitedUserId");
+
+                    b.HasIndex("InviterId");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("UserInvites");
+                });
+
             modelBuilder.Entity("AuthScape.Models.Logging.Logging", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1131,6 +1231,251 @@ namespace Services.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Plans");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<string>("AllowedCountries")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("EnableTrial")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Interval")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IntervalCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsContactUs")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMostPopular")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastStripeSyncAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripePriceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StripeProductId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StripeProductName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("TaxCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("TrialPeriodDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("SortOrder");
+
+                    b.HasIndex("StripePriceId")
+                        .IsUnique()
+                        .HasFilter("[StripePriceId] IS NOT NULL");
+
+                    b.HasIndex("StripeProductId");
+
+                    b.ToTable("SubscriptionPlans");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlanRole", b =>
+                {
+                    b.Property<Guid>("SubscriptionPlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("SubscriptionPlanId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("SubscriptionPlanRoles");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.PromoCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<int>("AdditionalTrialDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApplicablePlanIds")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ApplicableProductIds")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("AppliesTo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DurationInMonths")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("ExtendsTrialDays")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastStripeSyncAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MaxRedemptionsPerCustomer")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("MinimumAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long?>("RestrictedToCompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("RestrictedToLocationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("RestrictedToUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("StartsAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("StripeCouponId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StripePromotionCodeId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("TimesRedeemed")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Scope");
+
+                    b.HasIndex("StripeCouponId")
+                        .HasFilter("[StripeCouponId] IS NOT NULL");
+
+                    b.HasIndex("StripePromotionCodeId")
+                        .HasFilter("[StripePromotionCodeId] IS NOT NULL");
+
+                    b.ToTable("PromoCodes");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.StoreCredit", b =>
@@ -3360,6 +3705,58 @@ namespace Services.Database.Migrations
                     b.Navigation("DocumentFolder");
                 });
 
+            modelBuilder.Entity("AuthScape.Models.Invite.InviteSettings", b =>
+                {
+                    b.HasOne("AuthScape.Models.Users.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("AuthScape.Models.Invite.UserInvite", b =>
+                {
+                    b.HasOne("AuthScape.Models.Users.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AuthScape.Models.Users.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthScape.Models.Users.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("InviterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("AuthScape.Models.Users.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlanRole", b =>
+                {
+                    b.HasOne("AuthScape.Models.Users.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlan", "SubscriptionPlan")
+                        .WithMany("AllowedRoles")
+                        .HasForeignKey("SubscriptionPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("SubscriptionPlan");
+                });
+
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.StoreCredit", b =>
                 {
                     b.HasOne("AuthScape.Models.Users.Company", null)
@@ -3851,6 +4248,11 @@ namespace Services.Database.Migrations
             modelBuilder.Entity("AuthScape.Document.Models.DocumentSegment", b =>
                 {
                     b.Navigation("Folders");
+                });
+
+            modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlan", b =>
+                {
+                    b.Navigation("AllowedRoles");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Stripe.StripeInvoice", b =>

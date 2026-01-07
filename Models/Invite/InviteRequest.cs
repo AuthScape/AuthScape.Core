@@ -11,5 +11,15 @@
         public string? PhoneNumber { get; set; }
 
         public string? CompanyName { get; set; }
+
+        /// <summary>
+        /// Role IDs to assign to the invited user upon acceptance
+        /// </summary>
+        public List<long>? RoleIds { get; set; }
+
+        /// <summary>
+        /// Permission IDs to assign to the invited user upon acceptance
+        /// </summary>
+        public List<Guid>? PermissionIds { get; set; }
     }
 }

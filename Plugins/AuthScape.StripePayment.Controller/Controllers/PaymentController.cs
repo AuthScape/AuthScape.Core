@@ -5,7 +5,10 @@ using AuthScape.StripePayment.Models;
 using AuthScape.StripePayment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenIddict.Validation.AspNetCore;
+using Services.Context;
+using Services.Database;
 
 namespace AuthScape.StripePayment.Controller.Controllers
 {
@@ -15,9 +18,11 @@ namespace AuthScape.StripePayment.Controller.Controllers
     {
         readonly IStripePayService stripePayService;
         readonly IUserManagementService userManagementService;
-        public PaymentController(IStripePayService stripePayService, IUserManagementService userManagementService)
+        readonly DatabaseContext context;
+        public PaymentController(IStripePayService stripePayService, IUserManagementService userManagementService, DatabaseContext context)
         {
             this.stripePayService = stripePayService;
+            this.context = context;
             this.userManagementService = userManagementService;
         }
 
@@ -54,11 +59,35 @@ namespace AuthScape.StripePayment.Controller.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetStripePublicKey()
+        {
+            var publicKey = await stripePayService.GetStripePublicKey();
+            if (string.IsNullOrEmpty(publicKey))
+            {
+                return NotFound(new { success = false, message = "Stripe public key not configured. Please add a setting with Name='StripePublicKey' in the Settings table." });
+            }
+            return Ok(new { publicKey = publicKey });
+        }
+
+        [HttpGet]
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
         public async Task<IActionResult> SetupStripeConnect(string returnBaseUrl)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
             return Ok(await stripePayService.SetupStripeConnect(signedInUser, returnBaseUrl));
+        }
+
+        [HttpGet]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
+        public async Task<IActionResult> GetStripeConnectStatus()
+        {
+            var signedInUser = await userManagementService.GetSignedInUser();
+            var status = await stripePayService.GetStripeConnectStatus(signedInUser);
+            if (status == null)
+            {
+                return NotFound(new { success = false, message = "No Stripe Connect account found" });
+            }
+            return Ok(status);
         }
 
         [HttpPost]
@@ -168,7 +197,43 @@ namespace AuthScape.StripePayment.Controller.Controllers
             }
 
             var paymentMethods = await stripePayService.GetPaymentMethods(signedInUser, paymentMethodType);
-            return Ok(paymentMethods);
+
+            // Get wallet to determine default payment method
+            Wallet wallet = null;
+            if (paymentMethodType == PaymentMethodType.Company && signedInUser.CompanyId.HasValue)
+            {
+                wallet = await context.Wallets.FirstOrDefaultAsync(w => w.CompanyId == signedInUser.CompanyId);
+            }
+            else if (paymentMethodType == PaymentMethodType.User)
+            {
+                wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == signedInUser.Id);
+            }
+            else if (paymentMethodType == PaymentMethodType.Location && signedInUser.LocationId.HasValue)
+            {
+                wallet = await context.Wallets.FirstOrDefaultAsync(w => w.LocationId == signedInUser.LocationId);
+            }
+
+            var defaultPaymentMethodId = wallet?.DefaultPaymentMethodId;
+
+            // Map to response with isDefault flag
+            var result = paymentMethods?.Select(pm => new
+            {
+                id = pm.Id,
+                walletId = pm.WalletId,
+                expMonth = pm.ExpMonth,
+                expYear = pm.ExpYear,
+                last4 = pm.Last4,
+                brand = pm.Brand,
+                bankName = pm.BankName,
+                accountType = pm.AccountType,
+                accountHolderType = pm.AccountHolderType,
+                routingNumber = pm.RoutingNumber,
+                walletType = pm.WalletType,
+                paymentMethodId = pm.PaymentMethodId,
+                isDefault = pm.Id == defaultPaymentMethodId
+            }).ToList();
+
+            return Ok(result);
         }
 
         [HttpGet]
@@ -350,6 +415,78 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 return StatusCode(500, new { success = false, error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Quick charge - one-time payment using an existing payment method
+        /// </summary>
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
+        public async Task<IActionResult> QuickCharge([FromBody] QuickChargeRequest request)
+        {
+            try
+            {
+                var signedInUser = await userManagementService.GetSignedInUser();
+
+                // If null (cookie auth), construct from claims
+                if (signedInUser == null)
+                {
+                    var idValue =
+                        User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+                        User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ??
+                        User.FindFirst("sub")?.Value ??
+                        User.FindFirst("oid")?.Value;
+
+                    if (string.IsNullOrWhiteSpace(idValue) || !long.TryParse(idValue, out var userId))
+                    {
+                        return Unauthorized(new { success = false, error = "User ID not found in claims" });
+                    }
+
+                    signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
+                }
+
+                if (request.AmountCents < 100)
+                {
+                    return BadRequest(new { success = false, error = "Minimum charge amount is $1.00" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.PaymentMethodId))
+                {
+                    return BadRequest(new { success = false, error = "Payment method is required" });
+                }
+
+                // Parse the payment method ID - can be either a Guid (from DB) or a Stripe payment method ID string
+                Guid walletPaymentMethodId;
+                if (!Guid.TryParse(request.PaymentMethodId, out walletPaymentMethodId))
+                {
+                    return BadRequest(new { success = false, error = "Invalid payment method ID format" });
+                }
+
+                // Use the existing Charge method with the payment method
+                var chargeParam = new ChargeParam
+                {
+                    PaymentMethodType = PaymentMethodType.User,
+                    Amount = request.AmountCents / 100m, // Convert cents to dollars
+                    WalletPaymentMethodId = walletPaymentMethodId
+                };
+
+                var result = await stripePayService.Charge(signedInUser, chargeParam);
+
+                if (result == null || !result.Success)
+                {
+                    return StatusCode(500, new { success = false, error = result?.Reason ?? "Payment processing failed" });
+                }
+
+                return Ok(new { success = true });
+            }
+            catch (Stripe.StripeException ex)
+            {
+                return BadRequest(new { success = false, error = ex.StripeError?.Message ?? ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+        }
     }
 
     public class PaidInvoiceParam
@@ -388,5 +525,13 @@ namespace AuthScape.StripePayment.Controller.Controllers
     {
         public Guid WalletId { get; set; }
         public Guid PaymentMethodId { get; set; }
+    }
+
+    public class QuickChargeRequest
+    {
+        public long AmountCents { get; set; }
+        public string PaymentMethodId { get; set; }
+        public string? Description { get; set; }
+        public Dictionary<string, string>? Metadata { get; set; }
     }
 }
