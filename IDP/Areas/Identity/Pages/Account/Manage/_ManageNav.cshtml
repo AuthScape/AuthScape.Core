@@ -141,18 +141,8 @@
     <!-- Billing & Subscriptions -->
     <li class="nav-section-title mt-3">Billing &amp; Subscriptions</li>
     <li class="nav-item">
-        <a class="nav-link @ManageNavPages.PaymentMethodsClass(ViewContext)" id="payment-methods" asp-page="./Wallet">
-            <i class="fa fa-credit-card"></i>Payment methods
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link @ManageNavPages.SubscriptionsNavClass(ViewContext)" id="subscriptions" asp-page="./Subscriptions">
-            <i class="fa fa-star"></i>Subscriptions
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link @ManageNavPages.BillingHistoryNavClass(ViewContext)" id="billing-history" asp-page="./BillingHistory">
-            <i class="fa fa-file-text-o"></i>Billing history / Invoices
+        <a class="nav-link @ManageNavPages.PaymentsNavClass(ViewContext)" id="payments" asp-page="./Payments">
+            <i class="fa fa-credit-card"></i>Payments &amp; Billing
         </a>
     </li>
 

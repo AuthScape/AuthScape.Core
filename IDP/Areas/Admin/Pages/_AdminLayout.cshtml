@@ -207,6 +207,26 @@
                         <i class="fa fa-cog"></i>Settings
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/InviteSettings" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/InviteSettings">
+                        <i class="fa fa-envelope"></i>Invite Settings
+                    </a>
+                </li>
+
+                <li class="admin-nav-section-title mt-3">Billing</li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/SubscriptionPlans" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/SubscriptionPlans">
+                        <i class="fa fa-credit-card"></i>Subscription Plans
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/PromoCodes" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/PromoCodes">
+                        <i class="fa fa-ticket"></i>Promo Codes
+                    </a>
+                </li>
 
                 <li class="admin-nav-section-title mt-3">System</li>
                 <li class="nav-item">

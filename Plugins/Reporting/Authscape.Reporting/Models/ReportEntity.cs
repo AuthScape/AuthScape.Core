@@ -14,6 +14,7 @@ namespace Authscape.Reporting.Models
 
 
         public ReportType ReportType { get; set; }
+        public Dictionary<string, object> Options { get; set; } = new Dictionary<string, object>();
 
 
         public Guid Id

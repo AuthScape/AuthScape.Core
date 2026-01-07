@@ -98,6 +98,79 @@
         flex-wrap: wrap;
     }
 
+    /* =====================================================
+       CHOOSE A PLAN MODAL STYLES
+       ===================================================== */
+
+    /* Modal Header - Gradient Background */
+    #newSubscriptionModal .modal-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.75rem 2rem;
+        border: none;
+        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    #newSubscriptionModal .modal-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.5;
+    }
+
+    #newSubscriptionModal .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    #newSubscriptionModal .modal-title::before {
+        content: '';
+        display: inline-flex;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        align-items: center;
+        justify-content: center;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z'/%3E%3Cpath d='M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    #newSubscriptionModal .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+        position: relative;
+        z-index: 1;
+    }
+
+    #newSubscriptionModal .btn-close:hover {
+        opacity: 1;
+    }
+
+    #newSubscriptionModal .modal-content {
+        border: none;
+        border-radius: var(--border-radius-lg);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    #newSubscriptionModal .modal-body {
+        padding: 2rem;
+        background: var(--gray-50);
+    }
+
+    /* Plan Cards */
     .plan-selector {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -107,41 +180,63 @@
 
     .plan-option {
         position: relative;
-        border: 3px solid var(--gray-200);
+        border: 2px solid var(--gray-200);
         border-radius: var(--border-radius-lg);
         padding: 1.75rem;
         cursor: pointer;
-        transition: all var(--transition-base);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         background: white;
+        overflow: hidden;
+    }
+
+    .plan-option::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gray-200);
+        transition: all 0.3s ease;
     }
 
     .plan-option:hover {
         border-color: var(--primary-color);
-        transform: scale(1.02);
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(102, 126, 234, 0.1), 0 10px 10px -5px rgba(102, 126, 234, 0.04);
+    }
+
+    .plan-option:hover::before {
+        background: var(--primary-gradient);
     }
 
     .plan-option.selected {
         border-color: var(--primary-color);
-        background: linear-gradient(to bottom, rgba(102, 126, 234, 0.03), white);
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        background: linear-gradient(to bottom, rgba(102, 126, 234, 0.04), white);
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
     }
 
     .plan-option.selected::before {
-        content: '✓';
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 28px;
-        height: 28px;
         background: var(--primary-gradient);
-        color: white;
+        height: 5px;
+    }
+
+    .plan-option.selected::after {
+        content: '';
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        width: 32px;
+        height: 32px;
+        background: var(--primary-gradient);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        font-size: 0.875rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
     }
 
     .plan-name {
@@ -152,59 +247,460 @@
     }
 
     .plan-price {
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 2.75rem;
+        font-weight: 800;
         background: var(--primary-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
+        line-height: 1;
     }
 
     .plan-interval {
         color: var(--gray-500);
         font-size: 0.95rem;
         margin-bottom: 1.25rem;
+        font-weight: 500;
     }
 
     .plan-description {
         color: var(--gray-600);
         font-size: 0.9rem;
-        line-height: 1.5;
+        line-height: 1.6;
     }
 
-    .subscription-details-form {
-        background: var(--gray-50);
-        border-radius: var(--border-radius-lg);
-        padding: 2rem;
-        border: 2px solid var(--gray-200);
+    .plan-badge {
+        position: absolute;
+        top: -1px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--primary-gradient);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.375rem 1rem;
+        border-radius: 0 0 8px 8px;
     }
 
-    .selected-plan-summary {
-        background: white;
-        padding: 1.5rem;
-        border-radius: var(--border-radius-md);
-        margin-bottom: 1.5rem;
-        border-left: 4px solid var(--primary-color);
-    }
-
-    .trial-info {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        padding: 1rem 1.25rem;
-        border-radius: var(--border-radius-md);
-        margin-top: 1rem;
+    .trial-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
+        color: var(--primary-color);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.5rem 0.875rem;
+        border-radius: 20px;
         border: 1px solid rgba(102, 126, 234, 0.2);
     }
 
-    .trial-checkbox-label {
+    /* Subscription Details Form */
+    .subscription-details-form {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        padding: 0;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .subscription-details-header {
+        background: var(--gray-50);
+        padding: 1.25rem 1.75rem;
+        border-bottom: 1px solid var(--gray-200);
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        cursor: pointer;
+    }
+
+    .subscription-details-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .subscription-details-header svg {
+        color: var(--primary-color);
+    }
+
+    .subscription-details-body {
+        padding: 1.75rem;
+    }
+
+    /* Selected Plan Summary Card */
+    .selected-plan-summary {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--border-radius-md);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .selected-plan-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-gradient);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+    }
+
+    .selected-plan-icon svg {
+        width: 24px;
+        height: 24px;
+        color: white;
+    }
+
+    .selected-plan-info {
+        flex: 1;
+    }
+
+    .selected-plan-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .selected-plan-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+        margin-bottom: 0.625rem;
+        display: block;
+    }
+
+    /* Payment Method Styled Select */
+    .payment-method-wrapper {
+        position: relative;
+    }
+
+    .payment-method-select {
+        width: 100%;
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-md);
+        font-size: 0.95rem;
         font-weight: 500;
+        color: var(--gray-900);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .payment-method-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .payment-method-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+    }
+
+    .payment-method-chevron {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+    }
+
+    .add-payment-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-top: 0.625rem;
+        font-size: 0.875rem;
+        color: var(--primary-color);
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .add-payment-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Promo Code Inline */
+    .promo-code-wrapper {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .promo-code-input {
+        flex: 1;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-md);
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+    .promo-code-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .promo-code-input::placeholder {
+        color: var(--gray-400);
+    }
+
+    .btn-apply-promo {
+        padding: 0.875rem 1.5rem;
+        background: var(--gray-100);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius-md);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .btn-apply-promo:hover {
+        background: var(--gray-200);
+        border-color: var(--gray-300);
+    }
+
+    /* Trial Section - Prominent Card */
+    .trial-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--border-radius-md);
+        margin-top: 1.5rem;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trial-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--primary-gradient);
+    }
+
+    .trial-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .trial-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary-gradient);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+        font-size: 1.25rem;
+    }
+
+    .trial-text {
+        flex: 1;
+    }
+
+    .trial-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.375rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .trial-description {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .trial-toggle-wrapper {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    /* Custom Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 52px;
+        height: 28px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--gray-300);
+        border-radius: 28px;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-slider::before {
+        position: absolute;
+        content: '';
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background: var(--primary-gradient);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+        transform: translateX(24px);
+    }
+
+    /* Modal Footer */
+    #newSubscriptionModal .modal-footer {
+        background: white;
+        border-top: 1px solid var(--gray-200);
+        padding: 1.25rem 2rem;
+        gap: 0.75rem;
+    }
+
+    .btn-cancel-subscription {
+        padding: 0.875rem 1.75rem;
+        background: transparent;
+        border: 2px solid var(--gray-300);
+        border-radius: var(--border-radius-md);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-cancel-subscription:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+        color: var(--gray-700);
+    }
+
+    .btn-subscribe {
+        padding: 0.875rem 2rem;
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: var(--border-radius-md);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-subscribe:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-subscribe:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-subscribe svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .plan-selector {
+            grid-template-columns: 1fr;
+        }
+
+        .promo-code-wrapper {
+            flex-direction: column;
+        }
+
+        .btn-apply-promo {
+            width: 100%;
+        }
+
+        .trial-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .trial-toggle-wrapper {
+            margin-top: 1rem;
+        }
+
+        #newSubscriptionModal .modal-body {
+            padding: 1.5rem;
+        }
     }
 </style>
 
+<div class="manage-container">
 <!-- Page Header -->
 <div class="page-header">
         <div class="page-header-actions">
@@ -257,6 +753,7 @@
             </div>
         </div>
     </div>
+</div> <!-- /.manage-container -->
 
 <!-- New Subscription Modal -->
 <div class="modal fade" id="newSubscriptionModal" tabindex="-1" aria-hidden="true">
@@ -264,7 +761,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">Choose a Plan</h2>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <!-- Plan Selection -->
@@ -278,48 +775,93 @@
                 <!-- Subscription Details Form -->
                 <div id="subscription-details" style="display: none;">
                     <div class="subscription-details-form">
-                        <h3 class="mb-3" style="font-size: 1.25rem; font-weight: 600;">Subscription Details</h3>
-
-                        <!-- Selected Plan Summary -->
-                        <div class="selected-plan-summary">
-                            <div class="form-label mb-2">Selected Plan</div>
-                            <div id="selected-plan-display" style="font-size: 1.125rem; font-weight: 600; color: var(--gray-900);"></div>
+                        <div class="subscription-details-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                                <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                            </svg>
+                            <h3>Subscription Details</h3>
                         </div>
+                        <div class="subscription-details-body">
+                            <!-- Selected Plan Summary -->
+                            <div class="selected-plan-summary">
+                                <div class="selected-plan-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                                        <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/>
+                                        <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/>
+                                    </svg>
+                                </div>
+                                <div class="selected-plan-info">
+                                    <div class="selected-plan-label">Selected Plan</div>
+                                    <div class="selected-plan-name" id="selected-plan-display"></div>
+                                </div>
+                            </div>
 
-                        <!-- Payment Method -->
-                        <div class="form-group">
-                            <label class="form-label">Payment Method</label>
-                            <select id="payment-method-select" class="form-control form-select">
-                                <option value="">Loading payment methods...</option>
-                            </select>
-                            <span class="form-help">Select a payment method for this subscription</span>
-                        </div>
+                            <!-- Payment Method -->
+                            <div class="form-section">
+                                <label class="form-section-label">Payment Method</label>
+                                <div class="payment-method-wrapper">
+                                    <svg class="payment-method-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                                        <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                                    </svg>
+                                    <select id="payment-method-select" class="payment-method-select">
+                                        <option value="">Loading payment methods...</option>
+                                    </select>
+                                    <svg class="payment-method-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                    </svg>
+                                </div>
+                                <a href="/PaymentMethods" class="add-payment-link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                    </svg>
+                                    Add new payment method
+                                </a>
+                            </div>
 
-                        <!-- Promo Code -->
-                        <div class="form-group">
-                            <label class="form-label">Promo Code (Optional)</label>
-                            <input type="text" id="promo-code-input" class="form-control" placeholder="Enter promo code">
-                            <span class="form-help">Have a discount code? Enter it here</span>
-                        </div>
+                            <!-- Promo Code -->
+                            <div class="form-section">
+                                <label class="form-section-label">Promo Code</label>
+                                <div class="promo-code-wrapper">
+                                    <input type="text" id="promo-code-input" class="promo-code-input" placeholder="Enter discount code">
+                                    <button type="button" class="btn-apply-promo" onclick="applyPromoCode()">Apply</button>
+                                </div>
+                            </div>
 
-                        <!-- Trial Period -->
-                        <div class="trial-info">
-                            <label class="trial-checkbox-label">
-                                <input class="form-check-input" type="checkbox" id="trial-checkbox" style="width: 20px; height: 20px;">
-                                <span>
-                                    Start with <strong id="trial-days">14</strong>-day free trial
-                                </span>
-                            </label>
-                            <p class="mb-0 mt-2" style="font-size: 0.875rem; color: var(--gray-600); margin-left: 2rem;">
-                                You won't be charged until the trial period ends. Cancel anytime.
-                            </p>
+                            <!-- Trial Period Card -->
+                            <div class="trial-card" id="trial-section">
+                                <div class="trial-content">
+                                    <div class="trial-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="0 0 16 16">
+                                            <path d="M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5V7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A2.968 2.968 0 0 1 3 2.506V2.5zm1.068.5H7v-.5a1.5 1.5 0 1 0-3 0c0 .085.002.274.045.43a.522.522 0 0 0 .023.07zM9 3h2.932a.56.56 0 0 0 .023-.07c.043-.156.045-.345.045-.43a1.5 1.5 0 0 0-3 0V3zM1 4v2h6V4H1zm8 0v2h6V4H9zm5 3H9v8h4.5a.5.5 0 0 0 .5-.5V7zm-7 8V7H2v7.5a.5.5 0 0 0 .5.5H7z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="trial-text">
+                                        <div class="trial-title">
+                                            Start with <strong id="trial-days">14</strong>-day FREE trial
+                                        </div>
+                                        <p class="trial-description">No charge until your trial ends. Cancel anytime during the trial period.</p>
+                                    </div>
+                                    <div class="trial-toggle-wrapper">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="trial-checkbox" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="create-subscription-btn" style="display: none;">
+                <button type="button" class="btn-cancel-subscription" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-subscribe" id="create-subscription-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                    </svg>
                     <span>Subscribe Now</span>
                 </button>
             </div>
@@ -427,8 +969,13 @@
                                 `<button class="btn btn-sm btn-danger" onclick="cancelSubscription('${sub.id}')">Cancel</button>` :
                                 `<button class="btn btn-sm btn-success" onclick="resumeSubscription('${sub.id}')">Resume</button>`
                             }
+                            <button class="btn btn-sm btn-secondary" onclick="removeStaleSubscription('${sub.id}')" title="Remove this subscription from your list">Remove</button>
                         </div>
-                        ` : ''}
+                        ` : `
+                        <div class="subscription-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="removeStaleSubscription('${sub.id}')" title="Remove from list">Remove</button>
+                        </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -455,14 +1002,18 @@
         const container = document.getElementById('plans-container');
 
         container.innerHTML = plans.map(plan => `
-            <div class="plan-option" onclick="selectPlan('${plan.priceId}', '${plan.productName}', ${plan.amount}, '${plan.interval}', ${plan.trialPeriodDays || 0})">
+            <div class="plan-option" onclick="selectPlan('${plan.priceId}', '${plan.productName}', ${plan.amount}, '${plan.interval}', ${plan.trialPeriodDays || 0}, ${plan.enableTrial || false}, '${plan.id || ''}')">
+                ${plan.isMostPopular ? `<span class="plan-badge">Most Popular</span>` : ''}
                 <div class="plan-name">${plan.productName}</div>
                 <div class="plan-price">$${plan.amount.toFixed(2)}</div>
                 <div class="plan-interval">per ${plan.interval}</div>
                 ${plan.description ? `<p class="plan-description">${plan.description}</p>` : ''}
-                ${plan.trialPeriodDays ? `
+                ${plan.enableTrial && plan.trialPeriodDays ? `
                     <div class="mt-3">
-                        <span class="badge" style="background: var(--primary-gradient); color: white;">
+                        <span class="trial-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5V7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A2.968 2.968 0 0 1 3 2.506V2.5z"/>
+                            </svg>
                             ${plan.trialPeriodDays} days free trial
                         </span>
                     </div>
@@ -471,17 +1022,166 @@
         `).join('');
     }
 
-    function selectPlan(priceId, planName, amount, interval, trialDays) {
+    let selectedPlanGuid = null;
+    let appliedPromoCode = null;
+    let baseTrialDays = 0;
+
+    async function applyPromoCode() {
+        const promoInput = document.getElementById('promo-code-input');
+        const promoCode = promoInput.value.trim();
+        const btn = document.querySelector('.btn-apply-promo');
+
+        if (!promoCode) {
+            return;
+        }
+
+        if (!selectedPlanGuid) {
+            alert('Please select a plan first');
+            return;
+        }
+
+        btn.textContent = 'Checking...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/Subscription/ValidatePromoCode', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    code: promoCode,
+                    planId: selectedPlanGuid
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                appliedPromoCode = promoCode;
+                btn.textContent = 'Applied!';
+                btn.style.background = 'var(--success-color)';
+                btn.style.borderColor = 'var(--success-color)';
+                btn.style.color = 'white';
+
+                // Show discount info
+                showPromoSuccess(result.discountDisplay);
+
+                // Handle trial extension if promo code extends trial
+                if (result.extendsTrialDays && result.additionalTrialDays > 0) {
+                    const currentDays = baseTrialDays;
+                    const newDays = currentDays + result.additionalTrialDays;
+                    document.getElementById('trial-days').textContent = newDays;
+                    document.getElementById('trial-section').style.display = 'block';
+                    document.getElementById('trial-checkbox').checked = true;
+                }
+
+                setTimeout(() => {
+                    btn.textContent = 'Applied';
+                    btn.style.background = 'var(--success-color)';
+                }, 2000);
+            } else {
+                appliedPromoCode = null;
+                btn.textContent = 'Invalid';
+                btn.style.background = 'var(--danger-color)';
+                btn.style.borderColor = 'var(--danger-color)';
+                btn.style.color = 'white';
+                showPromoError(result.error || 'Invalid promo code');
+
+                setTimeout(() => {
+                    btn.textContent = 'Apply';
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error validating promo code:', error);
+            btn.textContent = 'Error';
+            btn.style.background = 'var(--danger-color)';
+            btn.style.borderColor = 'var(--danger-color)';
+            btn.style.color = 'white';
+
+            setTimeout(() => {
+                btn.textContent = 'Apply';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+                btn.disabled = false;
+            }, 2000);
+        }
+    }
+
+    function showPromoSuccess(discountDisplay) {
+        // Remove existing messages
+        const existingMsg = document.querySelector('.promo-message');
+        if (existingMsg) existingMsg.remove();
+
+        const wrapper = document.querySelector('.promo-code-wrapper');
+        const msgEl = document.createElement('div');
+        msgEl.className = 'promo-message';
+        msgEl.style.cssText = 'margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; color: #065f46; font-size: 0.875rem; font-weight: 500;';
+        msgEl.innerHTML = `<svg style="display:inline; vertical-align: -2px; margin-right: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> Promo applied: ${discountDisplay}`;
+        wrapper.parentNode.appendChild(msgEl);
+    }
+
+    function showPromoError(errorMessage) {
+        // Remove existing messages
+        const existingMsg = document.querySelector('.promo-message');
+        if (existingMsg) existingMsg.remove();
+
+        const wrapper = document.querySelector('.promo-code-wrapper');
+        const msgEl = document.createElement('div');
+        msgEl.className = 'promo-message';
+        msgEl.style.cssText = 'margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 6px; color: #991b1b; font-size: 0.875rem; font-weight: 500;';
+        msgEl.innerHTML = `<svg style="display:inline; vertical-align: -2px; margin-right: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg> ${errorMessage}`;
+        wrapper.parentNode.appendChild(msgEl);
+
+        setTimeout(() => {
+            msgEl.remove();
+        }, 5000);
+    }
+
+    function selectPlan(priceId, planName, amount, interval, trialDays, enableTrial, planGuid) {
         selectedPlanId = priceId;
+        selectedPlanGuid = planGuid || null;
+        baseTrialDays = trialDays;
 
         // Update UI
         document.querySelectorAll('.plan-option').forEach(card => card.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
 
         document.getElementById('selected-plan-display').textContent = `${planName} - $${amount.toFixed(2)}/${interval}`;
-        document.getElementById('trial-days').textContent = trialDays || 14;
         document.getElementById('subscription-details').style.display = 'block';
         document.getElementById('create-subscription-btn').style.display = 'inline-flex';
+
+        // Handle trial section dynamically based on plan settings
+        const trialSection = document.getElementById('trial-section');
+        const trialCheckbox = document.getElementById('trial-checkbox');
+        const trialDaysSpan = document.getElementById('trial-days');
+
+        if (enableTrial && trialDays > 0) {
+            trialSection.style.display = 'block';
+            trialDaysSpan.textContent = trialDays;
+            trialCheckbox.checked = true;
+        } else {
+            trialSection.style.display = 'none';
+            trialCheckbox.checked = false;
+        }
+
+        // Reset promo code state when changing plans
+        appliedPromoCode = null;
+        const existingMsg = document.querySelector('.promo-message');
+        if (existingMsg) existingMsg.remove();
+        const btn = document.querySelector('.btn-apply-promo');
+        btn.textContent = 'Apply';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        btn.disabled = false;
     }
 
     async function loadPaymentMethods() {
@@ -507,8 +1207,10 @@
 
     async function createSubscription() {
         const paymentMethodId = document.getElementById('payment-method-select').value;
-        const promoCode = document.getElementById('promo-code-input').value;
+        const promoCodeInput = document.getElementById('promo-code-input').value.trim();
         const useTrial = document.getElementById('trial-checkbox').checked;
+        const trialSection = document.getElementById('trial-section');
+        const trialEnabled = trialSection.style.display !== 'none';
 
         if (!selectedPlanId || !paymentMethodId) {
             alert('Please select a plan and payment method');
@@ -526,12 +1228,14 @@
                 paymentMethodId: paymentMethodId
             };
 
-            // Only add optional fields if they have values
-            if (promoCode) {
-                requestBody.promoCode = promoCode;
+            // Use the validated promo code if available, otherwise use input value
+            const promoToUse = appliedPromoCode || promoCodeInput;
+            if (promoToUse) {
+                requestBody.promoCode = promoToUse;
             }
 
-            if (useTrial) {
+            // Only include trial days if trial is enabled for this plan and user wants trial
+            if (trialEnabled && useTrial) {
                 requestBody.trialPeriodDays = parseInt(document.getElementById('trial-days').textContent);
             }
 
@@ -590,7 +1294,14 @@
                 alert('Subscription canceled. It will remain active until the end of your billing period.');
                 loadSubscriptions();
             } else {
-                alert('Error: ' + data.error);
+                // Check if the error is due to subscription not found
+                if (data.error && (data.error.includes('resource_missing') || data.error.includes('No such subscription'))) {
+                    if (confirm('This subscription is no longer active. Would you like to remove it from your list?')) {
+                        removeStaleSubscription(subscriptionId);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
             }
         } catch (error) {
             console.error('Error canceling subscription:', error);
@@ -629,6 +1340,36 @@
     function manageSubscription(subscriptionId) {
         // TODO: Implement subscription management modal
         alert('Subscription management coming soon!');
+    }
+
+    async function removeStaleSubscription(subscriptionId) {
+        if (!confirm('Are you sure you want to remove this subscription from your list?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/Subscriptions?handler=RemoveStale', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: new URLSearchParams({ subscriptionId: subscriptionId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Subscription removed successfully.');
+                loadSubscriptions();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+            }
+        } catch (error) {
+            console.error('Error removing subscription:', error);
+            alert('Failed to remove subscription: ' + error.message);
+        }
     }
 
 </script>

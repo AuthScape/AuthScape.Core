@@ -39,6 +39,17 @@ namespace AuthScape.ContentManagement.Services
         Task<long> CreatePageRoot(string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId);
         Task UpdatePageRoot(long? pageRootId, string title, string slug, bool isInHeaderNavigation, bool highlight, int order, long? privateLabelCompanyId, long? parentId);
         Task RemovePageRoot(long pageRootId);
+        Task<List<AIDesignerPage>> GetPagesForAIDesigner(long? privateLabelCompanyId = null);
+    }
+
+    /// <summary>
+    /// Simplified page model for AI Designer dropdown.
+    /// </summary>
+    public class AIDesignerPage
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = "";
+        public string? Slug { get; set; }
     }
     public class ContentManagementService : IContentManagementService
     {
@@ -737,6 +748,26 @@ namespace AuthScape.ContentManagement.Services
                 .ToPagedResultAsync(offset - 1, length);
 
             return pageAssets;
+        }
+
+        /// <summary>
+        /// Get a simplified list of pages for the AI Designer WPF app.
+        /// </summary>
+        public async Task<List<AIDesignerPage>> GetPagesForAIDesigner(long? privateLabelCompanyId = null)
+        {
+            var pages = await databaseContext.Pages
+                .AsNoTracking()
+                .Where(p => privateLabelCompanyId == null || p.CompanyId == privateLabelCompanyId)
+                .OrderBy(p => p.Title)
+                .Select(p => new AIDesignerPage
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug
+                })
+                .ToListAsync();
+
+            return pages;
         }
     }
 }

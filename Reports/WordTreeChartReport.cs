@@ -13,28 +13,39 @@ namespace Reports
         {
             return await Task.Run(() =>
             {
-                //var dataPoints = new List<WordTreeChartDataPoint>();
+                var phrases = new List<WordTreePhrase>
+                {
+                    new WordTreePhrase { Text = "cats are better than dogs" },
+                    new WordTreePhrase { Text = "cats eat kibble" },
+                    new WordTreePhrase { Text = "cats are better than hamsters" },
+                    new WordTreePhrase { Text = "cats are awesome" },
+                    new WordTreePhrase { Text = "cats are people too" },
+                    new WordTreePhrase { Text = "cats eat mice" },
+                    new WordTreePhrase { Text = "cats meowing" },
+                    new WordTreePhrase { Text = "cats in the cradle" },
+                    new WordTreePhrase { Text = "cats eat mice" },
+                    new WordTreePhrase { Text = "cats in the cradle lyrics" },
+                    new WordTreePhrase { Text = "cats eat kibble" },
+                    new WordTreePhrase { Text = "cats for adoption" },
+                    new WordTreePhrase { Text = "cats are property" },
+                    new WordTreePhrase { Text = "cats are evil" },
+                    new WordTreePhrase { Text = "cats are weird" },
+                    new WordTreePhrase { Text = "cats are mammals" },
+                    new WordTreePhrase { Text = "cats are carnivores" },
+                    new WordTreePhrase { Text = "cats are lazy" },
+                    new WordTreePhrase { Text = "cats are the best" },
+                    new WordTreePhrase { Text = "cats for sale" },
+                    new WordTreePhrase { Text = "cats playing" },
+                    new WordTreePhrase { Text = "cats sleeping" }
+                };
 
-                //dataPoints.Add(new WordTreeChartDataPoint()
-                //{
-                //    Label = "Sales",
-                //    StartDate = DateTime.Now,
-                //    EndDate = DateTime.Now.AddMonths(4),
-                //});
-
-                //dataPoints.Add(new WordTreeChartDataPoint()
-                //{
-                //    Label = "Expenses",
-                //    StartDate = DateTime.Now,
-                //    EndDate = DateTime.Now.AddMonths(2)
-                //});
-
-
-                return new Widget("Sample Area Chart")
+                return new Widget("Word Tree - Cat Phrases")
                 {
                     Content = new WordTreeChartContent()
                     {
-                        //DataPoints = dataPoints
+                        Phrases = phrases,
+                        RootWord = "cats",
+                        Format = "implicit"
                     },
                 };
             });

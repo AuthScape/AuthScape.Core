@@ -229,6 +229,7 @@
     }
 </style>
 
+<div class="manage-container">
 <!-- Page Header -->
 <div class="page-header">
         <div class="page-header-actions">
@@ -404,6 +405,7 @@
             }
         </div>
     </div>
+</div> <!-- /.manage-container -->
 
 <!-- Add Funds Modal -->
 <div class="modal fade" id="addFundsModal" tabindex="-1" aria-hidden="true">
@@ -520,8 +522,9 @@
         paymentElement = elements.create('payment', { paymentMethodOrder: ['us_bank_account', 'card'] });
         paymentElement.mount('#payment-element');
       } catch (err) {
-        console.error(err);
-        alert('Unable to initialize payment form. Please try again.');
+        console.error('SetupIntent error:', err);
+        const errorMsg = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
+        alert('Unable to initialize payment form: ' + errorMsg);
       } finally {
         isMounting = false;
       }

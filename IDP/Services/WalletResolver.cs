@@ -73,9 +73,27 @@
 
         public async Task EnsureStripeCustomerAsync(Wallet wallet, CancellationToken ct = default)
         {
-            if (!string.IsNullOrWhiteSpace(wallet.PaymentCustomerId)) return;
+            var customerService = new CustomerService();
 
-            var cust = await new CustomerService().CreateAsync(new CustomerCreateOptions
+            // If we have a customer ID, verify it still exists in Stripe
+            if (!string.IsNullOrWhiteSpace(wallet.PaymentCustomerId))
+            {
+                try
+                {
+                    var existing = await customerService.GetAsync(wallet.PaymentCustomerId, cancellationToken: ct);
+                    if (existing != null && !existing.Deleted.GetValueOrDefault())
+                    {
+                        return; // Customer exists and is valid
+                    }
+                }
+                catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+                {
+                    // Customer doesn't exist in Stripe - will create a new one below
+                }
+            }
+
+            // Create a new Stripe customer
+            var cust = await customerService.CreateAsync(new CustomerCreateOptions
             {
                 Name = wallet.CompanyId != null ? $"Company:{wallet.CompanyId}" : $"User:{wallet.UserId}",
                 Metadata = new Dictionary<string, string> { ["wallet_id"] = wallet.Id.ToString() }

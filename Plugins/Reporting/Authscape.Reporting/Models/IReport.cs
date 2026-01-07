@@ -13,6 +13,7 @@ namespace Authscape.Reporting.Models
 
 
         ReportType ReportType { get; set; }
+        Dictionary<string, object> Options { get; set; }
 
 
         public DbContext[] Databases { get; set; }

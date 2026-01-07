@@ -287,39 +287,436 @@ namespace Authscape.Reporting.Services
             }
             else if (instance.RawData.Content.GetType() == typeof(WordTreeChartContent))
             {
-                var areaCharts = (WordTreeChartContent)instance.RawData.Content;
+                var wordTree = (WordTreeChartContent)instance.RawData.Content;
 
-                // get the column data
+                // WordTree uses simple phrase-based format
+                // Column: ["Phrases"] or ["Phrases", "Size"] if sizes are provided
                 var columnData = new List<string>();
-                columnData.Add(areaCharts.XAxis.FirstOrDefault());
-                foreach (var dataPoint in areaCharts.dataPoints)
+                columnData.Add("Phrases");
+
+                bool hasSize = wordTree.Phrases?.Any(p => p.Size.HasValue) ?? false;
+                if (hasSize)
+                {
+                    columnData.Add("Size");
+                }
+                instance.Columns = columnData;
+
+                // Data: each row is a phrase (and optionally size)
+                var list = new List<object>();
+                if (wordTree.Phrases != null)
+                {
+                    foreach (var phrase in wordTree.Phrases)
+                    {
+                        if (hasSize)
+                        {
+                            var data = new List<object>();
+                            data.Add(phrase.Text);
+                            data.Add(phrase.Size ?? 1);
+                            list.Add(data);
+                        }
+                        else
+                        {
+                            var data = new List<object>();
+                            data.Add(phrase.Text);
+                            list.Add(data);
+                        }
+                    }
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.WordTree;
+
+                // Set WordTree-specific options
+                instance.Options = new Dictionary<string, object>
+                {
+                    { "wordtree", new Dictionary<string, object>
+                        {
+                            { "format", wordTree.Format ?? "implicit" },
+                            { "word", wordTree.RootWord ?? "" }
+                        }
+                    }
+                };
+            }
+            else if (instance.RawData.Content.GetType() == typeof(SankeyChartContent))
+            {
+                var sankey = (SankeyChartContent)instance.RawData.Content;
+
+                // Sankey requires: From, To, Weight columns
+                var columnData = new List<string>();
+                columnData.Add("From");
+                columnData.Add("To");
+                columnData.Add("Weight");
+                instance.Columns = columnData;
+
+                // Data: each row is [from, to, weight]
+                var list = new List<object>();
+                if (sankey.DataPoints != null)
+                {
+                    foreach (var point in sankey.DataPoints)
+                    {
+                        var data = new List<object>();
+                        data.Add(point.From);
+                        data.Add(point.To);
+                        data.Add(point.Weight);
+                        list.Add(data);
+                    }
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.SanKey;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(LineChartContent))
+            {
+                var lineChart = (LineChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add(lineChart.XAxis.FirstOrDefault());
+                foreach (var dataPoint in lineChart.DataPoints)
                 {
                     columnData.Add(dataPoint.Label);
                 }
                 instance.Columns = columnData;
 
-
-                // get the values for the columns
                 var list = new List<List<object>>();
-
                 int columnIndex = 0;
-                foreach (var columnDat in areaCharts.XAxis.Skip(1))
+                foreach (var columnDat in lineChart.XAxis.Skip(1))
                 {
                     var data = new List<object>();
                     data.Add(columnDat);
-
-                    foreach (var dp in areaCharts.dataPoints)
+                    foreach (var dp in lineChart.DataPoints)
                     {
                         data.Add(dp.Data[columnIndex]);
                     }
-
                     list.Add(data);
-
                     columnIndex++;
                 }
 
                 instance.Data = list;
-                instance.ReportType = ReportType.WordTree;
+                instance.ReportType = ReportType.LineChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(ComboChartContent))
+            {
+                var comboChart = (ComboChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add(comboChart.XAxis.FirstOrDefault());
+                foreach (var dataPoint in comboChart.DataPoints)
+                {
+                    columnData.Add(dataPoint.Label);
+                }
+                instance.Columns = columnData;
+
+                var list = new List<List<object>>();
+                int columnIndex = 0;
+                foreach (var columnDat in comboChart.XAxis.Skip(1))
+                {
+                    var data = new List<object>();
+                    data.Add(columnDat);
+                    foreach (var dp in comboChart.DataPoints)
+                    {
+                        data.Add(dp.Data[columnIndex]);
+                    }
+                    list.Add(data);
+                    columnIndex++;
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.ComboChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(DonutChartContent))
+            {
+                var donutChart = (DonutChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add("Name");
+                columnData.Add("Value");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var dataPoint in donutChart.DataPoints)
+                {
+                    var data = new List<object>();
+                    data.Add(dataPoint.Name);
+                    data.Add(dataPoint.Value);
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.DonutChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(GanttChartContent))
+            {
+                var ganttChart = (GanttChartContent)instance.RawData.Content;
+
+                // Gantt chart requires typed columns
+                var columnData = new List<TimelineHeader>();
+                columnData.Add(new TimelineHeader("string", "Task ID"));
+                columnData.Add(new TimelineHeader("string", "Task Name"));
+                columnData.Add(new TimelineHeader("string", "Resource"));
+                columnData.Add(new TimelineHeader("date", "Start Date"));
+                columnData.Add(new TimelineHeader("date", "End Date"));
+                columnData.Add(new TimelineHeader("number", "Duration"));
+                columnData.Add(new TimelineHeader("number", "Percent Complete"));
+                columnData.Add(new TimelineHeader("string", "Dependencies"));
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var task in ganttChart.Tasks)
+                {
+                    var data = new List<object>();
+                    data.Add(task.TaskId);
+                    data.Add(task.TaskName);
+                    data.Add(task.Resource ?? "");
+                    data.Add(task.StartDate.ToString("DT-yyyy-MM-dd"));
+                    data.Add(task.EndDate.ToString("DT-yyyy-MM-dd"));
+                    data.Add(task.Duration);
+                    data.Add(task.PercentComplete);
+                    data.Add(task.Dependencies ?? "");
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.GanttChartReport;
+
+                // Set Gantt-specific options
+                instance.Options = new Dictionary<string, object>
+                {
+                    { "gantt", new Dictionary<string, object>
+                        {
+                            { "trackHeight", ganttChart.TrackHeight },
+                            { "criticalPathEnabled", ganttChart.ShowCriticalPath },
+                            { "criticalPathStyle", new Dictionary<string, object>
+                                {
+                                    { "stroke", "#FA896B" },
+                                    { "strokeWidth", 2 }
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+            else if (instance.RawData.Content.GetType() == typeof(GeoChartContent))
+            {
+                var geoChart = (GeoChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add("Location");
+                columnData.Add(geoChart.ValueLabel ?? "Value");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var dataPoint in geoChart.DataPoints)
+                {
+                    var data = new List<object>();
+                    data.Add(dataPoint.Location);
+                    data.Add(dataPoint.Value);
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.GeoChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(OrgChartContent))
+            {
+                var orgChart = (OrgChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add("Name");
+                columnData.Add("Parent");
+                columnData.Add("Tooltip");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var node in orgChart.Nodes)
+                {
+                    var data = new List<object>();
+                    data.Add(node.Name);
+                    data.Add(string.IsNullOrEmpty(node.ParentId) ? "" : orgChart.Nodes.FirstOrDefault(n => n.Id == node.ParentId)?.Name ?? "");
+                    data.Add(node.Tooltip ?? "");
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.OrgChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(SteppedAreaChartContent))
+            {
+                var steppedAreaChart = (SteppedAreaChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add(steppedAreaChart.XAxis.FirstOrDefault());
+                foreach (var dataPoint in steppedAreaChart.DataPoints)
+                {
+                    columnData.Add(dataPoint.Label);
+                }
+                instance.Columns = columnData;
+
+                var list = new List<List<object>>();
+                int columnIndex = 0;
+                foreach (var columnDat in steppedAreaChart.XAxis.Skip(1))
+                {
+                    var data = new List<object>();
+                    data.Add(columnDat);
+                    foreach (var dp in steppedAreaChart.DataPoints)
+                    {
+                        data.Add(dp.Data[columnIndex]);
+                    }
+                    list.Add(data);
+                    columnIndex++;
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.SteppedAreaChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(TreeMapChartContent))
+            {
+                var treeMapChart = (TreeMapChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add("ID");
+                columnData.Add("Parent");
+                columnData.Add("Value");
+                columnData.Add("Color");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var node in treeMapChart.Nodes)
+                {
+                    var data = new List<object>();
+                    data.Add(node.Id);
+                    data.Add(node.Parent ?? "");
+                    data.Add(node.Value);
+                    data.Add(node.ColorValue ?? node.Value);
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.TreeMapChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(ScatterChartContent))
+            {
+                var scatterChart = (ScatterChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add(scatterChart.XName ?? "X");
+                columnData.Add(scatterChart.YName ?? "Y");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var dataPoint in scatterChart.DataPoints)
+                {
+                    var data = new List<object>();
+                    data.Add(dataPoint.X);
+                    data.Add(dataPoint.Y);
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.ScatterChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(CalendarChartContent))
+            {
+                var calendarChart = (CalendarChartContent)instance.RawData.Content;
+
+                var columnData = new List<TimelineHeader>();
+                columnData.Add(new TimelineHeader("date", "Date"));
+                columnData.Add(new TimelineHeader("number", "Value"));
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                foreach (var dataPoint in calendarChart.DataPoints)
+                {
+                    var data = new List<object>();
+                    data.Add(dataPoint.Date.ToString("DT-yyyy-MM-dd"));
+                    data.Add(dataPoint.Size);
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.CalendarChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(ColumnChartContent))
+            {
+                var columnChart = (ColumnChartContent)instance.RawData.Content;
+
+                var columnData = new List<string>();
+                columnData.Add(columnChart.XAxis.FirstOrDefault());
+                foreach (var dataPoint in columnChart.DataPoints)
+                {
+                    columnData.Add(dataPoint.Label);
+                }
+                instance.Columns = columnData;
+
+                var list = new List<List<object>>();
+                int columnIndex = 0;
+                foreach (var columnDat in columnChart.XAxis.Skip(1))
+                {
+                    var data = new List<object>();
+                    data.Add(columnDat);
+                    foreach (var dp in columnChart.DataPoints)
+                    {
+                        data.Add(dp.Data[columnIndex]);
+                    }
+                    list.Add(data);
+                    columnIndex++;
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.ColumnChartReport;
+            }
+            else if (instance.RawData.Content.GetType() == typeof(WaterfallChartContent))
+            {
+                var waterfallChart = (WaterfallChartContent)instance.RawData.Content;
+
+                // Waterfall uses candlestick-like format
+                var columnData = new List<string>();
+                columnData.Add("Category");
+                columnData.Add("Bottom");
+                columnData.Add("Start");
+                columnData.Add("End");
+                columnData.Add("Top");
+                instance.Columns = columnData;
+
+                var list = new List<object>();
+                decimal runningTotal = 0;
+
+                foreach (var dataPoint in waterfallChart.DataPoints)
+                {
+                    var data = new List<object>();
+                    data.Add(dataPoint.Label);
+
+                    if (dataPoint.IsTotal)
+                    {
+                        data.Add(0);
+                        data.Add(0);
+                        data.Add(runningTotal);
+                        data.Add(runningTotal);
+                    }
+                    else
+                    {
+                        decimal prevTotal = runningTotal;
+                        runningTotal += dataPoint.Value;
+
+                        if (dataPoint.Value >= 0)
+                        {
+                            data.Add(prevTotal);
+                            data.Add(prevTotal);
+                            data.Add(runningTotal);
+                            data.Add(runningTotal);
+                        }
+                        else
+                        {
+                            data.Add(runningTotal);
+                            data.Add(runningTotal);
+                            data.Add(prevTotal);
+                            data.Add(prevTotal);
+                        }
+                    }
+                    list.Add(data);
+                }
+
+                instance.Data = list;
+                instance.ReportType = ReportType.WaterfallChartReport;
             }
 
 

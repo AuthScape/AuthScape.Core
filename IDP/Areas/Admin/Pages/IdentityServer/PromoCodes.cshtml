@@ -1,0 +1,1658 @@
+@page
+@model IDP.Areas.Admin.Pages.IdentityServer.PromoCodesModel
+@using AuthScape.Models.PaymentGateway
+@{
+    ViewData["Title"] = "Promo Codes";
+    Layout = "_AdminLayout";
+}
+
+<div class="promo-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Promo Codes</h1>
+            <p class="page-subtitle">Manage promo codes and Stripe integration</p>
+        </div>
+        <div class="header-actions">
+            <form method="post" asp-page-handler="SyncFromStripe" style="display: inline;">
+                <button type="submit" class="btn-sync">
+                    <i class="fa fa-refresh"></i> Sync from Stripe
+                </button>
+            </form>
+            <button type="button" class="btn-add" onclick="showCreateModal()">
+                <i class="fa fa-plus"></i> Add Promo Code
+            </button>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-total">
+                <i class="fa fa-ticket"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Codes</div>
+                <div class="stat-value">@Model.TotalCount</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-active">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Active Codes</div>
+                <div class="stat-value">@Model.ActiveCount</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-expired">
+                <i class="fa fa-clock-o"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Expired</div>
+                <div class="stat-value">@Model.ExpiredCount</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-stripe">
+                <i class="fa fa-link"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Stripe Synced</div>
+                <div class="stat-value">@Model.SyncedCount</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Codes Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Discount</th>
+                    <th>Duration</th>
+                    <th>Scope</th>
+                    <th class="text-center">Usage</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Stripe</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.PromoCodes.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center empty-state">
+                            <div class="empty-icon">
+                                <i class="fa fa-ticket"></i>
+                            </div>
+                            <div class="empty-title">No promo codes yet</div>
+                            <div class="empty-subtitle">Create your first promo code or sync from Stripe to get started</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var promo in Model.PromoCodes)
+                    {
+                        <tr class="data-row">
+                            <td>
+                                <div class="code-info">
+                                    <div class="code-value">@promo.Code</div>
+                                    <div class="code-name">@promo.Name</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="discount-display">
+                                    <span class="discount-value">@promo.DiscountDisplay</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="duration-badge">@promo.DurationDisplay</span>
+                            </td>
+                            <td>
+                                <span class="scope-badge scope-@promo.Scope.ToString().ToLower()">@promo.ScopeDisplay</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="usage-display">@promo.UsageDisplay</span>
+                            </td>
+                            <td class="text-center">
+                                <form method="post" asp-page-handler="ToggleActive" style="display: inline;">
+                                    <input type="hidden" name="id" value="@promo.Id" />
+                                    <button type="submit" class="status-toggle @promo.StatusDisplay.ToLower().Replace(" ", "-")" title="Click to toggle">
+                                        @switch (promo.StatusDisplay)
+                                        {
+                                            case "Active":
+                                                <i class="fa fa-check"></i>
+                                                <span>Active</span>
+                                                break;
+                                            case "Inactive":
+                                                <i class="fa fa-pause"></i>
+                                                <span>Inactive</span>
+                                                break;
+                                            case "Expired":
+                                                <i class="fa fa-clock-o"></i>
+                                                <span>Expired</span>
+                                                break;
+                                            case "Scheduled":
+                                                <i class="fa fa-calendar"></i>
+                                                <span>Scheduled</span>
+                                                break;
+                                            case "Maxed Out":
+                                                <i class="fa fa-ban"></i>
+                                                <span>Maxed</span>
+                                                break;
+                                            default:
+                                                <span>@promo.StatusDisplay</span>
+                                                break;
+                                        }
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                @if (promo.IsSyncedToStripe)
+                                {
+                                    <span class="stripe-linked" title="@promo.StripePromotionCodeId">
+                                        <i class="fa fa-check-circle"></i> Linked
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="stripe-unlinked">
+                                        <i class="fa fa-minus-circle"></i> Not Linked
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-action btn-edit"
+                                            onclick="showEditModal('@promo.Id')"
+                                            title="Edit promo code">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete"
+                                            onclick="confirmDelete('@promo.Id', '@promo.Code.Replace("'", "\\'")')"
+                                            title="Delete promo code">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Promo Code Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-create">
+                <div class="modal-icon-wrapper modal-icon-create">
+                    <i class="fa fa-plus"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="createModalLabel">Create Promo Code</h5>
+                    <p class="modal-subtitle">Add a new promo code for your platform</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="form-tabs">
+                        <button type="button" class="form-tab active" onclick="showTab('create', 'basic')">Basic Info</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'discount')">Discount</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'restrictions')">Restrictions</button>
+                        <button type="button" class="form-tab" onclick="showTab('create', 'limits')">Limits</button>
+                    </div>
+
+                    <!-- Basic Info Tab -->
+                    <div id="create-basic" class="form-tab-content active">
+                        <div class="form-group">
+                            <label for="createName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="createName" name="name" required
+                                   placeholder="e.g., Summer 2026 Sale, Launch Discount">
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Internal name for admin reference
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="createDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="createDescription" name="description" rows="2"
+                                      placeholder="Notes about this promo code..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="createCode" class="form-label">Promo Code</label>
+                            <div class="input-group-custom">
+                                <input type="text" class="form-control" id="createCode" name="code"
+                                       placeholder="e.g., SUMMER20" style="text-transform: uppercase;">
+                                <button type="button" class="btn-generate" onclick="generateCode()">
+                                    <i class="fa fa-random"></i> Generate
+                                </button>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Leave empty or click Generate to create a random code
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="createIsActive" name="isActive" value="true" checked>
+                                <label for="createIsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discount Tab -->
+                    <div id="create-discount" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createDiscountType" class="form-label">Discount Type</label>
+                                <select class="form-control" id="createDiscountType" name="discountType" onchange="toggleCurrency('create')">
+                                    <option value="@((int)PromoCodeType.Percentage)">Percentage Off</option>
+                                    <option value="@((int)PromoCodeType.FixedAmount)">Fixed Amount Off</option>
+                                </select>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="createDiscountValue" class="form-label">Discount Value *</label>
+                                <div class="input-prefix-group">
+                                    <span id="createDiscountPrefix" class="input-prefix">%</span>
+                                    <input type="number" class="form-control" id="createDiscountValue" name="discountValue"
+                                           step="0.01" min="0" value="0" required>
+                                </div>
+                            </div>
+                            <div class="form-group" id="createCurrencyGroup" style="display: none; width: 100px;">
+                                <label for="createCurrency" class="form-label">Currency</label>
+                                <select class="form-control" id="createCurrency" name="currency">
+                                    <option value="usd">USD</option>
+                                    <option value="eur">EUR</option>
+                                    <option value="gbp">GBP</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createDuration" class="form-label">Duration</label>
+                                <select class="form-control" id="createDuration" name="duration" onchange="toggleDurationMonths('create')">
+                                    <option value="@((int)PromoDuration.Once)">First payment only</option>
+                                    <option value="@((int)PromoDuration.Repeating)">For multiple months</option>
+                                    <option value="@((int)PromoDuration.Forever)">Forever (all payments)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="createDurationMonthsGroup" style="display: none; width: 150px;">
+                                <label for="createDurationInMonths" class="form-label">Months</label>
+                                <input type="number" class="form-control" id="createDurationInMonths" name="durationInMonths"
+                                       min="1" value="3">
+                            </div>
+                        </div>
+                        <div class="form-divider"></div>
+                        <div class="form-group">
+                            <label class="form-label">Trial Extension</label>
+                            <div class="form-row align-items-center">
+                                <div class="form-check-inline">
+                                    <input type="checkbox" class="form-check-input" id="createExtendsTrialDays" name="extendsTrialDays" value="true"
+                                           onchange="toggleTrialExtension('create')">
+                                    <label for="createExtendsTrialDays" class="form-check-label">Extend trial period</label>
+                                </div>
+                                <div class="form-group" id="createTrialExtensionGroup" style="display: none; width: 150px;">
+                                    <input type="number" class="form-control" id="createAdditionalTrialDays" name="additionalTrialDays"
+                                           min="0" value="7" placeholder="Extra days">
+                                </div>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fa fa-info-circle"></i> Add extra trial days when this code is used
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restrictions Tab -->
+                    <div id="create-restrictions" class="form-tab-content">
+                        <div class="form-group">
+                            <label for="createScope" class="form-label">Who Can Use This Code</label>
+                            <select class="form-control" id="createScope" name="scope" onchange="toggleScopeFields('create')">
+                                <option value="@((int)PromoCodeScope.All)">Anyone (Global)</option>
+                                <option value="@((int)PromoCodeScope.User)">Specific User</option>
+                                <option value="@((int)PromoCodeScope.Company)">Specific Company</option>
+                                <option value="@((int)PromoCodeScope.Location)">Specific Location</option>
+                            </select>
+                        </div>
+
+                        <!-- User Search -->
+                        <div id="createUserSearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select User</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="createUserSearchInput"
+                                       placeholder="Search by name or email..." oninput="searchUsers('create')">
+                                <input type="hidden" id="createRestrictedToUserId" name="restrictedToUserId">
+                            </div>
+                            <div id="createUserResults" class="search-results"></div>
+                            <div id="createSelectedUser" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <!-- Company Search -->
+                        <div id="createCompanySearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select Company</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="createCompanySearchInput"
+                                       placeholder="Search by company name..." oninput="searchCompanies('create')">
+                                <input type="hidden" id="createRestrictedToCompanyId" name="restrictedToCompanyId">
+                            </div>
+                            <div id="createCompanyResults" class="search-results"></div>
+                            <div id="createSelectedCompany" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <!-- Location Search -->
+                        <div id="createLocationSearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select Location</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="createLocationSearchInput"
+                                       placeholder="Search by location name..." oninput="searchLocations('create')">
+                                <input type="hidden" id="createRestrictedToLocationId" name="restrictedToLocationId">
+                            </div>
+                            <div id="createLocationResults" class="search-results"></div>
+                            <div id="createSelectedLocation" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-divider"></div>
+
+                        <div class="form-group">
+                            <label for="createAppliesTo" class="form-label">Applies To</label>
+                            <select class="form-control" id="createAppliesTo" name="appliesTo" onchange="toggleApplicablePlans('create')">
+                                <option value="@((int)PromoCodeAppliesTo.All)">All Payment Types</option>
+                                <option value="@((int)PromoCodeAppliesTo.Subscriptions)">Subscriptions Only</option>
+                                <option value="@((int)PromoCodeAppliesTo.Products)">Products Only</option>
+                                <option value="@((int)PromoCodeAppliesTo.Services)">Services Only</option>
+                            </select>
+                        </div>
+
+                        <div id="createApplicablePlansGroup" class="form-group" style="display: none;">
+                            <label class="form-label">Specific Plans (Optional)</label>
+                            <div class="form-hint mb-2">
+                                <i class="fa fa-info-circle"></i> Leave unchecked to apply to all plans
+                            </div>
+                            <div class="plans-checkbox-grid">
+                                @foreach (var plan in Model.AvailablePlans)
+                                {
+                                    <div class="plan-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="createPlan_@plan.Id" name="applicablePlanIds" value="@plan.Id">
+                                        <label for="createPlan_@plan.Id" class="form-check-label">@plan.Name</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limits Tab -->
+                    <div id="create-limits" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createMaxRedemptions" class="form-label">Max Total Redemptions</label>
+                                <input type="number" class="form-control" id="createMaxRedemptions" name="maxRedemptions"
+                                       min="0" placeholder="Leave empty for unlimited">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="createMaxPerCustomer" class="form-label">Max Per Customer</label>
+                                <input type="number" class="form-control" id="createMaxPerCustomer" name="maxRedemptionsPerCustomer"
+                                       min="0" placeholder="Leave empty for unlimited">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="createStartsAt" class="form-label">Starts At</label>
+                                <input type="datetime-local" class="form-control" id="createStartsAt" name="startsAt">
+                                <div class="form-hint">Leave empty for immediate activation</div>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="createExpiresAt" class="form-label">Expires At</label>
+                                <input type="datetime-local" class="form-control" id="createExpiresAt" name="expiresAt">
+                                <div class="form-hint">Leave empty for no expiration</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="createMinimumAmount" class="form-label">Minimum Order Amount</label>
+                            <div class="input-prefix-group">
+                                <span class="input-prefix">$</span>
+                                <input type="number" class="form-control" id="createMinimumAmount" name="minimumAmount"
+                                       step="0.01" min="0" placeholder="No minimum">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-plus"></i> Create Promo Code
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Promo Code Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-edit">
+                <div class="modal-icon-wrapper modal-icon-edit">
+                    <i class="fa fa-edit"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="editModalLabel">Edit Promo Code</h5>
+                    <p class="modal-subtitle">Update promo code details</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <input type="hidden" id="editId" name="id" />
+                <div class="modal-body">
+                    <div class="form-tabs">
+                        <button type="button" class="form-tab active" onclick="showTab('edit', 'basic')">Basic Info</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'discount')">Discount</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'restrictions')">Restrictions</button>
+                        <button type="button" class="form-tab" onclick="showTab('edit', 'limits')">Limits</button>
+                    </div>
+
+                    <!-- Basic Info Tab -->
+                    <div id="edit-basic" class="form-tab-content active">
+                        <div class="form-group">
+                            <label for="editName" class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="editName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCode" class="form-label">Promo Code</label>
+                            <input type="text" class="form-control" id="editCode" name="code" style="text-transform: uppercase;">
+                            <div class="form-hint">
+                                <i class="fa fa-warning"></i> Changing the code will affect existing links/promotions
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check-inline">
+                                <input type="checkbox" class="form-check-input" id="editIsActive" name="isActive" value="true">
+                                <label for="editIsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discount Tab -->
+                    <div id="edit-discount" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editDiscountType" class="form-label">Discount Type</label>
+                                <select class="form-control" id="editDiscountType" name="discountType" onchange="toggleCurrency('edit')">
+                                    <option value="@((int)PromoCodeType.Percentage)">Percentage Off</option>
+                                    <option value="@((int)PromoCodeType.FixedAmount)">Fixed Amount Off</option>
+                                </select>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="editDiscountValue" class="form-label">Discount Value *</label>
+                                <div class="input-prefix-group">
+                                    <span id="editDiscountPrefix" class="input-prefix">%</span>
+                                    <input type="number" class="form-control" id="editDiscountValue" name="discountValue"
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-group" id="editCurrencyGroup" style="display: none; width: 100px;">
+                                <label for="editCurrency" class="form-label">Currency</label>
+                                <select class="form-control" id="editCurrency" name="currency">
+                                    <option value="usd">USD</option>
+                                    <option value="eur">EUR</option>
+                                    <option value="gbp">GBP</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editDuration" class="form-label">Duration</label>
+                                <select class="form-control" id="editDuration" name="duration" onchange="toggleDurationMonths('edit')">
+                                    <option value="@((int)PromoDuration.Once)">First payment only</option>
+                                    <option value="@((int)PromoDuration.Repeating)">For multiple months</option>
+                                    <option value="@((int)PromoDuration.Forever)">Forever (all payments)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="editDurationMonthsGroup" style="display: none; width: 150px;">
+                                <label for="editDurationInMonths" class="form-label">Months</label>
+                                <input type="number" class="form-control" id="editDurationInMonths" name="durationInMonths" min="1">
+                            </div>
+                        </div>
+                        <div class="form-divider"></div>
+                        <div class="form-group">
+                            <label class="form-label">Trial Extension</label>
+                            <div class="form-row align-items-center">
+                                <div class="form-check-inline">
+                                    <input type="checkbox" class="form-check-input" id="editExtendsTrialDays" name="extendsTrialDays" value="true"
+                                           onchange="toggleTrialExtension('edit')">
+                                    <label for="editExtendsTrialDays" class="form-check-label">Extend trial period</label>
+                                </div>
+                                <div class="form-group" id="editTrialExtensionGroup" style="display: none; width: 150px;">
+                                    <input type="number" class="form-control" id="editAdditionalTrialDays" name="additionalTrialDays" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restrictions Tab -->
+                    <div id="edit-restrictions" class="form-tab-content">
+                        <div class="form-group">
+                            <label for="editScope" class="form-label">Who Can Use This Code</label>
+                            <select class="form-control" id="editScope" name="scope" onchange="toggleScopeFields('edit')">
+                                <option value="@((int)PromoCodeScope.All)">Anyone (Global)</option>
+                                <option value="@((int)PromoCodeScope.User)">Specific User</option>
+                                <option value="@((int)PromoCodeScope.Company)">Specific Company</option>
+                                <option value="@((int)PromoCodeScope.Location)">Specific Location</option>
+                            </select>
+                        </div>
+
+                        <!-- User Search -->
+                        <div id="editUserSearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select User</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="editUserSearchInput"
+                                       placeholder="Search by name or email..." oninput="searchUsers('edit')">
+                                <input type="hidden" id="editRestrictedToUserId" name="restrictedToUserId">
+                            </div>
+                            <div id="editUserResults" class="search-results"></div>
+                            <div id="editSelectedUser" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <!-- Company Search -->
+                        <div id="editCompanySearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select Company</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="editCompanySearchInput"
+                                       placeholder="Search by company name..." oninput="searchCompanies('edit')">
+                                <input type="hidden" id="editRestrictedToCompanyId" name="restrictedToCompanyId">
+                            </div>
+                            <div id="editCompanyResults" class="search-results"></div>
+                            <div id="editSelectedCompany" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <!-- Location Search -->
+                        <div id="editLocationSearch" class="scope-search" style="display: none;">
+                            <label class="form-label">Select Location</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" class="form-control" id="editLocationSearchInput"
+                                       placeholder="Search by location name..." oninput="searchLocations('edit')">
+                                <input type="hidden" id="editRestrictedToLocationId" name="restrictedToLocationId">
+                            </div>
+                            <div id="editLocationResults" class="search-results"></div>
+                            <div id="editSelectedLocation" class="selected-item" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-divider"></div>
+
+                        <div class="form-group">
+                            <label for="editAppliesTo" class="form-label">Applies To</label>
+                            <select class="form-control" id="editAppliesTo" name="appliesTo" onchange="toggleApplicablePlans('edit')">
+                                <option value="@((int)PromoCodeAppliesTo.All)">All Payment Types</option>
+                                <option value="@((int)PromoCodeAppliesTo.Subscriptions)">Subscriptions Only</option>
+                                <option value="@((int)PromoCodeAppliesTo.Products)">Products Only</option>
+                                <option value="@((int)PromoCodeAppliesTo.Services)">Services Only</option>
+                            </select>
+                        </div>
+
+                        <div id="editApplicablePlansGroup" class="form-group" style="display: none;">
+                            <label class="form-label">Specific Plans (Optional)</label>
+                            <div class="plans-checkbox-grid">
+                                @foreach (var plan in Model.AvailablePlans)
+                                {
+                                    <div class="plan-checkbox-item">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="editPlan_@plan.Id" name="applicablePlanIds" value="@plan.Id">
+                                        <label for="editPlan_@plan.Id" class="form-check-label">@plan.Name</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limits Tab -->
+                    <div id="edit-limits" class="form-tab-content">
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editMaxRedemptions" class="form-label">Max Total Redemptions</label>
+                                <input type="number" class="form-control" id="editMaxRedemptions" name="maxRedemptions"
+                                       min="0" placeholder="Leave empty for unlimited">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="editMaxPerCustomer" class="form-label">Max Per Customer</label>
+                                <input type="number" class="form-control" id="editMaxPerCustomer" name="maxRedemptionsPerCustomer"
+                                       min="0" placeholder="Leave empty for unlimited">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1">
+                                <label for="editStartsAt" class="form-label">Starts At</label>
+                                <input type="datetime-local" class="form-control" id="editStartsAt" name="startsAt">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="editExpiresAt" class="form-label">Expires At</label>
+                                <input type="datetime-local" class="form-control" id="editExpiresAt" name="expiresAt">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editMinimumAmount" class="form-label">Minimum Order Amount</label>
+                            <div class="input-prefix-group">
+                                <span class="input-prefix">$</span>
+                                <input type="number" class="form-control" id="editMinimumAmount" name="minimumAmount"
+                                       step="0.01" min="0" placeholder="No minimum">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-modern btn-primary">
+                        <i class="fa fa-save"></i> Update Promo Code
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modal-header-delete">
+                <div class="modal-icon-wrapper modal-icon-danger">
+                    <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Promo Code</h5>
+                    <p class="modal-subtitle">This action cannot be undone</p>
+                </div>
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to delete the promo code <strong id="codeToDelete"></strong>?</p>
+                <p class="text-warning small mb-0">
+                    <i class="fa fa-exclamation-triangle"></i> The code will be deactivated in Stripe and cannot be reused.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm" style="display: inline;">
+                    <input type="hidden" name="id" id="idToDelete" />
+                    <button type="submit" class="btn-modern btn-danger">
+                        <i class="fa fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --danger-color: #dc2626;
+        --warning-color: #f59e0b;
+        --stripe-color: #635bff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    .promo-container { max-width: 1400px; margin: 0 auto; }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .page-subtitle { color: var(--gray-500); font-size: 1rem; margin: 0; }
+    .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    .btn-add, .btn-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-add {
+        background: var(--primary-gradient);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-sync {
+        background: linear-gradient(135deg, var(--stripe-color) 0%, #4f46e5 100%);
+        box-shadow: 0 4px 12px rgba(99, 91, 255, 0.3);
+    }
+
+    .btn-sync:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 91, 255, 0.4);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .stat-icon-total { background: var(--primary-gradient); }
+    .stat-icon-active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .stat-icon-expired { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .stat-icon-stripe { background: linear-gradient(135deg, var(--stripe-color) 0%, #4f46e5 100%); }
+
+    .stat-content { flex: 1; }
+    .stat-label { font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--gray-900); line-height: 1; }
+
+    /* Table */
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .data-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray-600);
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid var(--gray-200);
+        transition: background-color 0.15s ease;
+    }
+
+    .data-table tbody tr:hover { background: var(--gray-50); }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table td { padding: 1rem 1.5rem; vertical-align: middle; }
+
+    /* Code Info */
+    .code-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .code-value {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--gray-900);
+        background: var(--gray-100);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+    .code-name { font-size: 0.875rem; color: var(--gray-500); }
+
+    /* Discount Display */
+    .discount-display { font-weight: 700; color: var(--success-color); font-size: 1rem; }
+
+    /* Badges */
+    .duration-badge, .scope-badge {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .duration-badge { background: var(--gray-100); color: var(--gray-700); }
+
+    .scope-badge { background: #e0e7ff; color: #3730a3; }
+    .scope-badge.scope-all { background: #d1fae5; color: #065f46; }
+    .scope-badge.scope-user { background: #dbeafe; color: #1e40af; }
+    .scope-badge.scope-company { background: #fef3c7; color: #92400e; }
+    .scope-badge.scope-location { background: #fce7f3; color: #9d174d; }
+
+    .usage-display { font-size: 0.875rem; color: var(--gray-600); }
+
+    /* Status Toggle */
+    .status-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .status-toggle.active { background: #d1fae5; color: #065f46; }
+    .status-toggle.active:hover { background: #a7f3d0; }
+    .status-toggle.inactive { background: var(--gray-100); color: var(--gray-600); }
+    .status-toggle.inactive:hover { background: var(--gray-200); }
+    .status-toggle.expired { background: #fef3c7; color: #92400e; }
+    .status-toggle.scheduled { background: #dbeafe; color: #1e40af; }
+    .status-toggle.maxed-out { background: #fee2e2; color: #991b1b; }
+
+    /* Stripe Status */
+    .stripe-linked {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--stripe-color);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .stripe-unlinked {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    /* Empty State */
+    .empty-state { padding: 4rem 2rem !important; }
+    .empty-icon { font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem; }
+    .empty-title { font-size: 1.25rem; font-weight: 700; color: var(--gray-700); margin-bottom: 0.5rem; }
+    .empty-subtitle { font-size: 0.9375rem; color: var(--gray-500); }
+
+    /* Action Buttons */
+    .action-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .btn-edit { background: white; color: #667eea; border: 1px solid #e0e7ff; }
+    .btn-edit:hover { background: #e0e7ff; border-color: #667eea; }
+    .btn-delete { background: white; color: var(--danger-color); border: 1px solid #fecaca; }
+    .btn-delete:hover { background: #fee2e2; border-color: var(--danger-color); }
+
+    /* Modal Styles */
+    .modern-modal {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .modern-modal .modal-header {
+        border-bottom: none;
+        padding: 1.5rem 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .modal-header-text { flex: 1; }
+
+    .modal-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .modal-header-create { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
+    .modal-icon-create { color: #065f46; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+
+    .modal-header-edit { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+    .modal-icon-edit { color: #1e40af; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+
+    .modal-header-delete { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
+    .modal-icon-danger { color: var(--danger-color); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); }
+
+    .modal-title { font-weight: 700; color: var(--gray-900); margin: 0; font-size: 1.25rem; }
+    .modal-subtitle { font-size: 0.875rem; color: var(--gray-600); margin: 0.25rem 0 0 0; }
+
+    .btn-close-custom {
+        background: white;
+        border: 1px solid var(--gray-200);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--gray-600);
+        margin-left: auto;
+        transition: all 0.2s ease;
+    }
+
+    .btn-close-custom:hover { background: var(--gray-100); border-color: var(--gray-300); }
+
+    .modern-modal .modal-body { padding: 1.5rem 2rem 2rem 2rem; background: white; }
+
+    /* Form Tabs */
+    .form-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        padding-bottom: 0.75rem;
+    }
+
+    .form-tab {
+        padding: 0.625rem 1.25rem;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .form-tab:hover { color: var(--gray-700); background: var(--gray-100); }
+    .form-tab.active { color: #667eea; background: #e0e7ff; }
+
+    .form-tab-content { display: none; padding-top: 0.5rem; }
+    .form-tab-content.active { display: block; }
+
+    /* Form Styles */
+    .form-row { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+    .form-row.align-items-center { align-items: center; }
+    .flex-1 { flex: 1; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea.form-control { resize: vertical; min-height: 60px; }
+
+    .form-hint {
+        margin-top: 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.375rem;
+    }
+
+    .form-check-inline { display: inline-flex; align-items: center; gap: 0.5rem; margin-right: 1.5rem; }
+    .form-check-input { width: 1.1rem; height: 1.1rem; cursor: pointer; }
+    .form-check-label { font-size: 0.9rem; color: var(--gray-700); cursor: pointer; }
+
+    .form-divider { height: 1px; background: var(--gray-200); margin: 1.5rem 0; }
+
+    /* Input Group */
+    .input-group-custom {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .input-group-custom .form-control { flex: 1; }
+
+    .btn-generate {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.75rem 1rem;
+        background: var(--gray-100);
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        color: var(--gray-700);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .btn-generate:hover { background: var(--gray-200); border-color: var(--gray-300); }
+
+    /* Input Prefix Group */
+    .input-prefix-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-prefix {
+        position: absolute;
+        left: 1rem;
+        color: var(--gray-500);
+        font-weight: 600;
+        z-index: 1;
+    }
+
+    .input-prefix-group .form-control { padding-left: 2rem; }
+
+    /* Search Input */
+    .search-input-wrapper { position: relative; }
+
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-top: none;
+        border-radius: 0 0 10px 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+        display: none;
+    }
+
+    .search-results.show { display: block; }
+
+    .search-result-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-100);
+        transition: background 0.15s ease;
+    }
+
+    .search-result-item:hover { background: var(--gray-50); }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-name { font-weight: 600; color: var(--gray-900); }
+    .search-result-detail { font-size: 0.8rem; color: var(--gray-500); }
+
+    .selected-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: #e0e7ff;
+        border-radius: 10px;
+        margin-top: 0.5rem;
+    }
+
+    .selected-item-name { font-weight: 600; color: #3730a3; }
+
+    .btn-clear-selection {
+        background: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-600);
+    }
+
+    .btn-clear-selection:hover { background: #c7d2fe; }
+
+    .scope-search { margin-top: 1rem; }
+
+    /* Plans Checkbox Grid */
+    .plans-checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 10px;
+        border: 2px solid var(--gray-200);
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .plan-checkbox-item { display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Modal Footer */
+    .modern-modal .modal-footer {
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        padding: 1.25rem 2rem;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modern.btn-secondary { background: white; color: var(--gray-700); border: 2px solid var(--gray-200); }
+    .btn-modern.btn-secondary:hover { background: var(--gray-100); border-color: var(--gray-300); }
+
+    .btn-modern.btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-modern.btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-modern.btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #b91c1c 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-modern.btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Alerts */
+    .alert { border-radius: 12px; border: none; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .alert-success { background: #d1fae5; color: #065f46; }
+    .alert-danger { background: #fee2e2; color: #991b1b; }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .table-container { overflow-x: auto; }
+        .data-table { min-width: 900px; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Promo code data for edit modal
+        var promoCodesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PromoCodes.Select(p => new {
+            p.Id,
+            p.Name,
+            p.Description,
+            p.Code,
+            DiscountType = (int)p.DiscountType,
+            p.DiscountValue,
+            p.Currency,
+            Duration = (int)p.Duration,
+            p.DurationInMonths,
+            p.MaxRedemptions,
+            p.MaxRedemptionsPerCustomer,
+            StartsAt = p.StartsAt?.ToString("yyyy-MM-ddTHH:mm"),
+            ExpiresAt = p.ExpiresAt?.ToString("yyyy-MM-ddTHH:mm"),
+            Scope = (int)p.Scope,
+            p.RestrictedToUserId,
+            p.RestrictedToUserName,
+            p.RestrictedToCompanyId,
+            p.RestrictedToCompanyName,
+            p.RestrictedToLocationId,
+            p.RestrictedToLocationName,
+            AppliesTo = (int)p.AppliesTo,
+            p.ApplicablePlanIdList,
+            p.ExtendsTrialDays,
+            p.AdditionalTrialDays,
+            p.MinimumAmount,
+            p.IsActive
+        })));
+
+        var searchTimeout;
+
+        function showTab(prefix, tabName) {
+            document.querySelectorAll('#' + prefix + 'Modal .form-tab-content').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('#' + prefix + 'Modal .form-tab').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            document.getElementById(prefix + '-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function toggleCurrency(prefix) {
+            var select = document.getElementById(prefix + 'DiscountType');
+            var currencyGroup = document.getElementById(prefix + 'CurrencyGroup');
+            var discountPrefix = document.getElementById(prefix + 'DiscountPrefix');
+            var isFixed = select.value === '@((int)PromoCodeType.FixedAmount)';
+            currencyGroup.style.display = isFixed ? 'block' : 'none';
+            discountPrefix.textContent = isFixed ? '$' : '%';
+        }
+
+        function toggleDurationMonths(prefix) {
+            var select = document.getElementById(prefix + 'Duration');
+            var monthsGroup = document.getElementById(prefix + 'DurationMonthsGroup');
+            monthsGroup.style.display = select.value === '@((int)PromoDuration.Repeating)' ? 'block' : 'none';
+        }
+
+        function toggleTrialExtension(prefix) {
+            var checkbox = document.getElementById(prefix + 'ExtendsTrialDays');
+            var group = document.getElementById(prefix + 'TrialExtensionGroup');
+            group.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function toggleScopeFields(prefix) {
+            var scope = document.getElementById(prefix + 'Scope').value;
+            document.querySelectorAll('#' + prefix + 'Modal .scope-search').forEach(function(el) {
+                el.style.display = 'none';
+            });
+
+            // Clear previous selections
+            ['User', 'Company', 'Location'].forEach(function(type) {
+                document.getElementById(prefix + 'RestrictedTo' + type + 'Id').value = '';
+                document.getElementById(prefix + 'Selected' + type).style.display = 'none';
+            });
+
+            if (scope === '@((int)PromoCodeScope.User)') {
+                document.getElementById(prefix + 'UserSearch').style.display = 'block';
+            } else if (scope === '@((int)PromoCodeScope.Company)') {
+                document.getElementById(prefix + 'CompanySearch').style.display = 'block';
+            } else if (scope === '@((int)PromoCodeScope.Location)') {
+                document.getElementById(prefix + 'LocationSearch').style.display = 'block';
+            }
+        }
+
+        function toggleApplicablePlans(prefix) {
+            var appliesTo = document.getElementById(prefix + 'AppliesTo').value;
+            var plansGroup = document.getElementById(prefix + 'ApplicablePlansGroup');
+            plansGroup.style.display = appliesTo === '@((int)PromoCodeAppliesTo.Subscriptions)' ? 'block' : 'none';
+        }
+
+        async function generateCode() {
+            try {
+                var response = await fetch('?handler=GenerateCode');
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status);
+                }
+                var data = await response.json();
+                document.getElementById('createCode').value = data.code;
+            } catch (error) {
+                console.error('Error generating code:', error);
+                alert('Failed to generate code. Please try again.');
+            }
+        }
+
+        // Search functions
+        async function searchUsers(prefix) {
+            var term = document.getElementById(prefix + 'UserSearchInput').value;
+            if (term.length < 2) {
+                document.getElementById(prefix + 'UserResults').classList.remove('show');
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async function() {
+                try {
+                    var response = await fetch('?handler=SearchUsers&term=' + encodeURIComponent(term));
+                    var users = await response.json();
+                    renderSearchResults(prefix, 'User', users, function(u) {
+                        return { id: u.id, name: u.displayName, detail: u.email };
+                    });
+                } catch (error) {
+                    console.error('Error searching users:', error);
+                }
+            }, 300);
+        }
+
+        async function searchCompanies(prefix) {
+            var term = document.getElementById(prefix + 'CompanySearchInput').value;
+            if (term.length < 2) {
+                document.getElementById(prefix + 'CompanyResults').classList.remove('show');
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async function() {
+                try {
+                    var response = await fetch('?handler=SearchCompanies&term=' + encodeURIComponent(term));
+                    var companies = await response.json();
+                    renderSearchResults(prefix, 'Company', companies, function(c) {
+                        return { id: c.id, name: c.name, detail: '' };
+                    });
+                } catch (error) {
+                    console.error('Error searching companies:', error);
+                }
+            }, 300);
+        }
+
+        async function searchLocations(prefix) {
+            var term = document.getElementById(prefix + 'LocationSearchInput').value;
+            if (term.length < 2) {
+                document.getElementById(prefix + 'LocationResults').classList.remove('show');
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async function() {
+                try {
+                    var response = await fetch('?handler=SearchLocations&term=' + encodeURIComponent(term));
+                    var locations = await response.json();
+                    renderSearchResults(prefix, 'Location', locations, function(l) {
+                        return { id: l.id, name: l.name, detail: l.companyName || '' };
+                    });
+                } catch (error) {
+                    console.error('Error searching locations:', error);
+                }
+            }, 300);
+        }
+
+        function renderSearchResults(prefix, type, items, mapper) {
+            var resultsContainer = document.getElementById(prefix + type + 'Results');
+            resultsContainer.innerHTML = '';
+
+            if (items.length === 0) {
+                resultsContainer.innerHTML = '<div class="search-result-item"><span class="search-result-detail">No results found</span></div>';
+                resultsContainer.classList.add('show');
+                return;
+            }
+
+            items.forEach(function(item) {
+                var mapped = mapper(item);
+                var div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.innerHTML = '<div class="search-result-name">' + mapped.name + '</div>' +
+                    (mapped.detail ? '<div class="search-result-detail">' + mapped.detail + '</div>' : '');
+                div.onclick = function() { selectItem(prefix, type, mapped.id, mapped.name); };
+                resultsContainer.appendChild(div);
+            });
+
+            resultsContainer.classList.add('show');
+        }
+
+        function selectItem(prefix, type, id, name) {
+            document.getElementById(prefix + 'RestrictedTo' + type + 'Id').value = id;
+            document.getElementById(prefix + type + 'SearchInput').value = '';
+            document.getElementById(prefix + type + 'Results').classList.remove('show');
+
+            var selectedDiv = document.getElementById(prefix + 'Selected' + type);
+            selectedDiv.innerHTML = '<span class="selected-item-name">' + name + '</span>' +
+                '<button type="button" class="btn-clear-selection" onclick="clearSelection(\'' + prefix + '\', \'' + type + '\')"><i class="fa fa-times"></i></button>';
+            selectedDiv.style.display = 'flex';
+        }
+
+        function clearSelection(prefix, type) {
+            document.getElementById(prefix + 'RestrictedTo' + type + 'Id').value = '';
+            document.getElementById(prefix + 'Selected' + type).style.display = 'none';
+        }
+
+        function showCreateModal() {
+            try {
+                document.querySelector('#createModal form').reset();
+                document.getElementById('createIsActive').checked = true;
+
+                // Reset tabs
+                document.querySelectorAll('#createModal .form-tab-content').forEach(function(tab) {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('#createModal .form-tab').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('create-basic').classList.add('active');
+                document.querySelector('#createModal .form-tab').classList.add('active');
+
+                // Reset conditional fields
+                document.getElementById('createCurrencyGroup').style.display = 'none';
+                document.getElementById('createDurationMonthsGroup').style.display = 'none';
+                document.getElementById('createTrialExtensionGroup').style.display = 'none';
+                document.getElementById('createApplicablePlansGroup').style.display = 'none';
+
+                document.querySelectorAll('#createModal .scope-search').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+                document.querySelectorAll('#createModal .selected-item').forEach(function(el) {
+                    el.style.display = 'none';
+                });
+
+                var createModal = new bootstrap.Modal(document.getElementById('createModal'));
+                createModal.show();
+            } catch (error) {
+                console.error('Error showing create modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        function showEditModal(promoId) {
+            try {
+                var promo = promoCodesData.find(function(p) { return p.Id === promoId; });
+                if (!promo) {
+                    alert('Promo code not found');
+                    return;
+                }
+
+                document.getElementById('editId').value = promo.Id;
+                document.getElementById('editName').value = promo.Name || '';
+                document.getElementById('editDescription').value = promo.Description || '';
+                document.getElementById('editCode').value = promo.Code || '';
+                document.getElementById('editDiscountType').value = promo.DiscountType;
+                document.getElementById('editDiscountValue').value = promo.DiscountValue || 0;
+                document.getElementById('editCurrency').value = (promo.Currency || 'usd').toLowerCase();
+                document.getElementById('editDuration').value = promo.Duration;
+                document.getElementById('editDurationInMonths').value = promo.DurationInMonths || 3;
+                document.getElementById('editMaxRedemptions').value = promo.MaxRedemptions || '';
+                document.getElementById('editMaxPerCustomer').value = promo.MaxRedemptionsPerCustomer || '';
+                document.getElementById('editStartsAt').value = promo.StartsAt || '';
+                document.getElementById('editExpiresAt').value = promo.ExpiresAt || '';
+                document.getElementById('editScope').value = promo.Scope;
+                document.getElementById('editAppliesTo').value = promo.AppliesTo;
+                document.getElementById('editExtendsTrialDays').checked = promo.ExtendsTrialDays;
+                document.getElementById('editAdditionalTrialDays').value = promo.AdditionalTrialDays || 0;
+                document.getElementById('editMinimumAmount').value = promo.MinimumAmount || '';
+                document.getElementById('editIsActive').checked = promo.IsActive;
+
+                // Trigger toggles
+                toggleCurrency('edit');
+                toggleDurationMonths('edit');
+                toggleTrialExtension('edit');
+                toggleScopeFields('edit');
+                toggleApplicablePlans('edit');
+
+                // Set scope selections
+                if (promo.Scope === @((int)PromoCodeScope.User) && promo.RestrictedToUserId) {
+                    document.getElementById('editRestrictedToUserId').value = promo.RestrictedToUserId;
+                    var selectedDiv = document.getElementById('editSelectedUser');
+                    selectedDiv.innerHTML = '<span class="selected-item-name">' + (promo.RestrictedToUserName || 'User #' + promo.RestrictedToUserId) + '</span>' +
+                        '<button type="button" class="btn-clear-selection" onclick="clearSelection(\'edit\', \'User\')"><i class="fa fa-times"></i></button>';
+                    selectedDiv.style.display = 'flex';
+                }
+                if (promo.Scope === @((int)PromoCodeScope.Company) && promo.RestrictedToCompanyId) {
+                    document.getElementById('editRestrictedToCompanyId').value = promo.RestrictedToCompanyId;
+                    var selectedDiv = document.getElementById('editSelectedCompany');
+                    selectedDiv.innerHTML = '<span class="selected-item-name">' + (promo.RestrictedToCompanyName || 'Company #' + promo.RestrictedToCompanyId) + '</span>' +
+                        '<button type="button" class="btn-clear-selection" onclick="clearSelection(\'edit\', \'Company\')"><i class="fa fa-times"></i></button>';
+                    selectedDiv.style.display = 'flex';
+                }
+                if (promo.Scope === @((int)PromoCodeScope.Location) && promo.RestrictedToLocationId) {
+                    document.getElementById('editRestrictedToLocationId').value = promo.RestrictedToLocationId;
+                    var selectedDiv = document.getElementById('editSelectedLocation');
+                    selectedDiv.innerHTML = '<span class="selected-item-name">' + (promo.RestrictedToLocationName || 'Location #' + promo.RestrictedToLocationId) + '</span>' +
+                        '<button type="button" class="btn-clear-selection" onclick="clearSelection(\'edit\', \'Location\')"><i class="fa fa-times"></i></button>';
+                    selectedDiv.style.display = 'flex';
+                }
+
+                // Set applicable plans
+                document.querySelectorAll('#editModal input[name="applicablePlanIds"]').forEach(function(cb) {
+                    cb.checked = promo.ApplicablePlanIdList && promo.ApplicablePlanIdList.includes(cb.value);
+                });
+
+                // Reset tabs
+                document.querySelectorAll('#editModal .form-tab-content').forEach(function(tab) {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('#editModal .form-tab').forEach(function(btn) {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('edit-basic').classList.add('active');
+                document.querySelector('#editModal .form-tab').classList.add('active');
+
+                var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                editModal.show();
+            } catch (error) {
+                console.error('Error showing edit modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        function confirmDelete(id, code) {
+            try {
+                document.getElementById('codeToDelete').textContent = code;
+                document.getElementById('idToDelete').value = id;
+
+                var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                deleteModal.show();
+            } catch (error) {
+                console.error('Error showing delete modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-input-wrapper')) {
+                document.querySelectorAll('.search-results').forEach(function(el) {
+                    el.classList.remove('show');
+                });
+            }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    var bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+    </script>
+}

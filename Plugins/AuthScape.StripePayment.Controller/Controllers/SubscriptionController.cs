@@ -1,4 +1,6 @@
 using AuthScape.Services;
+using AuthScape.Services.PromoCode;
+using AuthScape.Services.Subscription;
 using AuthScape.StripePayment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,19 +23,25 @@ namespace AuthScape.StripePayment.Controller.Controllers
         readonly IUserManagementService userManagementService;
         readonly IStripeSubscriptionService subscriptionService;
         readonly IStripeInvoiceService invoiceService;
+        readonly IPromoCodeService promoCodeService;
+        readonly ISubscriptionPlanService subscriptionPlanService;
 
         public SubscriptionController(
             IOptions<AppSettings> appSettings,
             DatabaseContext context,
             IUserManagementService userManagementService,
             IStripeSubscriptionService subscriptionService,
-            IStripeInvoiceService invoiceService)
+            IStripeInvoiceService invoiceService,
+            IPromoCodeService promoCodeService,
+            ISubscriptionPlanService subscriptionPlanService)
         {
             this.appSettings = appSettings.Value;
             this.context = context;
             this.userManagementService = userManagementService;
             this.subscriptionService = subscriptionService;
             this.invoiceService = invoiceService;
+            this.promoCodeService = promoCodeService;
+            this.subscriptionPlanService = subscriptionPlanService;
 
             if (this.appSettings.Stripe != null && this.appSettings.Stripe.SecretKey != null)
             {
@@ -42,14 +50,15 @@ namespace AuthScape.StripePayment.Controller.Controllers
         }
 
         /// <summary>
-        /// Get all available subscription plans from Stripe
+        /// Get all available subscription plans from database
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAvailablePlans()
         {
             try
             {
-                var plans = await subscriptionService.ListAvailablePlansAsync();
+                var plans = await subscriptionPlanService.GetAllPlansAsync(includeInactive: false);
                 return Ok(new { success = true, plans });
             }
             catch (Exception ex)
@@ -78,39 +87,68 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     return Unauthorized(new { success = false, error = "User ID not found in claims" });
                 }
 
-                // Get the appropriate wallet
+                // Resolve payment method and wallet
                 Guid walletId;
-                if (req.PaymentMethodType == "company")
+                string stripePaymentMethodId = req.PaymentMethodId;
+
+                // If walletPaymentMethodId is provided, use the wallet that owns that payment method
+                if (req.WalletPaymentMethodId.HasValue)
                 {
-                    // Try to get company ID from claims
-                    var companyIdValue = User.FindFirst("companyId")?.Value;
-                    if (long.TryParse(companyIdValue, out var companyId))
-                    {
-                        var wallet = await context.Wallets
-                            .FirstOrDefaultAsync(w => w.CompanyId == companyId);
-                        if (wallet == null)
-                            return BadRequest(new { success = false, error = "No company wallet found" });
-                        walletId = wallet.Id;
-                    }
-                    else
-                    {
-                        return BadRequest(new { success = false, error = "Company wallet requested but no company ID found" });
-                    }
+                    var walletPaymentMethod = await context.WalletPaymentMethods
+                        .Include(wpm => wpm.Wallet)
+                        .FirstOrDefaultAsync(wpm => wpm.Id == req.WalletPaymentMethodId.Value && wpm.Archived == null);
+
+                    if (walletPaymentMethod == null)
+                        return BadRequest(new { success = false, error = "Payment method not found" });
+
+                    // Use the wallet that owns this payment method
+                    walletId = walletPaymentMethod.WalletId;
+                    stripePaymentMethodId = walletPaymentMethod.PaymentMethodId;
                 }
                 else
                 {
-                    var wallet = await context.Wallets
-                        .FirstOrDefaultAsync(w => w.UserId == userId);
-                    if (wallet == null)
-                        return BadRequest(new { success = false, error = "No user wallet found" });
-                    walletId = wallet.Id;
+                    // No payment method specified, get the appropriate wallet based on type
+                    if (req.PaymentMethodType == "company")
+                    {
+                        // Try to get company ID from claims
+                        var companyIdValue = User.FindFirst("companyId")?.Value;
+                        if (long.TryParse(companyIdValue, out var companyId))
+                        {
+                            var wallet = await context.Wallets
+                                .FirstOrDefaultAsync(w => w.CompanyId == companyId);
+                            if (wallet == null)
+                                return BadRequest(new { success = false, error = "No company wallet found" });
+                            walletId = wallet.Id;
+                        }
+                        else
+                        {
+                            return BadRequest(new { success = false, error = "Company wallet requested but no company ID found" });
+                        }
+                    }
+                    else
+                    {
+                        // For user wallet, prefer wallet without company association
+                        var wallet = await context.Wallets
+                            .FirstOrDefaultAsync(w => w.UserId == userId && w.CompanyId == null);
+
+                        // Fallback to any user wallet if no dedicated user wallet exists
+                        if (wallet == null)
+                        {
+                            wallet = await context.Wallets
+                                .FirstOrDefaultAsync(w => w.UserId == userId);
+                        }
+
+                        if (wallet == null)
+                            return BadRequest(new { success = false, error = "No user wallet found" });
+                        walletId = wallet.Id;
+                    }
                 }
 
                 var options = new CreateSubscriptionOptions
                 {
                     TrialPeriodDays = req.TrialPeriodDays,
                     PromoCode = req.PromoCode,
-                    PaymentMethodId = req.PaymentMethodId,
+                    PaymentMethodId = stripePaymentMethodId,
                     Metadata = req.Metadata
                 };
 
@@ -156,7 +194,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     return Unauthorized(new { success = false, error = "User ID not found in claims" });
                 }
 
-                Guid walletId;
+                List<Guid> walletIds = new List<Guid>();
                 if (walletType == "company")
                 {
                     // Try to get company ID from claims
@@ -165,9 +203,8 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     {
                         var wallet = await context.Wallets
                             .FirstOrDefaultAsync(w => w.CompanyId == companyId);
-                        if (wallet == null)
-                            return Ok(new { success = true, subscriptions = new List<object>() });
-                        walletId = wallet.Id;
+                        if (wallet != null)
+                            walletIds.Add(wallet.Id);
                     }
                     else
                     {
@@ -176,16 +213,25 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 }
                 else
                 {
-                    var wallet = await context.Wallets
-                        .FirstOrDefaultAsync(w => w.UserId == userId);
-                    if (wallet == null)
-                        return Ok(new { success = true, subscriptions = new List<object>() });
-                    walletId = wallet.Id;
+                    // Get ALL wallets for this user (they might have multiple)
+                    walletIds = await context.Wallets
+                        .Where(w => w.UserId == userId)
+                        .Select(w => w.Id)
+                        .ToListAsync();
                 }
 
-                var results = await subscriptionService.ListSubscriptionsAsync(walletId, includeInactive);
+                if (!walletIds.Any())
+                    return Ok(new { success = true, subscriptions = new List<object>() });
 
-                var subscriptions = results.Select(r => new
+                // Get subscriptions from all user wallets
+                var allResults = new List<SubscriptionResult>();
+                foreach (var walletId in walletIds)
+                {
+                    var results = await subscriptionService.ListSubscriptionsAsync(walletId, includeInactive);
+                    allResults.AddRange(results);
+                }
+
+                var subscriptions = allResults.Select(r => new
                 {
                     id = r.Subscription.Id,
                     stripeSubscriptionId = r.Subscription.StripeSubscriptionId,
@@ -478,6 +524,68 @@ namespace AuthScape.StripePayment.Controller.Controllers
         }
 
         /// <summary>
+        /// Validate a promo code before applying it
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ValidatePromoCode([FromBody] ValidatePromoCodeRequest req)
+        {
+            try
+            {
+                // Get user context for scope validation
+                long? userId = null;
+                long? companyId = null;
+                long? locationId = null;
+
+                var idValue =
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+                    User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ??
+                    User.FindFirst("sub")?.Value ??
+                    User.FindFirst("oid")?.Value;
+
+                if (!string.IsNullOrWhiteSpace(idValue) && long.TryParse(idValue, out var parsedUserId))
+                {
+                    userId = parsedUserId;
+
+                    // Get company and location from user
+                    var user = await context.Users
+                        .FirstOrDefaultAsync(u => u.Id == userId.Value);
+                    if (user != null)
+                    {
+                        companyId = user.CompanyId;
+                        locationId = user.LocationId;
+                    }
+                }
+
+                var result = await promoCodeService.ValidateCodeAsync(
+                    req.Code,
+                    req.PlanId,
+                    userId,
+                    companyId,
+                    locationId,
+                    req.OrderAmount);
+
+                return Ok(new
+                {
+                    success = result.IsValid,
+                    error = result.ErrorMessage,
+                    promoCodeId = result.PromoCodeId,
+                    discountType = result.DiscountType?.ToString(),
+                    discountValue = result.DiscountValue,
+                    discountDisplay = result.DiscountDisplay,
+                    duration = result.Duration?.ToString(),
+                    durationInMonths = result.DurationInMonths,
+                    extendsTrialDays = result.ExtendsTrialDays,
+                    additionalTrialDays = result.AdditionalTrialDays,
+                    stripePromotionCodeId = result.StripePromotionCodeId
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Sync subscription data from Stripe
         /// </summary>
         [HttpPost]
@@ -512,7 +620,8 @@ namespace AuthScape.StripePayment.Controller.Controllers
     {
         public string PriceId { get; set; }
         public string PaymentMethodType { get; set; } = "user"; // "user" or "company"
-        public string PaymentMethodId { get; set; }
+        public string? PaymentMethodId { get; set; } // Stripe payment method ID (pm_xxx) - optional if WalletPaymentMethodId provided
+        public Guid? WalletPaymentMethodId { get; set; } // Database wallet payment method ID (alternative to PaymentMethodId)
         public int? TrialPeriodDays { get; set; }
         public string? PromoCode { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
@@ -562,6 +671,13 @@ namespace AuthScape.StripePayment.Controller.Controllers
     public class SyncSubscriptionRequest
     {
         public string StripeSubscriptionId { get; set; }
+    }
+
+    public class ValidatePromoCodeRequest
+    {
+        public string Code { get; set; }
+        public Guid? PlanId { get; set; }
+        public decimal? OrderAmount { get; set; }
     }
 
     #endregion

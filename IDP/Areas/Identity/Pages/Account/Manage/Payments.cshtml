@@ -1,0 +1,885 @@
+@page "/Payments"
+@model IDP.Areas.Identity.Pages.Account.Manage.PaymentsModel
+
+@{
+    ViewData["Title"] = "Payments & Billing";
+    ViewData["ActivePage"] = ManageNavPages.Payments;
+    var pk = Model.StripePublicKey;
+    var walletBalance = Model.WalletBalance;
+    var activeWalletId = Model.ActiveWalletId;
+    var activeTab = Model.ActiveTab;
+
+    // ACH verification state from SetupIntent redirect
+    var achVerifyPending = (bool?)ViewData["AchVerifyPending"] == true;
+    var achHostedUrl = ViewData["AchHostedUrl"] as string;
+    var achVerifyHint = ViewData["AchVerifyHint"] as string;
+}
+
+@Html.AntiForgeryToken()
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="~/css/manage-pages.css" rel="stylesheet" />
+<link href="~/css/unified-payments.css" rel="stylesheet" />
+<script src="https://js.stripe.com/v3/"></script>
+
+<div class="manage-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-actions">
+            <div>
+                <h1>Payments & Billing</h1>
+                <p>Manage subscriptions, payment methods, and billing history</p>
+            </div>
+            <div class="header-quick-actions">
+                <button class="btn header-btn" data-bs-toggle="modal" data-bs-target="#quickPayModal">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Quick Pay
+                </button>
+                <button class="btn header-btn" data-bs-toggle="modal" data-bs-target="#addPmModal">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Payment Method
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (ViewData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" id="success-alert">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+            <span>@ViewData["SuccessMessage"]</span>
+        </div>
+    }
+    @if (ViewData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" id="error-alert">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+            </svg>
+            <span>@ViewData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- Tab Navigation -->
+    <div class="payments-tabs">
+        <button class="payments-tab @(activeTab == "overview" ? "active" : "")" data-tab="overview">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5H5V1H1.5zM10 15V1H6v14h4zm1 0h3.5a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5H11v14z"/>
+            </svg>
+            Overview
+        </button>
+        <button class="payments-tab @(activeTab == "subscriptions" ? "active" : "")" data-tab="subscriptions">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+            </svg>
+            Subscriptions
+            @if (Model.ActiveSubscriptionCount > 0)
+            {
+                <span class="tab-badge">@Model.ActiveSubscriptionCount</span>
+            }
+        </button>
+        <button class="payments-tab @(activeTab == "payment-methods" ? "active" : "")" data-tab="payment-methods">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+            </svg>
+            Payment Methods
+            @if (Model.PaymentMethodCount > 0)
+            {
+                <span class="tab-badge">@Model.PaymentMethodCount</span>
+            }
+        </button>
+        <button class="payments-tab @(activeTab == "billing-history" ? "active" : "")" data-tab="billing-history">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                <path d="M4.5 12.5A.5.5 0 0 1 5 12h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 10h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+            Billing History
+        </button>
+        <button class="payments-tab @(activeTab == "quick-pay" ? "active" : "")" data-tab="quick-pay">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9H5.5zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518l.087.02z"/>
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            </svg>
+            Quick Pay
+        </button>
+        @if (Model.HasStripeConnectAccount || true)
+        {
+            <button class="payments-tab @(activeTab == "stripe-connect" ? "active" : "")" data-tab="stripe-connect">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0Z"/>
+                    <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3ZM8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                </svg>
+                Stripe Connect
+                @if (Model.HasStripeConnectAccount)
+                {
+                    <span class="tab-badge badge-success">Active</span>
+                }
+            </button>
+        }
+    </div>
+
+    <!-- Tab Content Panels -->
+
+    <!-- Overview Tab -->
+    <div id="tab-overview" class="tab-panel" style="display: @(activeTab == "overview" ? "block" : "none")">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <!-- Wallet Balance Card -->
+            <div class="summary-card gradient-card">
+                <div class="summary-card-icon">
+                    <svg width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                        <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+                    </svg>
+                </div>
+                <div class="summary-card-label">Wallet Balance</div>
+                <div class="summary-card-value">@walletBalance.ToString("C")</div>
+                <button class="summary-card-action" data-bs-toggle="modal" data-bs-target="#addFundsModal">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Funds
+                </button>
+            </div>
+
+            <!-- Active Subscriptions Card -->
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--primary-color)">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                </div>
+                <div class="summary-card-label">Active Subscriptions</div>
+                <div class="summary-card-value" style="color: var(--gray-900)">@Model.ActiveSubscriptionCount</div>
+                <a href="javascript:void(0)" onclick="switchTab('subscriptions')" class="summary-card-link">View All</a>
+            </div>
+
+            <!-- Payment Methods Card -->
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--primary-color)">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                        <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                    </svg>
+                </div>
+                <div class="summary-card-label">Payment Methods</div>
+                <div class="summary-card-value" style="color: var(--gray-900)">@Model.PaymentMethodCount</div>
+                <a href="javascript:void(0)" onclick="switchTab('payment-methods')" class="summary-card-link">Manage</a>
+            </div>
+
+            <!-- Stripe Connect Card -->
+            <div class="summary-card">
+                <div class="summary-card-header">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: @(Model.HasStripeConnectAccount ? "var(--success-color)" : "var(--gray-400)")">
+                        <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0Z"/>
+                        <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3ZM8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                    </svg>
+                </div>
+                <div class="summary-card-label">Stripe Connect</div>
+                <div class="summary-card-value" style="color: var(--gray-900); font-size: 1rem;">
+                    @if (Model.HasStripeConnectAccount)
+                    {
+                        <span class="badge badge-success">Connected</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-gray">Not Set Up</span>
+                    }
+                </div>
+                <a href="javascript:void(0)" onclick="switchTab('stripe-connect')" class="summary-card-link">
+                    @(Model.HasStripeConnectAccount ? "Manage" : "Set Up")
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Recent Activity</h2>
+                    <p class="card-subtitle">Your latest transactions and updates</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="switchTab('billing-history')">
+                    View All
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity-container">
+                    <div class="text-center py-5">
+                        <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                        <p class="text-muted mt-3">Loading recent activity...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscriptions Tab -->
+    <div id="tab-subscriptions" class="tab-panel" style="display: @(activeTab == "subscriptions" ? "block" : "none")">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Active Subscriptions</h2>
+                    <p class="card-subtitle">Your currently active subscription plans</p>
+                </div>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newSubscriptionModal">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    New Subscription
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="subscriptions-container">
+                    <div class="text-center py-5">
+                        <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                        <p class="text-muted mt-3">Loading subscriptions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Past Subscriptions</h2>
+                    <p class="card-subtitle">Previously canceled or expired subscriptions</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="past-subscriptions-container">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3 class="empty-state-title">No past subscriptions</h3>
+                        <p class="empty-state-description">Your canceled subscriptions will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Methods Tab -->
+    <div id="tab-payment-methods" class="tab-panel" style="display: @(activeTab == "payment-methods" ? "block" : "none")">
+        <!-- ACH Verification Banner -->
+        <div id="ach-verify-panel" class="ach-verify-banner" style="display:@(achVerifyPending ? "block" : "none")">
+            <div class="ach-verify-banner-header">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color: #f59e0b;">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+                <strong class="ach-verify-banner-title">Verify Your Bank Account</strong>
+            </div>
+            <div class="ach-verify-content">
+                <p style="margin: 0 0 1rem 0;">
+                    We sent two small deposits (or a descriptor code) to your bank. Enter them here to finish setup.
+                </p>
+                <div id="ach-hosted-wrapper" style="display:@(string.IsNullOrWhiteSpace(achHostedUrl) ? "none" : "block"); margin-bottom: 0.75rem;">
+                    <a id="ach-hosted-link" class="btn btn-sm btn-primary" href="@(achHostedUrl ?? "#")" target="_blank" rel="noopener">
+                        Verify on Stripe
+                    </a>
+                    <span style="margin-left: 0.5rem; font-size: 0.875rem;">or verify below:</span>
+                </div>
+            </div>
+            <form id="ach-verify-form" class="ach-verify-form">
+                <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Deposit 1 (cents)</label>
+                        <input class="form-control" id="amt1" type="number" min="1" step="1" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Deposit 2 (cents)</label>
+                        <input class="form-control" id="amt2" type="number" min="1" step="1" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Descriptor Code</label>
+                        <input class="form-control" id="code" type="text" placeholder="SMXXXX" />
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-primary btn-sm" id="verify-ach-client">Verify (Client)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="verify-ach-server">Verify (Server)</button>
+                </div>
+                <div id="ach-hint" style="display:@(string.IsNullOrWhiteSpace(achVerifyHint) ? "none" : "block"); margin-top: 0.75rem; font-size: 0.875rem;">
+                    @if (!string.IsNullOrWhiteSpace(achVerifyHint))
+                    {
+                        <text>Hint: expected verification via <strong>@achVerifyHint</strong>.</text>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <!-- Wallet Summary -->
+        <div class="wallet-summary-grid">
+            <div class="wallet-balance-card">
+                <div class="wallet-balance-icon">
+                    <svg width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                        <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+                    </svg>
+                </div>
+                <div class="wallet-balance-label">Current Balance</div>
+                <div class="wallet-balance-amount">@walletBalance.ToString("C")</div>
+                <div class="wallet-balance-actions">
+                    <button class="btn" data-bs-toggle="modal" data-bs-target="#addFundsModal">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Add Credit
+                    </button>
+                </div>
+            </div>
+            <div class="default-method-card">
+                <div class="default-method-info">
+                    <h3>Default Payment Method</h3>
+                    <p>Used for subscriptions and recurring charges</p>
+                </div>
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#addPmModal">Change</button>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Saved Payment Methods</h2>
+                    <p class="card-subtitle">Manage your cards and bank accounts</p>
+                </div>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPmModal">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Method
+                </button>
+            </div>
+            <div class="card-body">
+                @if (!Model.PaymentMethods.Any())
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <svg width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zM1 7v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7H1z"/>
+                            </svg>
+                        </div>
+                        <h3 class="empty-state-title">No payment methods yet</h3>
+                        <p class="empty-state-description">Add a card or bank account to speed up checkout and enable autopay</p>
+                        <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addPmModal">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            Add Your First Method
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var pm in Model.PaymentMethods)
+                    {
+                        var isBank = pm.WalletType == AuthScape.Models.PaymentGateway.WalletType.us_bank_account;
+                        var label = isBank
+                            ? (string.IsNullOrWhiteSpace(pm.BankName) ? "Bank" : pm.BankName)
+                            : (string.IsNullOrWhiteSpace(pm.Brand) ? "Card" : pm.Brand);
+                        var sub = isBank
+                            ? (string.IsNullOrWhiteSpace(pm.AccountType) ? "US bank account" : pm.AccountType)
+                            : $"Expires {pm.ExpMonth:D2}/{pm.ExpYear}";
+
+                        var shortBrand = (label ?? (isBank ? "BANK" : "CARD")).ToUpperInvariant();
+                        if (shortBrand.Length > 4) { shortBrand = shortBrand.Substring(0, 4); }
+
+                        <div class="payment-method-item">
+                            <div class="payment-method-info">
+                                <div class="payment-method-icon">@shortBrand</div>
+                                <div class="payment-method-details">
+                                    <div class="payment-method-name">@label .... @pm.Last4</div>
+                                    <div class="payment-method-meta">@sub</div>
+                                </div>
+                            </div>
+                            <div class="payment-method-actions">
+                                <button class="btn btn-sm btn-outline make-default" data-pmid="@pm.PaymentMethodId">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    Make Default
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-method" data-pmid="@pm.PaymentMethodId">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5Zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/>
+                                    </svg>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Billing History Tab -->
+    <div id="tab-billing-history" class="tab-panel" style="display: @(activeTab == "billing-history" ? "block" : "none")">
+        <!-- Sub-tabs for Invoices vs Transactions -->
+        <div class="billing-tabs">
+            <button class="billing-tab active" onclick="switchBillingTab('invoices', this)">Invoices</button>
+            <button class="billing-tab" onclick="switchBillingTab('transactions', this)">Wallet Transactions</button>
+        </div>
+
+        <!-- Invoices Panel -->
+        <div id="invoices-panel">
+            <!-- Filters -->
+            <div class="filter-card">
+                <div class="filter-grid">
+                    <div class="form-group mb-0">
+                        <label class="form-label">Status</label>
+                        <select id="invoice-status-filter" class="form-control form-select">
+                            <option value="">All Statuses</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Open">Open</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Uncollectible">Uncollectible</option>
+                            <option value="Void">Void</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label">From Date</label>
+                        <input type="date" id="invoice-start-date" class="form-control">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label">To Date</label>
+                        <input type="date" id="invoice-end-date" class="form-control">
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="loadInvoices()" style="width: 100%;">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Your Invoices</h2>
+                        <p class="card-subtitle">Complete history of all your invoices</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="syncAllData()">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        Sync from Stripe
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="invoices-container">
+                        <div class="text-center py-5">
+                            <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                            <p class="text-muted mt-3">Loading invoices...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Panel -->
+        <div id="transactions-panel" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Wallet Transactions</h2>
+                        <p class="card-subtitle">Your wallet top-ups and charges</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="transactions-container">
+                        <div class="text-center py-5">
+                            <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                            <p class="text-muted mt-3">Loading transactions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Pay Tab -->
+    <div id="tab-quick-pay" class="tab-panel" style="display: @(activeTab == "quick-pay" ? "block" : "none")">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Quick Pay</h2>
+                    <p class="card-subtitle">Make a one-time payment quickly</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="quick-pay-form">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600; font-size: 1.25rem;">$</span>
+                            <input id="quick-pay-amount" type="number" min="1" step="0.01" class="form-control form-control-lg" placeholder="0.00" style="padding-left: 2.5rem; font-size: 1.5rem;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description (Optional)</label>
+                        <input id="quick-pay-description" type="text" class="form-control" placeholder="What is this payment for?">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Payment Method</label>
+                        <select id="quick-pay-method" class="form-control form-select">
+                            <option value="">Loading payment methods...</option>
+                        </select>
+                        <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#addPmModal" class="add-payment-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            Add new payment method
+                        </a>
+                    </div>
+                    <button class="btn btn-primary btn-lg" id="quick-pay-submit" style="width: 100%; margin-top: 1rem;">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                        </svg>
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stripe Connect Tab -->
+    <div id="tab-stripe-connect" class="tab-panel" style="display: @(activeTab == "stripe-connect" ? "block" : "none")">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Stripe Connect</h2>
+                    <p class="card-subtitle">Set up your account to receive payments</p>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (Model.HasStripeConnectAccount && Model.ConnectAccount != null)
+                {
+                    <div class="connect-status-card connected">
+                        <div class="connect-status-icon">
+                            <svg width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                            </svg>
+                        </div>
+                        <h3>Your Stripe Connect account is active</h3>
+                        <p>You can receive payments from customers.</p>
+                        <div class="connect-details">
+                            <div class="connect-detail-item">
+                                <span class="label">Account ID:</span>
+                                <span class="value">@Model.ConnectAccount.StripeConnectAccountId</span>
+                            </div>
+                            @if (Model.ConnectAccount.Transfers)
+                            {
+                                <div class="connect-detail-item">
+                                    <span class="label">Transfers:</span>
+                                    <span class="badge badge-success">Enabled</span>
+                                </div>
+                            }
+                            @if (Model.ConnectAccount.Card_payments)
+                            {
+                                <div class="connect-detail-item">
+                                    <span class="label">Card Payments:</span>
+                                    <span class="badge badge-success">Enabled</span>
+                                </div>
+                            }
+                        </div>
+                        <button class="btn btn-secondary mt-3" onclick="openStripeDashboard()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                                <path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                            </svg>
+                            Open Stripe Dashboard
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="connect-status-card not-connected">
+                        <div class="connect-status-icon">
+                            <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0Z"/>
+                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3ZM8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                            </svg>
+                        </div>
+                        <h3>Start Receiving Payments</h3>
+                        <p>Connect your bank account to receive payments from customers through Stripe.</p>
+                        <ul class="connect-benefits">
+                            <li>
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                                Accept credit cards, debit cards, and bank transfers
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                                Automatic payouts to your bank account
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                                Detailed transaction reporting
+                            </li>
+                        </ul>
+                        <button class="btn btn-primary btn-lg" id="setup-connect-btn" onclick="setupStripeConnect()">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v1.384l7.614 2.03a1.5 1.5 0 0 0 .772 0L16 5.884V4.5A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M0 12.5A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5V6.85l-7.214 1.924a2.5 2.5 0 0 1-1.286 0L0 6.85v5.65z"/>
+                            </svg>
+                            Set Up Stripe Connect
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div> <!-- /.manage-container -->
+
+<!-- =====================================================
+     MODALS
+     ===================================================== -->
+
+<!-- Add Funds Modal -->
+<div class="modal fade" id="addFundsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Credit</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="add-funds-form" class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600;">$</span>
+                        <input id="topup" type="number" min="1" step="1" class="form-control" placeholder="25" style="padding-left: 2rem;">
+                    </div>
+                    <span class="form-help">Funds will be added to your wallet balance</span>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="add-funds-form" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Proceed to Pay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Method Modal -->
+<div class="modal fade" id="addPmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Payment Method</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="pm-form">
+                <div class="modal-body">
+                    <div id="payment-element" style="padding: 1.5rem; border: 2px solid var(--gray-200); border-radius: var(--border-radius-md);"></div>
+                    <span class="form-help" style="display: block; margin-top: 1rem;">Your information is stored securely with Stripe</span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="savePm" class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                        </svg>
+                        Save Payment Method
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Pay Modal (Alternative) -->
+<div class="modal fade" id="quickPayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Quick Pay</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-weight: 600; font-size: 1.25rem;">$</span>
+                        <input id="modal-quick-pay-amount" type="number" min="1" step="0.01" class="form-control" placeholder="0.00" style="padding-left: 2.5rem; font-size: 1.25rem;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input id="modal-quick-pay-description" type="text" class="form-control" placeholder="What is this payment for?">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <select id="modal-quick-pay-method" class="form-control form-select">
+                        <option value="">Loading payment methods...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="modal-quick-pay-submit">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Subscription Modal -->
+<div class="modal fade" id="newSubscriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header subscription-modal-header">
+                <h2 class="modal-title">Choose a Plan</h2>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: var(--gray-50);">
+                <!-- Plan Selection -->
+                <div id="plans-container" class="plan-selector">
+                    <div class="text-center py-5" style="grid-column: 1/-1;">
+                        <div class="spinner spinner-primary" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                        <p class="text-muted mt-3">Loading available plans...</p>
+                    </div>
+                </div>
+
+                <!-- Subscription Details Form (shown after plan selection) -->
+                <div id="subscription-details" style="display: none;">
+                    <div class="subscription-details-form">
+                        <div class="subscription-details-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                                <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                            </svg>
+                            <h3>Subscription Details</h3>
+                        </div>
+                        <div class="subscription-details-body">
+                            <div class="selected-plan-summary">
+                                <div class="selected-plan-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 16 16">
+                                        <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5Z"/>
+                                    </svg>
+                                </div>
+                                <div class="selected-plan-info">
+                                    <div class="selected-plan-label">Selected Plan</div>
+                                    <div class="selected-plan-name" id="selected-plan-display"></div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Method -->
+                            <div class="form-section">
+                                <label class="form-section-label">Payment Method</label>
+                                <div class="payment-method-wrapper">
+                                    <svg class="payment-method-icon-select" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                                        <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                                    </svg>
+                                    <select id="payment-method-select" class="payment-method-select">
+                                        <option value="">Loading payment methods...</option>
+                                    </select>
+                                </div>
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#addPmModal" class="add-payment-link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                    </svg>
+                                    Add new payment method
+                                </a>
+                            </div>
+
+                            <!-- Promo Code -->
+                            <div class="form-section">
+                                <label class="form-section-label">Promo Code</label>
+                                <div class="promo-code-wrapper">
+                                    <input type="text" id="promo-code-input" class="promo-code-input" placeholder="Enter discount code">
+                                    <button type="button" class="btn-apply-promo" onclick="applyPromoCode()">Apply</button>
+                                </div>
+                            </div>
+
+                            <!-- Trial Period -->
+                            <div class="trial-card" id="trial-section" style="display: none;">
+                                <div class="trial-content">
+                                    <div class="trial-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="0 0 16 16">
+                                            <path d="M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5V7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A2.968 2.968 0 0 1 3 2.506V2.5z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="trial-text">
+                                        <div class="trial-title">
+                                            Start with <strong id="trial-days">14</strong>-day FREE trial
+                                        </div>
+                                        <p class="trial-description">No charge until your trial ends. Cancel anytime during the trial period.</p>
+                                    </div>
+                                    <div class="trial-toggle-wrapper">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="trial-checkbox" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="create-subscription-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                    </svg>
+                    <span>Subscribe Now</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Details Modal -->
+<div class="modal fade" id="invoiceDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Invoice Details</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="invoice-details-content" class="invoice-details-grid">
+                    <!-- Content populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/payments/payments-core.js"></script>

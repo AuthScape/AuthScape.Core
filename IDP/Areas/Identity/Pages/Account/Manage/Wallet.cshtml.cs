@@ -120,25 +120,39 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostSetupIntentAsync(Guid? walletId)
         {
-            var wallet = await _resolver.GetActiveAsync(HttpContext);
-            await _resolver.EnsureStripeCustomerAsync(wallet);
-
-            var opts = new SetupIntentCreateOptions
+            try
             {
-                Customer = wallet.PaymentCustomerId,
-                //PaymentMethodTypes = new List<string> { "us_bank_account", "card" },
-                Metadata = new Dictionary<string, string> { ["wallet_id"] = wallet.Id.ToString() },
-                PaymentMethodOptions = new SetupIntentPaymentMethodOptionsOptions
-                {
-                    UsBankAccount = new SetupIntentPaymentMethodOptionsUsBankAccountOptions
-                    {
-                        VerificationMethod = "automatic" // allows instant, can fall back to micro-deposits
-                    }
-                }
-            };
+                var wallet = await _resolver.GetActiveAsync(HttpContext);
+                await _resolver.EnsureStripeCustomerAsync(wallet);
 
-            var si = await _siService.CreateAsync(opts);
-            return new JsonResult(new { clientSecret = si.ClientSecret });
+                var opts = new SetupIntentCreateOptions
+                {
+                    Customer = wallet.PaymentCustomerId,
+                    AutomaticPaymentMethods = new SetupIntentAutomaticPaymentMethodsOptions
+                    {
+                        Enabled = true,
+                    },
+                    Metadata = new Dictionary<string, string> { ["wallet_id"] = wallet.Id.ToString() },
+                    PaymentMethodOptions = new SetupIntentPaymentMethodOptionsOptions
+                    {
+                        UsBankAccount = new SetupIntentPaymentMethodOptionsUsBankAccountOptions
+                        {
+                            VerificationMethod = "automatic" // allows instant, can fall back to micro-deposits
+                        }
+                    }
+                };
+
+                var si = await _siService.CreateAsync(opts);
+                return new JsonResult(new { clientSecret = si.ClientSecret });
+            }
+            catch (StripeException ex)
+            {
+                return BadRequest(new { error = ex.StripeError?.Message ?? ex.Message, code = ex.StripeError?.Code });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // NEW: Status probe so UI can show micro-deposits banner even without redirect params
@@ -300,11 +314,27 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
             if (string.IsNullOrWhiteSpace(pmId)) return BadRequest();
 
             var wallet = await _resolver.GetActiveAsync(HttpContext);
-            await _customerService.UpdateAsync(wallet.PaymentCustomerId,
-                new CustomerUpdateOptions
+
+            try
+            {
+                await _customerService.UpdateAsync(wallet.PaymentCustomerId,
+                    new CustomerUpdateOptions
+                    {
+                        InvoiceSettings = new CustomerInvoiceSettingsOptions { DefaultPaymentMethod = pmId }
+                    });
+            }
+            catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+            {
+                // Payment method doesn't exist in Stripe - remove it from local DB
+                var local = await _db.WalletPaymentMethods.FirstOrDefaultAsync(p => p.PaymentMethodId == pmId);
+                if (local != null)
                 {
-                    InvoiceSettings = new CustomerInvoiceSettingsOptions { DefaultPaymentMethod = pmId }
-                });
+                    local.Archived = DateTimeOffset.UtcNow;
+                    _db.Update(local);
+                    await _db.SaveChangesAsync();
+                }
+                return BadRequest(new { error = "This payment method no longer exists. It has been removed." });
+            }
 
             return new OkResult();
         }
@@ -315,7 +345,15 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
         {
             if (string.IsNullOrWhiteSpace(pmId)) return BadRequest();
 
-            await _pmService.DetachAsync(pmId);
+            // Try to detach from Stripe, but don't fail if it doesn't exist
+            try
+            {
+                await _pmService.DetachAsync(pmId);
+            }
+            catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+            {
+                // Payment method doesn't exist in Stripe - that's fine, just remove from DB
+            }
 
             var local = await _db.WalletPaymentMethods.FirstOrDefaultAsync(p => p.PaymentMethodId == pmId);
             if (local != null)

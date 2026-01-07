@@ -91,7 +91,57 @@ namespace AuthScape.StripePayment.Services
                     // Apply coupon after creation if needed
 
                     if (!string.IsNullOrEmpty(options.PaymentMethodId))
+                    {
+                        // Try to get the payment method to determine its type
+                        bool isBankAccount = false;
+                        try
+                        {
+                            var paymentMethodService = new PaymentMethodService();
+                            var pm = await paymentMethodService.GetAsync(options.PaymentMethodId);
+
+                            // Check if this is a bank account (ACH/US Bank Account)
+                            isBankAccount = pm.Type == "us_bank_account";
+
+                            // If payment method is not attached to any customer, attach it
+                            if (pm.Customer == null)
+                            {
+                                try
+                                {
+                                    await paymentMethodService.AttachAsync(options.PaymentMethodId, new PaymentMethodAttachOptions
+                                    {
+                                        Customer = wallet.PaymentCustomerId
+                                    });
+                                }
+                                catch (StripeException)
+                                {
+                                    // If attach fails, continue anyway - let subscription creation handle it
+                                }
+                            }
+                            // If payment method is attached to a different customer, we need to use that customer
+                            // This can happen if wallet data is out of sync with Stripe
+                            else if (pm.Customer.Id != wallet.PaymentCustomerId)
+                            {
+                                // Update subscription to use the customer the payment method is attached to
+                                subscriptionOptions.Customer = pm.Customer.Id;
+                            }
+                        }
+                        catch (StripeException)
+                        {
+                            // If we can't get the payment method info, continue anyway
+                        }
+
+                        if (isBankAccount)
+                        {
+                            // For ACH/bank accounts, we need to configure payment settings
+                            subscriptionOptions.PaymentSettings = new SubscriptionPaymentSettingsOptions
+                            {
+                                PaymentMethodTypes = new List<string> { "us_bank_account", "card" },
+                                SaveDefaultPaymentMethod = "on_subscription"
+                            };
+                        }
+
                         subscriptionOptions.DefaultPaymentMethod = options.PaymentMethodId;
+                    }
                     else if (wallet.DefaultPaymentMethodId.HasValue)
                     {
                         var defaultPm = wallet.WalletPaymentMethods
