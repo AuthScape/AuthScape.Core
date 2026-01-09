@@ -19,11 +19,13 @@ namespace AuthScape.StripePayment.Controller.Controllers
         readonly IStripePayService stripePayService;
         readonly IUserManagementService userManagementService;
         readonly DatabaseContext context;
-        public PaymentController(IStripePayService stripePayService, IUserManagementService userManagementService, DatabaseContext context)
+        readonly IAchVerificationEmailService achEmailService;
+        public PaymentController(IStripePayService stripePayService, IUserManagementService userManagementService, DatabaseContext context, IAchVerificationEmailService achEmailService)
         {
             this.stripePayService = stripePayService;
             this.context = context;
             this.userManagementService = userManagementService;
+            this.achEmailService = achEmailService;
         }
 
         [HttpPost]
@@ -285,7 +287,49 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
             }
 
-            return Ok(await stripePayService.AddPaymentMethod(signedInUser, savePaymentMethod.PaymentMethodType, savePaymentMethod.WalletId, savePaymentMethod.StripePaymentMethod));
+            var result = await stripePayService.AddPaymentMethod(signedInUser, savePaymentMethod.PaymentMethodType, savePaymentMethod.WalletId, savePaymentMethod.StripePaymentMethod);
+
+            // Check if this is an ACH payment method requiring verification
+            var pmService = new Stripe.PaymentMethodService();
+            var paymentMethod = await pmService.GetAsync(savePaymentMethod.StripePaymentMethod);
+
+            if (paymentMethod?.Type == "us_bank_account")
+            {
+                // Check SetupIntent status for this payment method
+                var siService = new Stripe.SetupIntentService();
+                var setupIntents = await siService.ListAsync(new Stripe.SetupIntentListOptions
+                {
+                    PaymentMethod = savePaymentMethod.StripePaymentMethod,
+                    Limit = 1
+                });
+
+                var setupIntent = setupIntents.Data.FirstOrDefault();
+                if (setupIntent?.Status == "requires_action" &&
+                    setupIntent.NextAction?.Type == "verify_with_microdeposits")
+                {
+                    var microdeposits = setupIntent.NextAction.VerifyWithMicrodeposits;
+                    string arrivalDateStr = microdeposits?.ArrivalDate != default
+                        ? microdeposits.ArrivalDate.ToString("MMMM d, yyyy")
+                        : "1-2 business days";
+
+                    await achEmailService.SendInitialVerificationEmailAsync(
+                        signedInUser.Id,
+                        paymentMethod.UsBankAccount?.Last4,
+                        paymentMethod.UsBankAccount?.BankName,
+                        arrivalDateStr,
+                        microdeposits?.HostedVerificationUrl,
+                        microdeposits?.MicrodepositType);
+
+                    return Ok(new
+                    {
+                        id = result,
+                        requiresVerification = true,
+                        hostedVerificationUrl = microdeposits?.HostedVerificationUrl
+                    });
+                }
+            }
+
+            return Ok(new { id = result, requiresVerification = false });
         }
 
         [HttpDelete]

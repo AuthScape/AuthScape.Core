@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-111111111111")]
-    public class LineChartReport : ReportEntity, IReport
+    public class LineChartReport : FullReportEntity, IFullReport
     {
         public LineChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var xAxis = new List<string> { "Month", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
                 var dataPoints = new List<LineChartDataPoint>
@@ -34,16 +36,21 @@ namespace Reports
                     }
                 };
 
-                return new Widget("Monthly Sales Trend")
+                widgets.Add(new WidgetItem("Monthly Sales Trend")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new LineChartContent()
                     {
                         Title = "Monthly Sales Trend",
                         XAxis = xAxis,
                         DataPoints = dataPoints,
                         CurveLines = true
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

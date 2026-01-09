@@ -1,6 +1,7 @@
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Stripe;
 using AuthScape.Models.Users;
+using AuthScape.Services;
 using IDP.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,7 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
         private readonly DatabaseContext _db;
         private readonly AppSettings _cfg;
         private readonly ILogger<PaymentsModel> _logger;
+        private readonly IAchVerificationEmailService _achEmailService;
 
         private readonly SetupIntentService _siService;
         private readonly CustomerService _customerService;
@@ -37,12 +39,14 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
             IWalletResolver resolver,
             DatabaseContext db,
             IOptions<AppSettings> cfg,
-            ILogger<PaymentsModel> logger)
+            ILogger<PaymentsModel> logger,
+            IAchVerificationEmailService achEmailService)
         {
             _resolver = resolver;
             _db = db;
             _cfg = cfg.Value;
             _logger = logger;
+            _achEmailService = achEmailService;
 
             _siService = new SetupIntentService();
             _customerService = new CustomerService();
@@ -119,6 +123,29 @@ namespace IDP.Areas.Identity.Pages.Account.Manage
                                 ViewData["AchHostedUrl"] = si.NextAction.VerifyWithMicrodeposits?.HostedVerificationUrl;
                                 ViewData["AchVerifyHint"] = si.NextAction.VerifyWithMicrodeposits?.MicrodepositType;
                                 ActiveTab = "payment-methods";
+
+                                // Send ACH verification email
+                                var currentUserId = GetUserId();
+                                if (currentUserId.HasValue)
+                                {
+                                    string bankLast4 = si.PaymentMethod?.UsBankAccount?.Last4;
+                                    string bankName = si.PaymentMethod?.UsBankAccount?.BankName;
+                                    var microdeposits = si.NextAction.VerifyWithMicrodeposits;
+                                    string arrivalDate = microdeposits?.ArrivalDate != default
+                                        ? microdeposits.ArrivalDate.ToString("MMMM d, yyyy")
+                                        : "1-2 business days";
+                                    string hostedUrl = microdeposits?.HostedVerificationUrl;
+                                    string verificationType = microdeposits?.MicrodepositType;
+
+                                    await _achEmailService.SendInitialVerificationEmailAsync(
+                                        currentUserId.Value,
+                                        bankLast4,
+                                        bankName,
+                                        arrivalDate,
+                                        hostedUrl,
+                                        verificationType);
+                                }
+
                                 break;
                             }
                             return RedirectToPage("Payments", new { tab = "payment-methods", error = si.Status });

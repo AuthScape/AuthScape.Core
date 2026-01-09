@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-666666666666")]
-    public class OrgChartReport : ReportEntity, IReport
+    public class OrgChartReport : FullReportEntity, IFullReport
     {
         public OrgChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var nodes = new List<OrgDataPoint>
                 {
                     new OrgDataPoint { Id = "ceo", Name = "John Smith<br><i>CEO</i>", ParentId = null, Tooltip = "Chief Executive Officer" },
@@ -27,8 +29,11 @@ namespace Reports
                     new OrgDataPoint { Id = "dev2", Name = "Anna Martinez<br><i>Developer</i>", ParentId = "dev_lead", Tooltip = "Developer" }
                 };
 
-                return new Widget("Company Organization")
+                widgets.Add(new WidgetItem("Company Organization")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new OrgChartContent()
                     {
                         Title = "Company Organizational Structure",
@@ -36,8 +41,10 @@ namespace Reports
                         AllowHtml = true,
                         AllowCollapse = true,
                         Size = "medium"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

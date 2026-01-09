@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-999999999999")]
-    public class ScatterChartReport : ReportEntity, IReport
+    public class ScatterChartReport : FullReportEntity, IFullReport
     {
         public ScatterChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var dataPoints = new List<ScatterChartDataPoint>
                 {
                     new ScatterChartDataPoint(8, 12),
@@ -32,16 +34,21 @@ namespace Reports
                     new ScatterChartDataPoint(5.5m, 6.5m)
                 };
 
-                return new Widget("Hours Studied vs Test Score")
+                widgets.Add(new WidgetItem("Hours Studied vs Test Score")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new ScatterChartContent()
                     {
                         Title = "Study Time vs Performance",
                         DataPoints = dataPoints,
                         XName = "Hours Studied",
                         YName = "Test Score"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

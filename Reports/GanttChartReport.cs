@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-444444444444")]
-    public class GanttChartReport : ReportEntity, IReport
+    public class GanttChartReport : FullReportEntity, IFullReport
     {
         public GanttChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var startDate = DateTime.Now.Date;
 
                 var tasks = new List<GanttDataPoint>
@@ -79,16 +81,21 @@ namespace Reports
                     }
                 };
 
-                return new Widget("Project Timeline")
+                widgets.Add(new WidgetItem("Project Timeline")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new GanttChartContent()
                     {
                         Title = "Project Development Timeline",
                         Tasks = tasks,
                         ShowCriticalPath = true,
                         TrackHeight = 30
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

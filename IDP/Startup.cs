@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Services;
 using Services.Context;
+using Services.Database;
 using System;
 
 namespace IDP
@@ -48,70 +49,13 @@ namespace IDP
                     .AddDefaultTokenProviders()
                     .AddDefaultUI();
 
-                // database connections
-                if (_currentEnvironment.IsDevelopment())
-                {
-                    services.AddDbContext<DatabaseContext>(options =>
-                    {
-                        // Configure the context to use Microsoft SQL Server.
-                        options.UseSqlServer(_appsettings.DatabaseContext,
-                            sqlServerOptionsAction: sqlOptions =>
-                            {
-                                // will attempt to reconnect the connection
-                                sqlOptions.EnableRetryOnFailure(
-                                maxRetryCount: 10,
-                                maxRetryDelay: TimeSpan.FromSeconds(30),
-                                errorNumbersToAdd: null);
-                            });
-
-                        // Register the entity sets needed by OpenIddict.
-                        // Note: use the generic overload if you need
-                        // to replace the default OpenIddict entities.
-                        options.UseOpenIddict();
-                    });
-                }
-                else if (_currentEnvironment.IsStaging())
-                {
-                    services.AddDbContext<DatabaseContext>(options =>
-                    {
-                        // Configure the context to use Microsoft SQL Server.
-                        options.UseSqlServer(_appsettings.DatabaseContext,
-                            sqlServerOptionsAction: sqlOptions =>
-                            {
-                                // will attempt to reconnect the connection
-                                sqlOptions.EnableRetryOnFailure(
-                                maxRetryCount: 10,
-                                maxRetryDelay: TimeSpan.FromSeconds(30),
-                                errorNumbersToAdd: null);
-                            });
-
-                        // Register the entity sets needed by OpenIddict.
-                        // Note: use the generic overload if you need
-                        // to replace the default OpenIddict entities.
-                        options.UseOpenIddict();
-                    });
-                }
-                else if (_currentEnvironment.IsProduction())
-                {
-                    services.AddDbContext<DatabaseContext>(options =>
-                    {
-                        // Configure the context to use Microsoft SQL Server.
-                        options.UseSqlServer(_appsettings.DatabaseContext,
-                            sqlServerOptionsAction: sqlOptions =>
-                            {
-                                // will attempt to reconnect the connection
-                                sqlOptions.EnableRetryOnFailure(
-                                maxRetryCount: 10,
-                                maxRetryDelay: TimeSpan.FromSeconds(30),
-                                errorNumbersToAdd: null);
-                            });
-
-                        // Register the entity sets needed by OpenIddict.
-                        // Note: use the generic overload if you need
-                        // to replace the default OpenIddict entities.
-                        options.UseOpenIddict();
-                    });
-                }
+                // Configure database with the provider specified in appsettings.json
+                // Supports: SqlServer, PostgreSQL, MySQL, SQLite
+                services.AddAuthScapeDatabase(
+                    _appsettings,
+                    enableSensitiveDataLogging: _currentEnvironment.IsDevelopment(),
+                    useOpenIddict: true,
+                    lifetime: ServiceLifetime.Scoped);
 
             }, (authBuilder) =>
             {
@@ -134,6 +78,7 @@ namespace IDP
                 services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
                 services.AddScoped<IPromoCodeService, PromoCodeService>();
                 services.AddScoped<IInviteSettingsService, InviteSettingsService>();
+                services.AddScoped<IAchVerificationEmailService, AchVerificationEmailService>();
                 services.AddScoped<IAzureBlobStorage, AzureBlobStorage>();
                 services.AddScoped<IBlobStorage, BlobStorage>();
                 services.AddScoped<IImageService, ImageService>();

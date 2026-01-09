@@ -25,6 +25,26 @@ namespace Authscape.Reporting.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(ReportRequest request) // runs a report
         {
+            // Check if this is a full report (multi-widget)
+            if (reportService.IsFullReport(AppDomain.CurrentDomain, request.id))
+            {
+                var fullResponse = await reportService.RunFullReport(
+                    AppDomain.CurrentDomain,
+                    request.id,
+                    request.payLoad,
+                    new[] { databaseContext }
+                );
+
+                var fullReportData = new FullReportData();
+                foreach (var widget in fullResponse.Widgets)
+                {
+                    fullReportData.Widgets.Add(reportService.ProcessWidget(widget));
+                }
+
+                return Ok(fullReportData);
+            }
+
+            // Existing single-widget logic (unchanged)
             var response = await reportService.RunReport(AppDomain.CurrentDomain, request.id, request.payLoad, new[] { databaseContext });
 
             return Ok(new ReportData()

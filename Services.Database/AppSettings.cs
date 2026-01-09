@@ -9,6 +9,15 @@ namespace Services.Database
         public string Name { get; set; } // company or product name
         public Stage Stage { get; set; }
         public string IDPUrl { get; set; }
+
+        /// <summary>
+        /// The database connection string. The provider is auto-detected from the connection string format.
+        /// Examples:
+        /// - SqlServer: "Server=localhost;Database=AuthScape;Trusted_Connection=true;TrustServerCertificate=true;"
+        /// - PostgreSQL: "Host=localhost;Database=authscape;Username=postgres;Password=yourpassword"
+        /// - MySQL: "Server=localhost;Database=authscape;User=root;Password=yourpassword"
+        /// - SQLite: "Data Source=AuthScape.db"
+        /// </summary>
         public string DatabaseContext { get; set; }
         public StripeAppSetting Stripe { get; set; }
         public SendGridAppSettings SendGrid { get; set; }

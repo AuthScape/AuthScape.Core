@@ -1,25 +1,29 @@
 using AuthScape.MCPServer.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Services.Context;
+using Services.Database;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add database context - connects to same database as IDP
-builder.Services.AddDbContext<DatabaseContext>(options =>
+// Get AppSettings configuration for database provider
+var appSettings = builder.Configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
+
+// If connection string not in AppSettings, try ConnectionStrings section
+if (string.IsNullOrEmpty(appSettings.DatabaseContext))
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? builder.Configuration.GetSection("AppSettings:DatabaseContext").Value,
-        sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 10,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-        });
-    options.UseOpenIddict();
-});
+    appSettings.DatabaseContext = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? builder.Configuration.GetSection("AppSettings:DatabaseContext").Value
+        ?? "";
+}
+
+// Add database context - connects to same database as IDP
+// Supports: SqlServer, PostgreSQL, MySQL, SQLite (configured via AppSettings:DatabaseProvider)
+builder.Services.AddAuthScapeDatabase(
+    appSettings,
+    enableSensitiveDataLogging: builder.Environment.IsDevelopment(),
+    useOpenIddict: true,
+    lifetime: ServiceLifetime.Scoped);
 
 // Add OpenIddict for client management (not for token validation - this is the OAuth server side)
 builder.Services.AddOpenIddict()

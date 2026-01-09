@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("D419A0DD-B291-49DC-8B03-29FD389635D3")]
-    public class TimelineChartReport : ReportEntity, IReport
+    public class TimelineChartReport : FullReportEntity, IFullReport
     {
         public TimelineChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var dataPoints = new List<TimelineDataPoint>();
 
                 dataPoints.Add(new TimelineDataPoint()
@@ -29,14 +31,18 @@ namespace Reports
                     EndDate = DateTime.Now.AddMonths(2)
                 });
 
-
-                return new Widget("Sample Area Chart")
+                widgets.Add(new WidgetItem("Sample Timeline Chart")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new TimelineChartContent()
                     {
                         DataPoints = dataPoints
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }
