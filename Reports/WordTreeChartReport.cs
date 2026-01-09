@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("E832DC1A-0A81-476B-982A-155900AE9F71")]
-    public class WordTreeChartReport : ReportEntity, IReport
+    public class WordTreeChartReport : FullReportEntity, IFullReport
     {
         public WordTreeChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var phrases = new List<WordTreePhrase>
                 {
                     new WordTreePhrase { Text = "cats are better than dogs" },
@@ -39,15 +41,20 @@ namespace Reports
                     new WordTreePhrase { Text = "cats sleeping" }
                 };
 
-                return new Widget("Word Tree - Cat Phrases")
+                widgets.Add(new WidgetItem("Word Tree - Cat Phrases")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new WordTreeChartContent()
                     {
                         Phrases = phrases,
                         RootWord = "cats",
                         Format = "implicit"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

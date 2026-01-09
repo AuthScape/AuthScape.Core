@@ -26,21 +26,71 @@ using Models.Authentication;
 using Models.Kanban;
 using Models.Users;
 using OpenIddict.EntityFrameworkCore.Models;
+using Services.Database;
 
 namespace Services.Context
 {
     public class DatabaseContext : IdentityDbContext<AppUser, Role, long>
     {
+        /// <summary>
+        /// Creates a DatabaseContext with auto-detected provider based on connection string format.
+        /// </summary>
         public DatabaseContext(string connectionString) : base(GetOptions(connectionString))
         {
         }
 
         private static DbContextOptions GetOptions(string connectionString)
         {
-            return SqlServerDbContextOptionsExtensions.UseSqlServer(new DbContextOptionsBuilder(), connectionString).Options;
+            return DatabaseProviderExtensions.GetOptions(connectionString);
         }
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }
+
+        /// <summary>
+        /// Gets the current database provider based on the configured options.
+        /// </summary>
+        private DatabaseProvider CurrentProvider
+        {
+            get
+            {
+                if (Database.IsSqlServer()) return DatabaseProvider.SqlServer;
+                if (Database.IsNpgsql()) return DatabaseProvider.PostgreSQL;
+                if (Database.IsMySql()) return DatabaseProvider.MySQL;
+                if (Database.IsSqlite()) return DatabaseProvider.SQLite;
+                return DatabaseProvider.SqlServer; // Default fallback
+            }
+        }
+
+        /// <summary>
+        /// Gets the appropriate UUID/GUID generation SQL for the current database provider.
+        /// </summary>
+        private string GetNewGuidSql()
+        {
+            return CurrentProvider switch
+            {
+                DatabaseProvider.SqlServer => "newsequentialid()",
+                DatabaseProvider.PostgreSQL => "gen_random_uuid()",
+                DatabaseProvider.MySQL => "(UUID())",
+                DatabaseProvider.SQLite => "(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))",
+                _ => "newsequentialid()"
+            };
+        }
+
+        /// <summary>
+        /// Gets the appropriate filter syntax for nullable column checks.
+        /// SQL Server uses [Column] IS NOT NULL, PostgreSQL and MySQL use "Column" IS NOT NULL or Column IS NOT NULL
+        /// </summary>
+        private string GetNotNullFilter(string columnName)
+        {
+            return CurrentProvider switch
+            {
+                DatabaseProvider.SqlServer => $"[{columnName}] IS NOT NULL",
+                DatabaseProvider.PostgreSQL => $"\"{columnName}\" IS NOT NULL",
+                DatabaseProvider.MySQL => $"`{columnName}` IS NOT NULL",
+                DatabaseProvider.SQLite => $"\"{columnName}\" IS NOT NULL",
+                _ => $"[{columnName}] IS NOT NULL"
+            };
+        }
 
         public DbSet<UserLocations> UserLocations { get; set; }
 
@@ -246,10 +296,13 @@ namespace Services.Context
             ContentManagementSetup.OnModelCreating(builder);
 
 
+            // Get provider-specific SQL for GUID generation
+            var newGuidSql = GetNewGuidSql();
+
             builder.Entity<Settings>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             #region Invite Settings
@@ -257,12 +310,12 @@ namespace Services.Context
             builder.Entity<InviteSettings>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 // Unique constraint: only one global (null) and one per company
                 entity.HasIndex(e => e.CompanyId)
                     .IsUnique()
-                    .HasFilter("[CompanyId] IS NOT NULL");
+                    .HasFilter(GetNotNullFilter("CompanyId"));
 
                 // Configure foreign key without navigation property
                 entity.HasOne<Company>()
@@ -274,7 +327,7 @@ namespace Services.Context
             builder.Entity<UserInvite>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasIndex(e => e.InvitedUserId);
                 entity.HasIndex(e => e.Status);
@@ -341,13 +394,13 @@ namespace Services.Context
             builder.Entity<DnsRecord>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<PrivateLabelField>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<PrivateLabelSelectedFields>(entity =>
@@ -379,7 +432,7 @@ namespace Services.Context
             builder.Entity<InvoiceLineItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.Invoice)
                   .WithMany(u => u.InvoiceLineItems)
@@ -415,7 +468,7 @@ namespace Services.Context
             builder.Entity<FlowNode>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.FlowProject)
                     .WithMany(m => m.Nodes)
@@ -426,7 +479,7 @@ namespace Services.Context
             builder.Entity<FlowEdge>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.FlowProject)
                     .WithMany(m => m.Edges)
@@ -437,7 +490,7 @@ namespace Services.Context
             builder.Entity<FlowViewport>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.FlowProject)
                     .WithMany(m => m.Viewports)
@@ -454,7 +507,7 @@ namespace Services.Context
             {
 
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
             });
 
@@ -464,7 +517,7 @@ namespace Services.Context
             builder.Entity<AnalyticsMailTracking>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
                 entity.HasOne(e => e.AnalyticsMail)
                    .WithMany(s => s.AnalyticsMailTracking)
                    .HasForeignKey(s => s.AnalyticsMailId)
@@ -475,7 +528,7 @@ namespace Services.Context
             builder.Entity<AnalyticsMail>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
 
@@ -483,7 +536,7 @@ namespace Services.Context
             {
 
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
                 entity.HasOne(e => e.Session)
                    .WithMany(s => s.Events)
                    .HasForeignKey(s => s.SessionId)
@@ -495,7 +548,7 @@ namespace Services.Context
             {
 
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
                 entity.HasOne(e => e.Session)
                   .WithMany(s => s.Conversions)
                   .HasForeignKey(s => s.SessionId)
@@ -507,7 +560,7 @@ namespace Services.Context
             {
 
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
                 entity.HasOne(e => e.Session)
                   .WithMany(s => s.PageViews)
                   .HasForeignKey(s => s.SessionId)
@@ -524,13 +577,13 @@ namespace Services.Context
             builder.Entity<DocumentSheet>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<Attribute>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.DocumentComponent)
                     .WithMany(m => m.Attributes)
@@ -561,14 +614,14 @@ namespace Services.Context
             builder.Entity<KanbanColumn>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
 
             builder.Entity<KanbanCard>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.KanbanColumn)
                     .WithMany(m => m.Cards)
@@ -579,7 +632,7 @@ namespace Services.Context
             builder.Entity<KanbanCardCollaborator>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<KanbanAssignedTo>(entity =>
@@ -613,7 +666,7 @@ namespace Services.Context
             builder.Entity<Subscription>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.Wallet)
                     .WithMany(m => m.Subscriptions)
@@ -626,7 +679,7 @@ namespace Services.Context
             builder.Entity<SubscriptionItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.Subscription)
                     .WithMany(m => m.Items)
@@ -639,7 +692,7 @@ namespace Services.Context
             builder.Entity<StripeInvoice>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.Wallet)
                     .WithMany()
@@ -657,7 +710,7 @@ namespace Services.Context
             builder.Entity<StripeInvoiceLineItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.StripeInvoice)
                     .WithMany(m => m.LineItems)
@@ -669,9 +722,9 @@ namespace Services.Context
             builder.Entity<SubscriptionPlan>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
-                entity.HasIndex(e => e.StripePriceId).IsUnique().HasFilter("[StripePriceId] IS NOT NULL");
+                entity.HasIndex(e => e.StripePriceId).IsUnique().HasFilter(GetNotNullFilter("StripePriceId"));
                 entity.HasIndex(e => e.StripeProductId);
                 entity.HasIndex(e => e.IsActive);
                 entity.HasIndex(e => e.SortOrder);
@@ -696,14 +749,14 @@ namespace Services.Context
             builder.Entity<PromoCode>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 // Unique index on Code
                 entity.HasIndex(e => e.Code).IsUnique();
 
                 // Indexes for Stripe IDs
-                entity.HasIndex(e => e.StripeCouponId).HasFilter("[StripeCouponId] IS NOT NULL");
-                entity.HasIndex(e => e.StripePromotionCodeId).HasFilter("[StripePromotionCodeId] IS NOT NULL");
+                entity.HasIndex(e => e.StripeCouponId).HasFilter(GetNotNullFilter("StripeCouponId"));
+                entity.HasIndex(e => e.StripePromotionCodeId).HasFilter(GetNotNullFilter("StripePromotionCodeId"));
 
                 // Performance indexes
                 entity.HasIndex(e => e.IsActive);
@@ -715,14 +768,14 @@ namespace Services.Context
             builder.Entity<SomeSheet>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
 
             builder.Entity<CustomField>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.CustomFieldTab)
                     .WithMany(m => m.CustomFieldTabs)
@@ -733,7 +786,7 @@ namespace Services.Context
             builder.Entity<CustomFieldTab>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<UserCustomField>(entity =>
@@ -779,7 +832,7 @@ namespace Services.Context
             builder.Entity<DocumentMatchMemory>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<DocumentMapping>(entity =>
@@ -843,7 +896,7 @@ namespace Services.Context
             builder.Entity<ProductCardCategory>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<Location>(entity =>

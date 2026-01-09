@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-555555555555")]
-    public class GeoChartReport : ReportEntity, IReport
+    public class GeoChartReport : FullReportEntity, IFullReport
     {
         public GeoChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var dataPoints = new List<GeoDataPoint>
                 {
                     new GeoDataPoint { Location = "United States", Value = 52000, Label = "USA Sales" },
@@ -27,8 +29,11 @@ namespace Reports
                     new GeoDataPoint { Location = "Mexico", Value = 5200, Label = "Mexico Sales" }
                 };
 
-                return new Widget("Global Sales Distribution")
+                widgets.Add(new WidgetItem("Global Sales Distribution")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new GeoChartContent()
                     {
                         Title = "Sales by Country",
@@ -36,8 +41,10 @@ namespace Reports
                         Region = "world",
                         DisplayMode = "regions",
                         ValueLabel = "Sales ($)"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

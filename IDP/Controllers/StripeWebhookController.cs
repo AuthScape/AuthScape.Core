@@ -1,5 +1,6 @@
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Stripe;
+using AuthScape.Services;
 using AuthScape.StripePayment.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ namespace AuthScape.IDP.Controllers
         private readonly ILogger<StripeWebhookController> _logger;
         private readonly IStripeSubscriptionService _subscriptionService;
         private readonly IStripeInvoiceService _invoiceService;
+        private readonly IAchVerificationEmailService _achEmailService;
         private readonly string _webhookSecret;
         private readonly AppSettings _appSettings;
 
@@ -30,12 +32,14 @@ namespace AuthScape.IDP.Controllers
             IOptions<AppSettings> cfg,
             ILogger<StripeWebhookController> logger,
             IStripeSubscriptionService subscriptionService,
-            IStripeInvoiceService invoiceService)
+            IStripeInvoiceService invoiceService,
+            IAchVerificationEmailService achEmailService)
         {
             _db = db;
             _logger = logger;
             _subscriptionService = subscriptionService;
             _invoiceService = invoiceService;
+            _achEmailService = achEmailService;
             _appSettings = cfg.Value;
             _webhookSecret = cfg.Value.Stripe.SigningSecret;
         }
@@ -77,6 +81,10 @@ namespace AuthScape.IDP.Controllers
                     // ============ SETUP INTENT EVENTS ============
                     case "setup_intent.succeeded":
                         _logger.LogInformation("Setup intent succeeded");
+                        break;
+
+                    case "setup_intent.requires_action":
+                        await HandleSetupIntentRequiresAction(stripeEvent);
                         break;
 
                     // ============ SUBSCRIPTION EVENTS ============
@@ -195,6 +203,43 @@ namespace AuthScape.IDP.Controllers
             // TODO: Send notification to user
             // var customerId = pi?.CustomerId;
             // await SendPaymentFailedNotification(customerId);
+        }
+
+        #endregion
+
+        #region Setup Intent Handlers
+
+        private async Task HandleSetupIntentRequiresAction(Event stripeEvent)
+        {
+            var setupIntent = stripeEvent.Data.Object as SetupIntent;
+            if (setupIntent == null) return;
+
+            // Only handle micro-deposit verification
+            if (setupIntent.NextAction?.Type != "verify_with_microdeposits") return;
+
+            var microdeposits = setupIntent.NextAction.VerifyWithMicrodeposits;
+            if (microdeposits == null) return;
+
+            _logger.LogInformation($"SetupIntent requires micro-deposit verification: {setupIntent.Id}");
+
+            // Get bank account details from payment method
+            string bankLast4 = null;
+            string bankName = null;
+            if (!string.IsNullOrEmpty(setupIntent.PaymentMethodId))
+            {
+                var pmService = new PaymentMethodService();
+                var paymentMethod = await pmService.GetAsync(setupIntent.PaymentMethodId);
+                bankLast4 = paymentMethod?.UsBankAccount?.Last4;
+                bankName = paymentMethod?.UsBankAccount?.BankName;
+            }
+
+            // Send reminder email (deposits have been sent)
+            await _achEmailService.SendReminderEmailAsync(
+                setupIntent.CustomerId,
+                bankLast4,
+                bankName,
+                microdeposits.HostedVerificationUrl,
+                microdeposits.MicrodepositType);
         }
 
         #endregion

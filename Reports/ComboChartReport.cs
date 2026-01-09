@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-222222222222")]
-    public class ComboChartReport : ReportEntity, IReport
+    public class ComboChartReport : FullReportEntity, IFullReport
     {
         public ComboChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var xAxis = new List<string> { "Month", "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
 
                 var dataPoints = new List<ComboChartDataPoint>
@@ -37,16 +39,21 @@ namespace Reports
                     }
                 };
 
-                return new Widget("Revenue vs Expenses with Profit Margin")
+                widgets.Add(new WidgetItem("Revenue vs Expenses with Profit Margin")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new ComboChartContent()
                     {
                         Title = "Revenue vs Expenses with Profit Margin",
                         XAxis = xAxis,
                         DataPoints = dataPoints,
                         DefaultSeriesType = "bars"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

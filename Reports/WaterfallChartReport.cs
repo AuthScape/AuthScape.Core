@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-BBBBBBBBBBBB")]
-    public class WaterfallChartReport : ReportEntity, IReport
+    public class WaterfallChartReport : FullReportEntity, IFullReport
     {
         public WaterfallChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var dataPoints = new List<WaterfallDataPoint>
                 {
                     new WaterfallDataPoint { Label = "Starting Balance", Value = 100000, IsTotal = true },
@@ -26,8 +28,11 @@ namespace Reports
                     new WaterfallDataPoint { Label = "Net Profit", Value = 0, IsTotal = true }
                 };
 
-                return new Widget("Profit Breakdown")
+                widgets.Add(new WidgetItem("Profit Breakdown")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new WaterfallChartContent()
                     {
                         Title = "Quarterly Profit Breakdown",
@@ -35,8 +40,10 @@ namespace Reports
                         ShowConnectorLines = true,
                         StartLabel = "Opening",
                         EndLabel = "Closing"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

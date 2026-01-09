@@ -1,20 +1,21 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("973D18A2-FF6F-4826-8F62-852C005E7644")]
-    public class GaugeChartReport : ReportEntity, IReport
+    public class GaugeChartReport : FullReportEntity, IFullReport
     {
         public GaugeChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
-                var dataPoints = new List<GaugeDataPoint>();
+                var widgets = new List<WidgetItem>();
 
+                var dataPoints = new List<GaugeDataPoint>();
 
                 dataPoints.Add(new GaugeDataPoint()
                 {
@@ -28,14 +29,18 @@ namespace Reports
                     value = 12
                 });
 
-
-                return new Widget("Sample Area Chart")
+                widgets.Add(new WidgetItem("Sample Gauge Chart")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new GaugeChartContent()
                     {
                         DataPoints = dataPoints
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

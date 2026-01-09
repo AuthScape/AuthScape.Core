@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-AAAAAAAAAAAA")]
-    public class CalendarChartReport : ReportEntity, IReport
+    public class CalendarChartReport : FullReportEntity, IFullReport
     {
         public CalendarChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var dataPoints = new List<CalendarDataPoint>();
                 var random = new Random(42); // Seeded for consistent demo data
                 var startDate = new DateTime(DateTime.Now.Year, 1, 1);
@@ -37,14 +39,19 @@ namespace Reports
                     }
                 }
 
-                return new Widget("Activity Heatmap")
+                widgets.Add(new WidgetItem("Activity Heatmap")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new CalendarChartContent()
                     {
                         Title = "Daily Activity - " + DateTime.Now.Year,
                         DataPoints = dataPoints
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

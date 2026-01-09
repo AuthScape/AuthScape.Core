@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("A1B2C3D4-E5F6-7890-ABCD-EF1234567890")]
-    public class SankeyChartReport : ReportEntity, IReport
+    public class SankeyChartReport : FullReportEntity, IFullReport
     {
         public SankeyChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 // Sample: Website traffic flow
                 var dataPoints = new List<SankeyDataPoint>
                 {
@@ -45,14 +47,19 @@ namespace Reports
                     new SankeyDataPoint { From = "Sign Up", To = "No Action", Weight = 2500 }
                 };
 
-                return new Widget("Website Traffic Flow")
+                widgets.Add(new WidgetItem("Website Traffic Flow")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new SankeyChartContent()
                     {
                         DataPoints = dataPoints,
                         Title = "Website User Flow Analysis"
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }

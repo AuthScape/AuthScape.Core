@@ -1,18 +1,20 @@
-﻿using Authscape.Models.Reporting.Attributes;
+using Authscape.Models.Reporting.Attributes;
 using Authscape.Reporting.Models;
 using Authscape.Reporting.Models.ReportContent;
 
 namespace Reports
 {
     [ReportName("F1A2B3C4-D5E6-7890-ABCD-888888888888")]
-    public class TreeMapChartReport : ReportEntity, IReport
+    public class TreeMapChartReport : FullReportEntity, IFullReport
     {
         public TreeMapChartReport() : base() { }
 
-        public override async Task<Widget> OnRequest(string payLoad)
+        public override async Task<List<WidgetItem>> OnRequest(string payLoad)
         {
             return await Task.Run(() =>
             {
+                var widgets = new List<WidgetItem>();
+
                 var nodes = new List<TreeMapDataPoint>
                 {
                     // Root
@@ -46,8 +48,11 @@ namespace Reports
                     new TreeMapDataPoint { Id = "Legal", Parent = "Operations", Value = 100000, ColorValue = 2 }
                 };
 
-                return new Widget("Department Budget Allocation")
+                widgets.Add(new WidgetItem("Department Budget Allocation")
                 {
+                    Row = 0,
+                    Column = 0,
+                    ColumnSpan = 12,
                     Content = new TreeMapChartContent()
                     {
                         Title = "Budget by Department",
@@ -55,8 +60,10 @@ namespace Reports
                         ShowScale = true,
                         MaxDepth = 2,
                         HeaderHeight = 20
-                    },
-                };
+                    }
+                });
+
+                return widgets;
             });
         }
     }
