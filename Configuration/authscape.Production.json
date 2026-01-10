@@ -1,0 +1,23 @@
+{
+  "AuthScapeConfiguration": {
+    "AzureKeyVault": {
+      "Enabled": true,
+      "VaultUri": "https://your-keyvault.vault.azure.net/",
+      "UseManagedIdentity": true
+    }
+  },
+  "AppSettings": {
+    "Stage": 3,
+    "IDPUrl": "https://idp.yoursite.com",
+    "WebsiteRedirectUrl": "https://yoursite.com",
+    "InviteSignupRedirectUrl": "https://yoursite.com",
+    "LoginRedirectUrl": "https://yoursite.com"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  }
+}

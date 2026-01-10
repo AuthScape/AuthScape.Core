@@ -12,8 +12,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
     <!-- Database Providers - PostgreSQL -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-    <!-- Database Providers - MySQL/MariaDB -->
-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.1" />
+    <!-- Database Providers - MySQL/MariaDB (uncomment when Pomelo releases .NET 10 compatible version)
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="10.0.0" />
+    -->
     <!-- Database Providers - SQLite -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />

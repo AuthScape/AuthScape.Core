@@ -1,0 +1,55 @@
+{
+  "AppSettings": {
+    "Stage": 1,
+    "IDPUrl": "https://localhost:44303",
+    "WebsiteRedirectUrl": "http://localhost:3000",
+    "InviteSignupRedirectUrl": "http://localhost:3000",
+    "LoginRedirectUrl": "http://localhost:3000",
+    "DatabaseContext": "Data Source=localhost;Initial Catalog=AuthScape;Integrated Security=true;Trusted_Connection=true;TrustServerCertificate=true;",
+    "Storage": {
+      "AzureConnectionString": "",
+      "BaseUri": "https://storage.website.com",
+      "UserProfileContainer": "userphoto"
+    },
+    "Stripe": {
+      "PublishableKey": "",
+      "SecretKey": "",
+      "SigningSecret": ""
+    },
+    "Ticketing": {
+      "TemplateId": "",
+      "Domain": "",
+      "Name": "",
+      "Subject": "New Message"
+    },
+    "OpenAI": {
+      "APIKey": ""
+    },
+    "DocumentProcessing": {
+      "StorageContainer": "",
+      "BaseURL": "",
+      "AzureFormRecognizerEndpoint": "",
+      "AzureFormRecognizerKey": ""
+    },
+    "PrivateLabel": {
+      "GoogleFontsAPIKey": "",
+      "AppIconContainer": "appicons"
+    },
+    "SendGrid": {
+      "APIKey": "",
+      "FromEmail": "",
+      "FromName": ""
+    },
+    "Slack": {
+      "UserName": "",
+      "IconUrl": "",
+      "WebhookUrl": ""
+    }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft": "Information"
+    }
+  }
+}

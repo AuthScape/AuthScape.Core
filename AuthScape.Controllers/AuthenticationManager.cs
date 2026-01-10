@@ -1,4 +1,5 @@
-﻿using AuthScape.Services;
+﻿using AuthScape.Configuration.Extensions;
+using AuthScape.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -27,10 +28,13 @@ namespace AuthScape.Controllers
         public void RegisterConfigureServices(IConfiguration Configuration, IWebHostEnvironment _currentEnvironment, IServiceCollection services,
             Action<OpenIddictBuilder> Builder, Action<IServiceCollection> scope, Action<AppSettings, IWebHostEnvironment, IServiceCollection> dbContextSetup)
         {
-            // to be able to access the app settings for each stage
-            var appSettings = Configuration.GetSection("AppSettings");
-            services.Configure<AppSettings>(appSettings);
-            var _appsettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
+            // Add AuthScape settings with validation (uses shared configuration from authscape.json)
+            services.AddAuthScapeSettings(Configuration, options =>
+            {
+                options.ValidateOnStartup = !_currentEnvironment.IsDevelopment();
+            });
+
+            var _appsettings = Configuration.GetAuthScapeSettings();
 
             services.AddAuthentication(options =>
             {
@@ -52,7 +56,6 @@ namespace AuthScape.Controllers
 
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<ISlugService, SlugService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
 

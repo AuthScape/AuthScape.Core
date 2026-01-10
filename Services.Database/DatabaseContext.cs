@@ -6,6 +6,7 @@ using AuthScape.Marketplace.Models;
 using AuthScape.Models.Authentication;
 using AuthScape.Models.Invite;
 using AuthScape.Models.Logging;
+using AuthScape.Models.Marketing;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
 using AuthScape.Models.PaymentGateway.Plans;
@@ -55,8 +56,8 @@ namespace Services.Context
             {
                 if (Database.IsSqlServer()) return DatabaseProvider.SqlServer;
                 if (Database.IsNpgsql()) return DatabaseProvider.PostgreSQL;
-                if (Database.IsMySql()) return DatabaseProvider.MySQL;
                 if (Database.IsSqlite()) return DatabaseProvider.SQLite;
+                // MySQL detection will be added when Pomelo releases .NET 10 compatible version
                 return DatabaseProvider.SqlServer; // Default fallback
             }
         }
@@ -278,6 +279,12 @@ namespace Services.Context
         #region ThirdPartyAuthentication
 
         public DbSet<ThirdPartyAuthentication> ThirdPartyAuthentications { get; set; }
+
+        #endregion
+
+        #region Interest Signups (CommandDeck Marketing)
+
+        public DbSet<InterestSignup> InterestSignups { get; set; }
 
         #endregion
 

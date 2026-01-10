@@ -19,7 +19,7 @@ namespace Services.Database
         PostgreSQL = 1,
 
         /// <summary>
-        /// MySQL or MariaDB
+        /// MySQL or MariaDB (NOT YET SUPPORTED - waiting for Pomelo .NET 10 release)
         /// Connection string example: "Server=localhost;Database=AuthScape;User=root;Password=yourpassword"
         /// </summary>
         MySQL = 2,
@@ -89,7 +89,7 @@ namespace Services.Database
         }
 
         /// <summary>
-        /// MySQL/MariaDB connection string examples
+        /// MySQL/MariaDB connection string examples (NOT YET SUPPORTED - waiting for Pomelo .NET 10 release)
         /// </summary>
         public static class MySQL
         {

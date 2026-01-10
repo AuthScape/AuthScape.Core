@@ -1,0 +1,15 @@
+{
+  "AppSettings": {
+    "Stage": 2,
+    "IDPUrl": "https://staging-idp.yoursite.com",
+    "WebsiteRedirectUrl": "https://staging.yoursite.com",
+    "InviteSignupRedirectUrl": "https://staging.yoursite.com",
+    "LoginRedirectUrl": "https://staging.yoursite.com"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <UserSecretsId>62d55b37-0295-4b5e-913c-37a06bac2f75</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,6 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
     <ProjectReference Include="..\AuthScape.IDP\AuthScape.IDP.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />

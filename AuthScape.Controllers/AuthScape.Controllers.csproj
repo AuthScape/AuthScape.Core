@@ -31,6 +31,7 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.11.10" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
     <ProjectReference Include="..\AuthScape.Models\AuthScape.Models.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />

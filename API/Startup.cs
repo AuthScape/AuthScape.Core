@@ -96,6 +96,7 @@ namespace API
                 services.AddScoped<IStripePayService, StripePayService>();
                 services.AddScoped<IStripeSubscriptionService, StripeSubscriptionService>();
                 services.AddScoped<IStripeInvoiceService, StripeInvoiceService>();
+                services.AddScoped<IAchVerificationEmailService, AchVerificationEmailService>();
                 services.AddScoped<ITicketService, TicketService>();
                 services.AddScoped<IPrivateLabelService, PrivateLabelService>();
                 services.AddScoped<IAuthsomeService, AuthsomeService>();
