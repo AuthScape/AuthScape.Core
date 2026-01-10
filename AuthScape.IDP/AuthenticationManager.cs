@@ -1,4 +1,5 @@
-﻿using AuthScape.IDP.Services;
+﻿using AuthScape.Configuration.Extensions;
+using AuthScape.IDP.Services;
 using AuthScape.Models.Users;
 using AuthScape.Services;
 using IDP.Services;
@@ -28,9 +29,13 @@ namespace AuthScape.IDP
         public void RegisterConfigureServices(IConfiguration Configuration, IServiceCollection services, IWebHostEnvironment _currentEnvironment, Action<AppSettings> databaseConnection, Action<AuthenticationBuilder> authBuilder,
             string signingCertificateThumbprint, string encyptionCertificateThumbprint)
         {
-            var appSettings = Configuration.GetSection("AppSettings");
-            services.Configure<AppSettings>(appSettings);
-            var _appsettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
+            // Add AuthScape settings with validation (uses shared configuration from authscape.json)
+            services.AddAuthScapeSettings(Configuration, options =>
+            {
+                options.ValidateOnStartup = !_currentEnvironment.IsDevelopment();
+            });
+
+            var _appsettings = Configuration.GetAuthScapeSettings();
 
             databaseConnection(_appsettings);
 

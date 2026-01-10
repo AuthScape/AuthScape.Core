@@ -1,0 +1,36 @@
+{
+  "AuthScapeConfiguration": {
+    "UseSharedConfiguration": true,
+    "ValidateOnStartup": true,
+    "EnableHotReload": true,
+    "EnvironmentVariablePrefix": "AUTHSCAPE_",
+    "AzureKeyVault": {
+      "Enabled": false,
+      "VaultUri": "",
+      "UseManagedIdentity": true
+    },
+    "AwsSecretsManager": {
+      "Enabled": false,
+      "Region": "us-east-1",
+      "SecretId": "",
+      "UseDefaultCredentials": true
+    }
+  },
+  "AppSettings": {
+    "Name": "AuthScape",
+    "EnableCompanyMode": true,
+    "DataProtectionTokenProviderOptions_TokenLifespanByDays": 1,
+    "Authentication": {
+      "EnableCompany": true,
+      "SearchCompany": true
+    }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
+}

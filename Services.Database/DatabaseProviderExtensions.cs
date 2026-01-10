@@ -192,15 +192,12 @@ namespace Services.Database
 
         private static DbContextOptionsBuilder ConfigureMySQL(DbContextOptionsBuilder options, string connectionString)
         {
-            // Auto-detect MySQL version from connection
-            var serverVersion = ServerVersion.AutoDetect(connectionString);
-            return options.UseMySql(connectionString, serverVersion, mysqlOptions =>
-            {
-                mysqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 10,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            });
+            // MySQL support requires Pomelo.EntityFrameworkCore.MySql package
+            // As of .NET 10, Pomelo hasn't released a compatible version yet.
+            // Uncomment the package reference in Services.Database.csproj when available.
+            throw new NotSupportedException(
+                "MySQL is not currently supported. Pomelo.EntityFrameworkCore.MySql does not yet have a .NET 10 compatible version. " +
+                "Please use SQL Server, PostgreSQL, or SQLite instead.");
         }
 
         private static DbContextOptionsBuilder ConfigureSQLite(DbContextOptionsBuilder options, string connectionString)

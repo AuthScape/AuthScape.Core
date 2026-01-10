@@ -264,6 +264,93 @@ namespace AuthScape.StripePayment.Controller.Controllers
             return Ok(await stripePayService.ACHNeedValidation(signedInUser));
         }
 
+        [HttpGet]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
+        public async Task<IActionResult> GetUnverifiedACHPaymentMethods()
+        {
+            var signedInUser = await userManagementService.GetSignedInUser();
+
+            // If null (cookie auth), construct from claims
+            if (signedInUser == null)
+            {
+                var idValue =
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+                    User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ??
+                    User.FindFirst("sub")?.Value ??
+                    User.FindFirst("oid")?.Value;
+
+                if (string.IsNullOrWhiteSpace(idValue) || !long.TryParse(idValue, out var userId))
+                {
+                    return Unauthorized(new { success = false, error = "User ID not found in claims" });
+                }
+
+                signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
+            }
+
+            // Get user's wallet and ACH payment methods
+            var wallet = await context.Wallets
+                .Include(w => w.WalletPaymentMethods)
+                .FirstOrDefaultAsync(w => w.UserId == signedInUser.Id);
+
+            if (wallet == null)
+            {
+                return Ok(new { needsVerification = false, unverifiedMethods = new List<object>() });
+            }
+
+            var achMethods = wallet.WalletPaymentMethods
+                .Where(pm => pm.WalletType == WalletType.us_bank_account)
+                .ToList();
+
+            if (!achMethods.Any())
+            {
+                return Ok(new { needsVerification = false, unverifiedMethods = new List<object>() });
+            }
+
+            var unverifiedMethods = new List<object>();
+            var siService = new Stripe.SetupIntentService();
+
+            foreach (var achMethod in achMethods)
+            {
+                try
+                {
+                    // Find SetupIntent for this payment method
+                    var setupIntents = await siService.ListAsync(new Stripe.SetupIntentListOptions
+                    {
+                        PaymentMethod = achMethod.PaymentMethodId,
+                        Limit = 1
+                    });
+
+                    var setupIntent = setupIntents.Data.FirstOrDefault();
+                    if (setupIntent?.Status == "requires_action" &&
+                        setupIntent.NextAction?.Type == "verify_with_microdeposits")
+                    {
+                        var microdeposits = setupIntent.NextAction.VerifyWithMicrodeposits;
+                        unverifiedMethods.Add(new
+                        {
+                            walletPaymentMethodId = achMethod.Id,
+                            paymentMethodId = achMethod.PaymentMethodId,
+                            last4 = achMethod.Last4,
+                            bankName = achMethod.BankName,
+                            clientSecret = setupIntent.ClientSecret,
+                            hostedVerificationUrl = microdeposits?.HostedVerificationUrl,
+                            microdepositType = microdeposits?.MicrodepositType
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue checking other methods
+                    Console.WriteLine($"Error checking SetupIntent for payment method {achMethod.PaymentMethodId}: {ex.Message}");
+                }
+            }
+
+            return Ok(new
+            {
+                needsVerification = unverifiedMethods.Any(),
+                unverifiedMethods = unverifiedMethods
+            });
+        }
+
         [HttpPost]
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
         public async Task<IActionResult> AddPaymentMethod(SavePaymentMethod savePaymentMethod)
@@ -324,7 +411,9 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     {
                         id = result,
                         requiresVerification = true,
-                        hostedVerificationUrl = microdeposits?.HostedVerificationUrl
+                        hostedVerificationUrl = microdeposits?.HostedVerificationUrl,
+                        clientSecret = setupIntent.ClientSecret,
+                        microdepositType = microdeposits?.MicrodepositType
                     });
                 }
             }
