@@ -159,6 +159,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Marketplace.Servi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Sitemap", "Plugins\AuthScape.Sitemap\AuthScape.Sitemap.csproj", "{A353E9BC-CDDB-4B77-8A03-5C449FC07839}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Configuration", "AuthScape.Configuration\AuthScape.Configuration.csproj", "{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -373,6 +375,10 @@ Global
 		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A353E9BC-CDDB-4B77-8A03-5C449FC07839}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

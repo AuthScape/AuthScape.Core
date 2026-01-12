@@ -1099,8 +1099,20 @@ namespace AuthScape.StripePayment.Services
 
             if (paymentMethod != null)
             {
-                var paymentMethodService = new PaymentMethodService();
-                await paymentMethodService.DetachAsync(paymentMethod.PaymentMethodId);
+                // Try to detach from Stripe, but don't fail if the payment method doesn't exist in Stripe
+                try
+                {
+                    if (!string.IsNullOrEmpty(paymentMethod.PaymentMethodId))
+                    {
+                        var paymentMethodService = new PaymentMethodService();
+                        await paymentMethodService.DetachAsync(paymentMethod.PaymentMethodId);
+                    }
+                }
+                catch (Stripe.StripeException ex)
+                {
+                    // Log but continue - the payment method may not exist in Stripe
+                    Console.WriteLine($"Warning: Could not detach payment method from Stripe: {ex.Message}");
+                }
 
                 context.WalletPaymentMethods.Remove(paymentMethod);
                 await context.SaveChangesAsync();

@@ -287,18 +287,23 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
             }
 
-            // Get user's wallet and ACH payment methods
-            var wallet = await context.Wallets
+            // Get all wallets for this user (User, Company, Location)
+            var wallets = await context.Wallets
                 .Include(w => w.WalletPaymentMethods)
-                .FirstOrDefaultAsync(w => w.UserId == signedInUser.Id);
+                .Where(w => w.UserId == signedInUser.Id ||
+                           w.CompanyId == signedInUser.CompanyId ||
+                           w.LocationId == signedInUser.LocationId)
+                .ToListAsync();
 
-            if (wallet == null)
+            if (!wallets.Any())
             {
                 return Ok(new { needsVerification = false, unverifiedMethods = new List<object>() });
             }
 
-            var achMethods = wallet.WalletPaymentMethods
-                .Where(pm => pm.WalletType == WalletType.us_bank_account)
+            // Get all ACH payment methods from all wallets
+            var achMethods = wallets
+                .SelectMany(w => w.WalletPaymentMethods ?? new List<WalletPaymentMethod>())
+                .Where(pm => pm.WalletType == WalletType.us_bank_account && pm.Archived == null)
                 .ToList();
 
             if (!achMethods.Any())
@@ -306,42 +311,74 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 return Ok(new { needsVerification = false, unverifiedMethods = new List<object>() });
             }
 
-            var unverifiedMethods = new List<object>();
-            var siService = new Stripe.SetupIntentService();
+            // Get all customer IDs from wallets
+            var customerIds = wallets
+                .Where(w => !string.IsNullOrEmpty(w.PaymentCustomerId))
+                .Select(w => w.PaymentCustomerId)
+                .Distinct()
+                .ToList();
 
-            foreach (var achMethod in achMethods)
+            if (!customerIds.Any())
             {
-                try
+                return Ok(new { needsVerification = false, unverifiedMethods = new List<object>() });
+            }
+
+            var unverifiedMethods = new List<object>();
+            var allSetupIntents = new List<Stripe.SetupIntent>();
+
+            try
+            {
+                var siService = new Stripe.SetupIntentService();
+
+                // Get SetupIntents for all customer IDs
+                foreach (var customerId in customerIds)
                 {
-                    // Find SetupIntent for this payment method
                     var setupIntents = await siService.ListAsync(new Stripe.SetupIntentListOptions
                     {
-                        PaymentMethod = achMethod.PaymentMethodId,
-                        Limit = 1
+                        Customer = customerId,
+                        Limit = 100
                     });
+                    allSetupIntents.AddRange(setupIntents.Data);
+                }
 
-                    var setupIntent = setupIntents.Data.FirstOrDefault();
-                    if (setupIntent?.Status == "requires_action" &&
-                        setupIntent.NextAction?.Type == "verify_with_microdeposits")
+                // Filter to SetupIntents that require micro-deposit verification
+                var unverifiedSetupIntents = allSetupIntents
+                    .Where(si => si.Status == "requires_action" &&
+                                 si.NextAction?.Type == "verify_with_microdeposits")
+                    .ToList();
+
+                // Match SetupIntents to ACH payment methods
+                foreach (var achMethod in achMethods)
+                {
+                    var matchingSetupIntent = unverifiedSetupIntents
+                        .FirstOrDefault(si => si.PaymentMethodId == achMethod.PaymentMethodId);
+
+                    if (matchingSetupIntent != null)
                     {
-                        var microdeposits = setupIntent.NextAction.VerifyWithMicrodeposits;
+                        var microdeposits = matchingSetupIntent.NextAction.VerifyWithMicrodeposits;
                         unverifiedMethods.Add(new
                         {
                             walletPaymentMethodId = achMethod.Id,
                             paymentMethodId = achMethod.PaymentMethodId,
                             last4 = achMethod.Last4,
                             bankName = achMethod.BankName,
-                            clientSecret = setupIntent.ClientSecret,
+                            accountType = achMethod.AccountType,
+                            clientSecret = matchingSetupIntent.ClientSecret,
                             hostedVerificationUrl = microdeposits?.HostedVerificationUrl,
                             microdepositType = microdeposits?.MicrodepositType
                         });
                     }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking SetupIntents: {ex.Message}");
+                return Ok(new
                 {
-                    // Log error but continue checking other methods
-                    Console.WriteLine($"Error checking SetupIntent for payment method {achMethod.PaymentMethodId}: {ex.Message}");
-                }
+                    needsVerification = false,
+                    unverifiedMethods = new List<object>(),
+                    error = ex.Message
+                });
             }
 
             return Ok(new
@@ -425,28 +462,35 @@ namespace AuthScape.StripePayment.Controller.Controllers
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme + ",Identity.Application")]
         public async Task<IActionResult> RemovePaymentMethod(Guid Id)
         {
-            var signedInUser = await userManagementService.GetSignedInUser();
-
-            // If null (cookie auth), construct from claims
-            if (signedInUser == null)
+            try
             {
-                var idValue =
-                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
-                    User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ??
-                    User.FindFirst("sub")?.Value ??
-                    User.FindFirst("oid")?.Value;
+                var signedInUser = await userManagementService.GetSignedInUser();
 
-                if (string.IsNullOrWhiteSpace(idValue) || !long.TryParse(idValue, out var userId))
+                // If null (cookie auth), construct from claims
+                if (signedInUser == null)
                 {
-                    return Unauthorized(new { success = false, error = "User ID not found in claims" });
+                    var idValue =
+                        User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+                        User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ??
+                        User.FindFirst("sub")?.Value ??
+                        User.FindFirst("oid")?.Value;
+
+                    if (string.IsNullOrWhiteSpace(idValue) || !long.TryParse(idValue, out var userId))
+                    {
+                        return Unauthorized(new { success = false, error = "User ID not found in claims" });
+                    }
+
+                    signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
                 }
 
-                signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
+                await stripePayService.RemovePaymentMethod(signedInUser, Id);
+
+                return Ok(new { success = true });
             }
-
-            await stripePayService.RemovePaymentMethod(signedInUser, Id);
-
-            return Ok();
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, error = ex.Message });
+            }
         }
 
         /// <summary>
