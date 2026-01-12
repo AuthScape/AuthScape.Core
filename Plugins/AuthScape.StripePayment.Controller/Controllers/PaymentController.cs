@@ -34,7 +34,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
-            // If null (cookie auth), construct from claims
+            // If null (cookie auth), construct from claims and database
             if (signedInUser == null)
             {
                 var idValue =
@@ -48,7 +48,22 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     return Unauthorized(new { success = false, error = "User ID not found in claims" });
                 }
 
-                signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
+                // Load user data from database to get CompanyId, LocationId, etc.
+                var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    return Unauthorized(new { success = false, error = "User not found" });
+                }
+
+                signedInUser = new AuthScape.Models.Users.SignedInUser
+                {
+                    Id = userId,
+                    CompanyId = user.CompanyId,
+                    LocationId = user.LocationId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
             }
 
             return Ok(await stripePayService.ConnectCustomer(signedInUser, paymentRequest));
@@ -345,13 +360,93 @@ namespace AuthScape.StripePayment.Controller.Controllers
                 var unverifiedSetupIntents = allSetupIntents
                     .Where(si => si.Status == "requires_action" &&
                                  si.NextAction?.Type == "verify_with_microdeposits")
+                    .OrderByDescending(si => si.Created) // Most recent first
                     .ToList();
+
+                // Debug logging
+                Console.WriteLine($"Found {unverifiedSetupIntents.Count} unverified SetupIntents");
+                foreach (var si in unverifiedSetupIntents)
+                {
+                    Console.WriteLine($"  SetupIntent {si.Id}: PaymentMethodId={si.PaymentMethodId}, Created={si.Created}, MicrodepositType={si.NextAction?.VerifyWithMicrodeposits?.MicrodepositType}");
+                }
+                Console.WriteLine($"Looking for ACH methods with PaymentMethodIds:");
+                foreach (var achMethod in achMethods)
+                {
+                    Console.WriteLine($"  ACH {achMethod.Id}: PaymentMethodId={achMethod.PaymentMethodId}, Last4={achMethod.Last4}");
+                }
 
                 // Match SetupIntents to ACH payment methods
                 foreach (var achMethod in achMethods)
                 {
-                    var matchingSetupIntent = unverifiedSetupIntents
-                        .FirstOrDefault(si => si.PaymentMethodId == achMethod.PaymentMethodId);
+                    Stripe.SetupIntent matchingSetupIntent = null;
+
+                    // Priority 1: Match by stored SetupIntentId (most reliable)
+                    if (!string.IsNullOrEmpty(achMethod.SetupIntentId))
+                    {
+                        matchingSetupIntent = unverifiedSetupIntents
+                            .FirstOrDefault(si => si.Id == achMethod.SetupIntentId);
+                        if (matchingSetupIntent != null)
+                        {
+                            Console.WriteLine($"  Matched by SetupIntentId: SetupIntent {matchingSetupIntent.Id} -> ACH {achMethod.Id}");
+                        }
+                        else
+                        {
+                            // SetupIntent exists but might not be in our filtered list - fetch it directly
+                            try
+                            {
+                                var directSi = await siService.GetAsync(achMethod.SetupIntentId);
+                                if (directSi.Status == "requires_action" &&
+                                    directSi.NextAction?.Type == "verify_with_microdeposits")
+                                {
+                                    matchingSetupIntent = directSi;
+                                    Console.WriteLine($"  Matched by direct SetupIntent fetch: {directSi.Id} -> ACH {achMethod.Id}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"  Error fetching SetupIntent {achMethod.SetupIntentId}: {ex.Message}");
+                            }
+                        }
+                    }
+
+                    // Priority 2: Match by PaymentMethodId - query Stripe directly for SetupIntents with this PaymentMethod
+                    if (matchingSetupIntent == null && !string.IsNullOrEmpty(achMethod.PaymentMethodId))
+                    {
+                        // First check in our pre-loaded list
+                        matchingSetupIntent = unverifiedSetupIntents
+                            .FirstOrDefault(si => si.PaymentMethodId == achMethod.PaymentMethodId);
+
+                        if (matchingSetupIntent != null)
+                        {
+                            Console.WriteLine($"  Matched by PaymentMethodId in list: SetupIntent {matchingSetupIntent.Id} -> ACH {achMethod.Id}");
+                        }
+                        else
+                        {
+                            // Query Stripe directly for SetupIntents with this PaymentMethod
+                            try
+                            {
+                                var pmSetupIntents = await siService.ListAsync(new Stripe.SetupIntentListOptions
+                                {
+                                    PaymentMethod = achMethod.PaymentMethodId,
+                                    Limit = 10
+                                });
+
+                                var directMatch = pmSetupIntents.Data
+                                    .FirstOrDefault(si => si.Status == "requires_action" &&
+                                                          si.NextAction?.Type == "verify_with_microdeposits");
+
+                                if (directMatch != null)
+                                {
+                                    matchingSetupIntent = directMatch;
+                                    Console.WriteLine($"  Matched by direct PaymentMethod query: SetupIntent {directMatch.Id} -> ACH {achMethod.Id}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"  Error querying SetupIntents for PaymentMethod {achMethod.PaymentMethodId}: {ex.Message}");
+                            }
+                        }
+                    }
 
                     if (matchingSetupIntent != null)
                     {
@@ -360,6 +455,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
                         {
                             walletPaymentMethodId = achMethod.Id,
                             paymentMethodId = achMethod.PaymentMethodId,
+                            setupIntentId = matchingSetupIntent.Id,
                             last4 = achMethod.Last4,
                             bankName = achMethod.BankName,
                             accountType = achMethod.AccountType,
@@ -367,6 +463,10 @@ namespace AuthScape.StripePayment.Controller.Controllers
                             hostedVerificationUrl = microdeposits?.HostedVerificationUrl,
                             microdepositType = microdeposits?.MicrodepositType
                         });
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  No matching SetupIntent found for ACH {achMethod.Id} (PaymentMethodId={achMethod.PaymentMethodId}, SetupIntentId={achMethod.SetupIntentId})");
                     }
                 }
             }
@@ -394,7 +494,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
-            // If null (cookie auth), construct from claims
+            // If null (cookie auth), construct from claims and database
             if (signedInUser == null)
             {
                 var idValue =
@@ -408,10 +508,25 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     return Unauthorized(new { success = false, error = "User ID not found in claims" });
                 }
 
-                signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
+                // Load user data from database
+                var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    return Unauthorized(new { success = false, error = "User not found" });
+                }
+
+                signedInUser = new AuthScape.Models.Users.SignedInUser
+                {
+                    Id = userId,
+                    CompanyId = user.CompanyId,
+                    LocationId = user.LocationId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
             }
 
-            var result = await stripePayService.AddPaymentMethod(signedInUser, savePaymentMethod.PaymentMethodType, savePaymentMethod.WalletId, savePaymentMethod.StripePaymentMethod);
+            var result = await stripePayService.AddPaymentMethod(signedInUser, savePaymentMethod.PaymentMethodType, savePaymentMethod.WalletId, savePaymentMethod.StripePaymentMethod, savePaymentMethod.StripeSetupIntentId);
 
             // Check if this is an ACH payment method requiring verification
             var pmService = new Stripe.PaymentMethodService();
@@ -521,9 +636,22 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     signedInUser = new AuthScape.Models.Users.SignedInUser { Id = userId };
                 }
 
+                // If WalletId is not provided, look it up from the payment method
+                var walletId = request.WalletId;
+                if (walletId == Guid.Empty)
+                {
+                    var paymentMethod = await context.WalletPaymentMethods
+                        .FirstOrDefaultAsync(pm => pm.Id == request.PaymentMethodId);
+                    if (paymentMethod == null)
+                    {
+                        return BadRequest(new { success = false, error = "Payment method not found" });
+                    }
+                    walletId = paymentMethod.WalletId;
+                }
+
                 var success = await stripePayService.SetDefaultPaymentMethod(
                     signedInUser,
-                    request.WalletId,
+                    walletId,
                     request.PaymentMethodId);
 
                 if (!success)
@@ -653,7 +781,12 @@ namespace AuthScape.StripePayment.Controller.Controllers
                     return StatusCode(500, new { success = false, error = result?.Reason ?? "Payment processing failed" });
                 }
 
-                return Ok(new { success = true });
+                // Return processing status for ACH payments that are still pending
+                return Ok(new {
+                    success = true,
+                    paymentIntentId = result.StripePaymentIntentId,
+                    status = result.Reason ?? "succeeded" // "processing" for ACH, null/succeeded for cards
+                });
             }
             catch (Stripe.StripeException ex)
             {
@@ -677,6 +810,7 @@ namespace AuthScape.StripePayment.Controller.Controllers
         public Guid WalletId { get; set; }
         public PaymentMethodType PaymentMethodType { get; set; }
         public string StripePaymentMethod { get; set; }
+        public string StripeSetupIntentId { get; set; } // For ACH verification matching
     }
 
     public class PaymentMethodSyncParam

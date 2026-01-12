@@ -43,6 +43,8 @@ namespace AuthScape.Models.PaymentGateway
         public string? AccountHolderType { get; set; }
         public string? BankName { get; set; }
 
+        public string? SetupIntentId { get; set; } // For ACH micro-deposit verification
+
         public Wallet Wallet { get; set; }
     }
 

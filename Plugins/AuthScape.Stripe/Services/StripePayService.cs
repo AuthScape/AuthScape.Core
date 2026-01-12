@@ -20,7 +20,7 @@ namespace AuthScape.StripePayment.Services
         Task<ICollection<WalletPaymentMethod>> GetPaymentMethods(SignedInUser signedInUser, PaymentMethodType paymentMethodType = PaymentMethodType.Company);
         Task ChargeWithExistingPayment(SignedInUser signedInUser, long invoiceId, Guid walletPaymentMethodId, decimal amount);
         Task<string> GeneratePaymentLink(PaymentLinkParam param);
-        Task<Guid> AddPaymentMethod(SignedInUser signedInUser, PaymentMethodType paymentMethodType, Guid walletId, string paymentMethod);
+        Task<Guid> AddPaymentMethod(SignedInUser signedInUser, PaymentMethodType paymentMethodType, Guid walletId, string paymentMethod, string setupIntentId = null);
         Task RemovePaymentMethod(SignedInUser signedInUser, Guid id);
         Task<bool> SetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId, Guid paymentMethodId);
         Task<WalletPaymentMethod> GetDefaultPaymentMethod(SignedInUser signedInUser, Guid walletId);
@@ -154,12 +154,15 @@ namespace AuthScape.StripePayment.Services
             var paymentIntent = await service.CreateAsync(options);
             if (paymentIntent != null)
             {
-                if (paymentIntent.Status == "succeeded")
+                // "succeeded" = payment complete (cards)
+                // "processing" = payment initiated, awaiting completion (ACH bank transfers take 1-3 business days)
+                if (paymentIntent.Status == "succeeded" || paymentIntent.Status == "processing")
                 {
                     return new AuthScape.Models.PaymentGateway.Stripe.ChargeResponse()
                     {
                         Success = true,
-                        StripePaymentIntentId = paymentIntent.Id
+                        StripePaymentIntentId = paymentIntent.Id,
+                        Reason = paymentIntent.Status == "processing" ? "processing" : null
                     };
                 }
                 else
@@ -208,8 +211,40 @@ namespace AuthScape.StripePayment.Services
 
         public async Task<ConnectCustomerResponse> ConnectCustomer(SignedInUser currentUser, PaymentRequest paymentRequest)
         {
+            // Validate Stripe is configured
+            if (string.IsNullOrWhiteSpace(appSettings.Stripe?.SecretKey))
+            {
+                throw new AuthScape.Models.Exceptions.BadRequestException("Stripe is not configured. Please add Stripe API keys to your configuration.");
+            }
+
             string? stripeCustomerId = null;
             Wallet? wallet = null;
+
+            // Helper function to validate if a Stripe customer exists
+            async Task<bool> IsStripeCustomerValid(string customerId)
+            {
+                if (string.IsNullOrWhiteSpace(customerId))
+                    return false;
+
+                try
+                {
+                    var service = new CustomerService();
+                    var customer = await service.GetAsync(customerId);
+                    return customer != null && !customer.Deleted.GetValueOrDefault();
+                }
+                catch (StripeException)
+                {
+                    return false;
+                }
+            }
+
+            // Helper function to create a new Stripe customer and update wallet
+            async Task<string> CreateAndLinkStripeCustomer(Wallet existingWallet, string name, string email, string address = "", string city = "", string state = "", string postalCode = "")
+            {
+                var newCustomerId = await CreateCustomer(name, email, "", address, city, state, postalCode);
+                existingWallet.PaymentCustomerId = newCustomerId;
+                return newCustomerId;
+            }
 
             if (currentUser != null)
             {
@@ -228,201 +263,234 @@ namespace AuthScape.StripePayment.Services
                             PaymentCustomerId = stripeCustomerId,
                         };
                         await context.Wallets.AddAsync(newWallet);
+                        wallet = newWallet;
                     }
                     else
                     {
-                        stripeCustomerId = walletItem.PaymentCustomerId;
+                        // Validate the existing Stripe customer
+                        if (!await IsStripeCustomerValid(walletItem.PaymentCustomerId))
+                        {
+                            stripeCustomerId = await CreateAndLinkStripeCustomer(walletItem,
+                                currentUser.FirstName + " " + currentUser.LastName,
+                                currentUser.Email);
+                        }
+                        else
+                        {
+                            stripeCustomerId = walletItem.PaymentCustomerId;
+                        }
+                        wallet = walletItem;
                     }
 
                     await context.SaveChangesAsync();
                 }
                 else if (paymentRequest.PaymentMethodType == PaymentMethodType.Location)
                 {
-                    var walletItem = await context.Wallets
-                        .Where(w => w.LocationId == currentUser.LocationId)
-                        .FirstOrDefaultAsync();
-
-                    if (walletItem == null)
+                    if (currentUser.LocationId == null)
                     {
-                        var location = await context.Locations.Where(l => l.Id == currentUser.LocationId).FirstOrDefaultAsync();
-                        if (location != null)
-                        {
-                            stripeCustomerId = await CreateCustomer(location.Title, currentUser.Email, "",
-                                (!String.IsNullOrWhiteSpace(location.Address) ? location.Address : ""),
-                                (!String.IsNullOrWhiteSpace(location.City) ? location.City : ""),
-                                (!String.IsNullOrWhiteSpace(location.State) ? location.State : ""),
-                                (!String.IsNullOrWhiteSpace(location.ZipCode) ? location.ZipCode : ""));
+                        // Fallback to User payment type when no location is assigned
+                        paymentRequest.PaymentMethodType = PaymentMethodType.User;
 
+                        var userWalletItem = await context.Wallets
+                            .Where(w => w.UserId == currentUser.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (userWalletItem == null)
+                        {
+                            stripeCustomerId = await CreateCustomer(currentUser.FirstName + " " + currentUser.LastName, currentUser.Email, "", "", "", "", "");
                             var newWallet = new Wallet()
                             {
-                                LocationId = currentUser.LocationId,
+                                UserId = currentUser.Id,
                                 PaymentCustomerId = stripeCustomerId,
                             };
                             await context.Wallets.AddAsync(newWallet);
+                            wallet = newWallet;
                         }
+                        else
+                        {
+                            // Validate the existing Stripe customer
+                            if (!await IsStripeCustomerValid(userWalletItem.PaymentCustomerId))
+                            {
+                                stripeCustomerId = await CreateAndLinkStripeCustomer(userWalletItem,
+                                    currentUser.FirstName + " " + currentUser.LastName,
+                                    currentUser.Email);
+                            }
+                            else
+                            {
+                                stripeCustomerId = userWalletItem.PaymentCustomerId;
+                            }
+                            wallet = userWalletItem;
+                        }
+
+                        await context.SaveChangesAsync();
                     }
                     else
                     {
-                        stripeCustomerId = walletItem.PaymentCustomerId;
-                    }
+                        var walletItem = await context.Wallets
+                            .Where(w => w.LocationId == currentUser.LocationId)
+                            .FirstOrDefaultAsync();
 
-                    await context.SaveChangesAsync();
+                        var location = await context.Locations.Where(l => l.Id == currentUser.LocationId).FirstOrDefaultAsync();
+
+                        if (walletItem == null)
+                        {
+                            if (location != null)
+                            {
+                                stripeCustomerId = await CreateCustomer(location.Title, currentUser.Email, "",
+                                    (!String.IsNullOrWhiteSpace(location.Address) ? location.Address : ""),
+                                    (!String.IsNullOrWhiteSpace(location.City) ? location.City : ""),
+                                    (!String.IsNullOrWhiteSpace(location.State) ? location.State : ""),
+                                    (!String.IsNullOrWhiteSpace(location.ZipCode) ? location.ZipCode : ""));
+
+                                var newWallet = new Wallet()
+                                {
+                                    LocationId = currentUser.LocationId,
+                                    PaymentCustomerId = stripeCustomerId,
+                                };
+                                await context.Wallets.AddAsync(newWallet);
+                                wallet = newWallet;
+                            }
+                        }
+                        else
+                        {
+                            // Validate the existing Stripe customer
+                            if (!await IsStripeCustomerValid(walletItem.PaymentCustomerId))
+                            {
+                                stripeCustomerId = await CreateAndLinkStripeCustomer(walletItem,
+                                    location?.Title ?? "Location",
+                                    currentUser.Email,
+                                    location?.Address ?? "",
+                                    location?.City ?? "",
+                                    location?.State ?? "",
+                                    location?.ZipCode ?? "");
+                            }
+                            else
+                            {
+                                stripeCustomerId = walletItem.PaymentCustomerId;
+                            }
+                            wallet = walletItem;
+                        }
+
+                        await context.SaveChangesAsync();
+                    }
                 }
                 else if (paymentRequest.PaymentMethodType == PaymentMethodType.Company)
                 {
-                    var walletItem = await context.Wallets
-                        .Where(w => w.CompanyId == currentUser.CompanyId)
-                        .FirstOrDefaultAsync();
-
-                    if (walletItem == null)
+                    if (currentUser.CompanyId == null)
                     {
-                        var company = await context.Companies.Where(c => c.Id == currentUser.CompanyId).FirstOrDefaultAsync();
-                        if (company != null)
+                        // Fallback to User payment type when no company is assigned
+                        paymentRequest.PaymentMethodType = PaymentMethodType.User;
+
+                        var userWalletItem = await context.Wallets
+                            .Where(w => w.UserId == currentUser.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (userWalletItem == null)
                         {
-                            stripeCustomerId = await CreateCustomer(company.Title, currentUser.Email, "", "", "", "", "");
+                            stripeCustomerId = await CreateCustomer(currentUser.FirstName + " " + currentUser.LastName, currentUser.Email, "", "", "", "", "");
                             var newWallet = new Wallet()
                             {
-                                CompanyId = currentUser.CompanyId,
+                                UserId = currentUser.Id,
                                 PaymentCustomerId = stripeCustomerId,
                             };
                             await context.Wallets.AddAsync(newWallet);
+                            wallet = newWallet;
                         }
+                        else
+                        {
+                            // Validate the existing Stripe customer
+                            if (!await IsStripeCustomerValid(userWalletItem.PaymentCustomerId))
+                            {
+                                stripeCustomerId = await CreateAndLinkStripeCustomer(userWalletItem,
+                                    currentUser.FirstName + " " + currentUser.LastName,
+                                    currentUser.Email);
+                            }
+                            else
+                            {
+                                stripeCustomerId = userWalletItem.PaymentCustomerId;
+                            }
+                            wallet = userWalletItem;
+                        }
+
+                        await context.SaveChangesAsync();
                     }
                     else
                     {
-                        stripeCustomerId = walletItem.PaymentCustomerId;
-                    }
+                        var walletItem = await context.Wallets
+                            .Where(w => w.CompanyId == currentUser.CompanyId)
+                            .FirstOrDefaultAsync();
 
-                    await context.SaveChangesAsync();
+                        var company = await context.Companies.Where(c => c.Id == currentUser.CompanyId).FirstOrDefaultAsync();
+
+                        if (walletItem == null)
+                        {
+                            if (company != null)
+                            {
+                                stripeCustomerId = await CreateCustomer(company.Title, currentUser.Email, "", "", "", "", "");
+                                var newWallet = new Wallet()
+                                {
+                                    CompanyId = currentUser.CompanyId,
+                                    PaymentCustomerId = stripeCustomerId,
+                                };
+                                await context.Wallets.AddAsync(newWallet);
+                                wallet = newWallet;
+                            }
+                        }
+                        else
+                        {
+                            // Validate the existing Stripe customer
+                            if (!await IsStripeCustomerValid(walletItem.PaymentCustomerId))
+                            {
+                                stripeCustomerId = await CreateAndLinkStripeCustomer(walletItem,
+                                    company?.Title ?? currentUser.CompanyName ?? "Company",
+                                    currentUser.Email);
+                            }
+                            else
+                            {
+                                stripeCustomerId = walletItem.PaymentCustomerId;
+                            }
+                            wallet = walletItem;
+                        }
+
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
 
-            if (String.IsNullOrWhiteSpace(paymentRequest.stripeCustomerId))
+            // If stripeCustomerId is still null after processing, we need to handle it
+            if (String.IsNullOrWhiteSpace(stripeCustomerId))
             {
-                if (currentUser != null) // the user account was created already, let find a payment method
+                if (!String.IsNullOrWhiteSpace(paymentRequest.stripeCustomerId))
                 {
-                    if (paymentRequest.PaymentMethodType == PaymentMethodType.Company)
+                    // Use the provided stripeCustomerId, but validate it first
+                    if (await IsStripeCustomerValid(paymentRequest.stripeCustomerId))
                     {
-                        if (currentUser.CompanyId == null)
+                        stripeCustomerId = paymentRequest.stripeCustomerId;
+                    }
+                    else
+                    {
+                        // The provided customer ID is invalid, create a new one
+                        if (currentUser != null)
                         {
-                            return null;
-                        }
-
-                        wallet = await context.Wallets
-                                .Where(c => c.CompanyId == currentUser.CompanyId)
-                                .FirstOrDefaultAsync();
-
-                        if (wallet != null)
-                        {
-                            stripeCustomerId = wallet.PaymentCustomerId;
+                            stripeCustomerId = await CreateCustomer(
+                                currentUser.FirstName + " " + currentUser.LastName,
+                                currentUser.Email, "", "", "", "", "");
                         }
                         else
                         {
-                            var service = new CustomerService();
-                            var options = new CustomerCreateOptions
-                            {
-                                Description = currentUser.CompanyName,
-                                Name = currentUser.CompanyName,
-                                Email = currentUser.Email,
-                                Expand = new List<string>() { "tax" }
-                            };
-
-                            var stripeCustomer = await service.CreateAsync(options);
-
-                            wallet = new Wallet()
-                            {
-                                CompanyId = currentUser.CompanyId,
-                                PaymentCustomerId = stripeCustomer.Id
-                            };
-
-                            await context.Wallets.AddAsync(wallet);
-                            stripeCustomerId = stripeCustomer.Id;
+                            stripeCustomerId = await CreateCustomer(
+                                paymentRequest.Name ?? "Guest",
+                                paymentRequest.Email ?? "",
+                                "", "", "", "", "");
                         }
                     }
-                    else if (paymentRequest.PaymentMethodType == PaymentMethodType.User)
-                    {
-                        wallet = await context.Wallets
-                                .Where(c => c.UserId == currentUser.Id)
-                                .FirstOrDefaultAsync();
-
-                        if (wallet != null)
-                        {
-                            stripeCustomerId = wallet.PaymentCustomerId;
-                        }
-                        else
-                        {
-                            var service = new CustomerService();
-                            var options = new CustomerCreateOptions
-                            {
-                                Description = (currentUser.FirstName + " " + currentUser.LastName),
-                                Name = (currentUser.FirstName + " " + currentUser.LastName),
-                                Email = currentUser.Email,
-                                Expand = new List<string>() { "tax" }
-                            };
-
-                            var stripeCustomer = await service.CreateAsync(options);
-
-                            wallet = new Wallet()
-                            {
-                                UserId = currentUser.Id,
-                                PaymentCustomerId = stripeCustomer.Id
-                            };
-
-                            await context.Wallets.AddAsync(wallet);
-                            stripeCustomerId = stripeCustomer.Id;
-                        }
-                    }
-                    else if (paymentRequest.PaymentMethodType == PaymentMethodType.Location)
-                    {
-                        if (currentUser.LocationId == null)
-                        {
-                            return null;
-                        }
-
-                        wallet = await context.Wallets
-                                .Where(c => c.LocationId == currentUser.LocationId)
-                                .FirstOrDefaultAsync();
-
-                        if (wallet != null)
-                        {
-                            stripeCustomerId = wallet.PaymentCustomerId;
-                        }
-                        else
-                        {
-                            var location = await context.Locations
-                                .Where(c => c.Id == currentUser.LocationId)
-                                .FirstOrDefaultAsync();
-
-                            var service = new CustomerService();
-                            var options = new CustomerCreateOptions
-                            {
-                                Description = location.Title,
-                                Name = location.Title,
-                                Email = currentUser.Email,
-                                Expand = new List<string>() { "tax" }
-                            };
-
-                            var stripeCustomer = await service.CreateAsync(options);
-
-                            wallet = new Wallet()
-                            {
-                                LocationId = currentUser.LocationId,
-                                PaymentCustomerId = stripeCustomer.Id
-                            };
-
-                            await context.Wallets.AddAsync(wallet);
-                            stripeCustomerId = stripeCustomer.Id;
-                        }
-                    }
-
-                    await context.SaveChangesAsync();
                 }
-                else // Not signed in, already create a new customer account
+                else if (currentUser == null)
                 {
+                    // Not signed in, create a new customer account
                     var service = new CustomerService();
                     var options = new CustomerCreateOptions
                     {
-                        Description = paymentRequest.Name, // need to change this...
+                        Description = paymentRequest.Name,
                         Name = paymentRequest.Name,
                         Email = paymentRequest.Email,
                         Expand = new List<string>() { "tax" }
@@ -432,9 +500,11 @@ namespace AuthScape.StripePayment.Services
                     stripeCustomerId = stripeCustomer.Id;
                 }
             }
-            else
+
+            // Final safety check - ensure we have a valid Stripe customer ID
+            if (String.IsNullOrWhiteSpace(stripeCustomerId))
             {
-                stripeCustomerId = paymentRequest.stripeCustomerId;
+                throw new AuthScape.Models.Exceptions.BadRequestException("Unable to create or link payment customer. Please try again.");
             }
 
             var setupIntentService = new SetupIntentService();
@@ -1033,12 +1103,13 @@ namespace AuthScape.StripePayment.Services
         }
 
 
-        public async Task<Guid> AddPaymentMethod(SignedInUser signedInUser, PaymentMethodType paymentMethodType, Guid walletId, string paymentMethod)
+        public async Task<Guid> AddPaymentMethod(SignedInUser signedInUser, PaymentMethodType paymentMethodType, Guid walletId, string paymentMethod, string setupIntentId = null)
         {
-            var company = await context.Companies.Where(c => c.Id == signedInUser.CompanyId).FirstOrDefaultAsync();
-            if (company == null)
+            // Verify the wallet exists
+            var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.Id == walletId);
+            if (wallet == null)
             {
-                throw new AuthScape.Models.Exceptions.BadRequestException("Company not assigned");
+                throw new AuthScape.Models.Exceptions.BadRequestException("Wallet not found");
             }
 
             // can we determine the payment type from stripe api?
@@ -1061,6 +1132,7 @@ namespace AuthScape.StripePayment.Services
                     Funding = paymentMethodItem.Card.Funding,
                     WalletType = walletType,
                     PaymentMethodId = paymentMethod,
+                    SetupIntentId = setupIntentId,
                 };
 
                 await context.WalletPaymentMethods.AddAsync(walletPaymentMethod);
@@ -1081,6 +1153,7 @@ namespace AuthScape.StripePayment.Services
                     Last4 = paymentMethodItem.UsBankAccount.Last4,
                     WalletType = walletType,
                     PaymentMethodId = paymentMethod,
+                    SetupIntentId = setupIntentId,
                 };
                 await context.WalletPaymentMethods.AddAsync(walletPaymentMethod);
                 await context.SaveChangesAsync();
@@ -1179,9 +1252,16 @@ namespace AuthScape.StripePayment.Services
                 return false;
 
             // Verify user has access to this wallet
-            if (wallet.UserId.HasValue && wallet.UserId.Value != signedInUser.Id &&
-                wallet.CompanyId.HasValue && wallet.CompanyId.Value != signedInUser.CompanyId &&
-                wallet.LocationId.HasValue && wallet.LocationId.Value != signedInUser.LocationId)
+            // User has access if the wallet belongs to them, their company, or their location
+            bool hasAccess = false;
+            if (wallet.UserId.HasValue && wallet.UserId.Value == signedInUser.Id)
+                hasAccess = true;
+            else if (wallet.CompanyId.HasValue && signedInUser.CompanyId.HasValue && wallet.CompanyId.Value == signedInUser.CompanyId.Value)
+                hasAccess = true;
+            else if (wallet.LocationId.HasValue && signedInUser.LocationId.HasValue && wallet.LocationId.Value == signedInUser.LocationId.Value)
+                hasAccess = true;
+
+            if (!hasAccess)
             {
                 return false;
             }
