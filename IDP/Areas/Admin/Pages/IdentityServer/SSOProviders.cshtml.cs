@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AuthScape.Models.Authentication;
+using System;
 
 namespace IDP.Areas.Admin.Pages.IdentityServer
 {
@@ -41,7 +42,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 await ssoProviderService.ToggleProviderAsync((ThirdPartyAuthenticationType)providerType, enabled);
                 SuccessMessage = $"Provider {(enabled ? "enabled" : "disabled")} successfully. Changes will take effect immediately on the login page.";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 var errorDetails = ex.Message;
                 if (ex.InnerException != null)
@@ -61,7 +62,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 await ssoProviderService.DeleteProviderConfigurationAsync((ThirdPartyAuthenticationType)providerType);
                 SuccessMessage = "Provider configuration deleted successfully";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error deleting provider configuration: {ex.Message}";
             }

@@ -1,6 +1,7 @@
 @page
 @model IDP.Areas.Admin.Pages.IdentityServer.SubscriptionPlansModel
 @using AuthScape.Models.PaymentGateway.Plans
+@using global::System.Text.Json
 @{
     ViewData["Title"] = "Subscription Plans";
     Layout = "_AdminLayout";
@@ -1526,7 +1527,7 @@
 @section Scripts {
     <script>
         // Plan data for edit modal
-        var plansData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Plans.Select(p => new {
+        var plansData = @Html.Raw(JsonSerializer.Serialize(Model.Plans.Select(p => new {
             p.Id,
             p.Name,
             p.Description,

@@ -50,17 +50,17 @@ namespace AuthScape.TicketSystem.Services
         readonly DatabaseContext databaseContext;
         readonly IUserManagementService userManagementService;
         readonly ISendGridService sendGridService;
-        readonly INotificationService notificationService;
+        // readonly INotificationService notificationService; // REMOVED: Legacy service with empty implementations
         readonly IBlobStorage blobStorage;
         readonly AppSettings appSettings;
 
-        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISendGridService sendGridService, IOptions<AppSettings> appSettings, INotificationService notificationService, IBlobStorage blobStorage)
+        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISendGridService sendGridService, IOptions<AppSettings> appSettings, IBlobStorage blobStorage)
         {
             this.databaseContext = databaseContext;
             this.userManagementService = userManagementService;
             this.sendGridService = sendGridService;
             this.appSettings = appSettings.Value;
-            this.notificationService = notificationService;
+            // this.notificationService = notificationService; // REMOVED
             this.blobStorage = blobStorage;
         }
 
@@ -88,7 +88,8 @@ namespace AuthScape.TicketSystem.Services
                             CreatedByUserId = fromUser.Id
                         });
 
-                        await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, fromUser.FirstName, fromUser.LastName);
+                        // REMOVED: Legacy notification service call (empty implementation)
+                        // await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, fromUser.FirstName, fromUser.LastName);
                     }
                     else
                     {
@@ -101,7 +102,8 @@ namespace AuthScape.TicketSystem.Services
                             CreatedByUserId = null
                         });
 
-                        await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, ticket.FirstName, ticket.LastName);
+                        // REMOVED: Legacy notification service call (empty implementation)
+                        // await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, ticket.FirstName, ticket.LastName);
                     }
 
                     ticket.LastUpdated = SystemTime.Now;
@@ -487,9 +489,10 @@ namespace AuthScape.TicketSystem.Services
             });
             await databaseContext.SaveChangesAsync();
 
-            
 
-            await notificationService.NotifyTicketCreated(newTicket);
+
+            // REMOVED: Legacy notification service call (empty implementation)
+            // await notificationService.NotifyTicketCreated(newTicket);
 
             return newTicket.Id;
         }

@@ -1,3 +1,4 @@
+using AuthScape.ErrorTracking.Services;
 using AuthScape.IDP;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
@@ -82,6 +83,9 @@ namespace IDP
                 services.AddScoped<IAzureBlobStorage, AzureBlobStorage>();
                 services.AddScoped<IBlobStorage, BlobStorage>();
                 services.AddScoped<IImageService, ImageService>();
+
+                services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
+                services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
 
                 // Add HttpClientFactory for MCP proxy calls
                 services.AddHttpClient();

@@ -17,6 +17,7 @@
     -->
     <!-- Database Providers - SQLite -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
   </ItemGroup>
 

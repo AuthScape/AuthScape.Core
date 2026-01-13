@@ -1,0 +1,597 @@
+@page
+@model AuthScape.IDP.Areas.Admin.Pages.System.ErrorLogsModel
+@{
+    ViewData["Title"] = "Error Tracking";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Error Tracking</h2>
+            <p class="text-muted mb-0">Monitor and resolve application errors across API, IDP, and Frontend</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-outline-primary" onclick="refreshErrors()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <a href="/Admin/System/ErrorTrackingSettings" class="btn btn-primary">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" id="statsCards">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Total Errors (24h)</p>
+                            <h3 class="mb-0" id="stat-total">-</h3>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-exclamation-triangle text-danger fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Unique Types</p>
+                            <h3 class="mb-0" id="stat-unique">-</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-layer-group text-info fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Unresolved</p>
+                            <h3 class="mb-0" id="stat-unresolved">-</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-clock text-warning fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1 small">Resolved</p>
+                            <h3 class="mb-0" id="stat-resolved">-</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label small">Source</label>
+                    <select class="form-select" id="filter-source">
+                        <option value="">All Sources</option>
+                        <option value="1">API</option>
+                        <option value="2">IDP</option>
+                        <option value="3">Frontend</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Status Code</label>
+                    <input type="number" class="form-control" id="filter-statusCode" placeholder="e.g. 500">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Status</label>
+                    <select class="form-select" id="filter-resolved">
+                        <option value="">All</option>
+                        <option value="false">Unresolved</option>
+                        <option value="true">Resolved</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Date Range</label>
+                    <select class="form-select" id="filter-dateRange">
+                        <option value="24">Last 24 hours</option>
+                        <option value="168">Last 7 days</option>
+                        <option value="720">Last 30 days</option>
+                        <option value="2160">Last 90 days</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Search</label>
+                    <input type="text" class="form-control" id="filter-search" placeholder="Error message or type...">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Groups Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Error Type</th>
+                            <th>Message</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th class="text-center">Occurrences</th>
+                            <th>Last Seen</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="error-groups-tbody">
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="text-muted mt-2">Loading errors...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small" id="pagination-info">
+                    Showing 0 of 0 errors
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Details Modal -->
+<div class="modal fade" id="errorDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">Error Details</h5>
+                    <p class="text-muted mb-0 small" id="modal-subtitle"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Error Group Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h6 class="text-muted mb-2">Error Message</h6>
+                        <p id="detail-message" class="mb-3"></p>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <small class="text-muted">Error Type</small>
+                                <p class="mb-2"><code id="detail-type"></code></p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Endpoint</small>
+                                <p class="mb-2"><code id="detail-endpoint"></code></p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Status Code</small>
+                                <p class="mb-2"><span class="badge" id="detail-statusCode"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <small class="text-muted">Occurrences</small>
+                                    <h4 class="mb-0" id="detail-occurrences"></h4>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">First Seen</small>
+                                    <p class="mb-0" id="detail-firstSeen"></p>
+                                </div>
+                                <div>
+                                    <small class="text-muted">Last Seen</small>
+                                    <p class="mb-0" id="detail-lastSeen"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stack Trace -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Stack Trace</h6>
+                    <pre id="detail-stackTrace" class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 12px;"></pre>
+                </div>
+
+                <!-- Recent Occurrences -->
+                <div>
+                    <h6 class="text-muted mb-2">Recent Occurrences</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>IP Address</th>
+                                    <th>Browser</th>
+                                    <th>Response Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detail-occurrences">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resolution Section -->
+                <div class="mt-4" id="resolution-section">
+                    <hr>
+                    <h6 class="text-muted mb-3">Mark as Resolved</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Resolution Notes</label>
+                        <textarea class="form-control" id="resolution-notes" rows="3" placeholder="Describe how this error was resolved..."></textarea>
+                    </div>
+                    <button class="btn btn-success" onclick="markAsResolved()">
+                        <i class="fas fa-check"></i> Mark as Resolved
+                    </button>
+                </div>
+
+                <div class="mt-4 d-none" id="resolved-info">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> This error has been marked as resolved.
+                        <div class="mt-2" id="resolved-details"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .badge-source-api { background-color: #0d6efd; }
+    .badge-source-idp { background-color: #6610f2; }
+    .badge-source-frontend { background-color: #fd7e14; }
+
+    .badge-status-4xx { background-color: #ffc107; }
+    .badge-status-5xx { background-color: #dc3545; }
+
+    .cursor-pointer { cursor: pointer; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    let currentPage = 1;
+    let currentFilters = {};
+    let currentErrorGroupId = null;
+
+    // Load stats on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStats();
+        loadErrors();
+    });
+
+    async function loadStats() {
+        try {
+            const response = await axios.get('/api/ErrorTracking/GetStats?hours=24');
+            const stats = response.data;
+
+            document.getElementById('stat-total').textContent = stats.totalErrors;
+            document.getElementById('stat-unique').textContent = stats.uniqueTypes;
+            document.getElementById('stat-unresolved').textContent = stats.unresolvedCount;
+            document.getElementById('stat-resolved').textContent = stats.resolvedCount;
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }
+
+    async function loadErrors(page = 1) {
+        const tbody = document.getElementById('error-groups-tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Loading errors...</p>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const filters = {
+                page: page,
+                pageSize: 20,
+                ...currentFilters
+            };
+
+            const response = await axios.post('/api/ErrorTracking/GetErrors', filters);
+            const result = response.data;
+
+            if (result.errorGroups.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                            <p class="text-muted">No errors found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = result.errorGroups.map(error => `
+                <tr class="cursor-pointer" onclick="showErrorDetails('${error.id}')">
+                    <td>
+                        <code class="small">${escapeHtml(error.errorType)}</code>
+                    </td>
+                    <td>
+                        <div class="text-truncate" style="max-width: 300px;" title="${escapeHtml(error.errorMessage)}">
+                            ${escapeHtml(error.errorMessage)}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-source-${error.source === 1 ? 'api' : error.source === 2 ? 'idp' : 'frontend'}">
+                            ${error.source === 1 ? 'API' : error.source === 2 ? 'IDP' : 'Frontend'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${error.statusCode >= 500 ? 'badge-status-5xx' : 'badge-status-4xx'}">
+                            ${error.statusCode}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary">${error.occurrenceCount}</span>
+                    </td>
+                    <td>
+                        <small>${formatDate(error.lastSeen)}</small>
+                    </td>
+                    <td>
+                        ${error.isResolved
+                            ? '<span class="badge bg-success"><i class="fas fa-check"></i> Resolved</span>'
+                            : '<span class="badge bg-warning"><i class="fas fa-clock"></i> Open</span>'
+                        }
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); showErrorDetails('${error.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update pagination
+            updatePagination(result.page, result.totalPages, result.totalCount);
+
+        } catch (error) {
+            console.error('Failed to load errors:', error);
+
+            let errorMessage = 'Failed to load errors';
+            if (error.response && error.response.status === 500) {
+                errorMessage = `Database tables not found. Please run the migration:<br><br>
+                    <code style="display: block; text-align: left; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
+                    cd "d:\\Development\\AuthScape\\AuthScape.Core\\API"<br>
+                    dotnet ef migrations add AddErrorTrackingTables --project "../Services.Database"<br>
+                    dotnet ef database update --project "../Services.Database"
+                    </code>`;
+            }
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <p>${errorMessage}</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    async function showErrorDetails(errorGroupId) {
+        currentErrorGroupId = errorGroupId;
+
+        try {
+            const response = await axios.get(`/api/ErrorTracking/GetErrorGroup?id=${errorGroupId}&page=1&pageSize=10`);
+            const data = response.data;
+
+            if (data.occurrences.length === 0) return;
+
+            const firstError = data.occurrences[0];
+            const errorGroup = firstError.errorGroup || {};
+
+            // Populate modal
+            document.getElementById('modal-subtitle').textContent = `Error ID: ${errorGroupId}`;
+            document.getElementById('detail-message').textContent = firstError.errorMessage;
+            document.getElementById('detail-type').textContent = firstError.errorType;
+            document.getElementById('detail-endpoint').textContent = firstError.endpoint || 'N/A';
+
+            const statusBadge = document.getElementById('detail-statusCode');
+            statusBadge.textContent = firstError.statusCode;
+            statusBadge.className = `badge ${firstError.statusCode >= 500 ? 'bg-danger' : 'bg-warning'}`;
+
+            document.getElementById('detail-occurrences').textContent = errorGroup.occurrenceCount || data.occurrences.length;
+            document.getElementById('detail-firstSeen').textContent = formatDate(errorGroup.firstSeen || firstError.created);
+            document.getElementById('detail-lastSeen').textContent = formatDate(errorGroup.lastSeen || firstError.created);
+            document.getElementById('detail-stackTrace').textContent = firstError.stackTrace || 'No stack trace available';
+
+            // Recent occurrences
+            const occurrencesTbody = document.getElementById('detail-occurrences');
+            occurrencesTbody.innerHTML = data.occurrences.map(occ => `
+                <tr>
+                    <td><small>${formatDate(occ.created)}</small></td>
+                    <td><small>${occ.username || occ.userEmail || 'Anonymous'}</small></td>
+                    <td><small>${occ.ipAddress || 'N/A'}</small></td>
+                    <td><small>${occ.browser || 'Unknown'} ${occ.browserVersion || ''}</small></td>
+                    <td><small>${occ.responseTimeMs ? occ.responseTimeMs + 'ms' : 'N/A'}</small></td>
+                </tr>
+            `).join('');
+
+            // Resolution section
+            if (firstError.isResolved) {
+                document.getElementById('resolution-section').classList.add('d-none');
+                document.getElementById('resolved-info').classList.remove('d-none');
+                document.getElementById('resolved-details').innerHTML = `
+                    <strong>Resolved at:</strong> ${formatDate(firstError.resolvedAt)}<br>
+                    <strong>Notes:</strong> ${escapeHtml(firstError.resolutionNotes || 'No notes provided')}
+                `;
+            } else {
+                document.getElementById('resolution-section').classList.remove('d-none');
+                document.getElementById('resolved-info').classList.add('d-none');
+                document.getElementById('resolution-notes').value = '';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('errorDetailsModal'));
+            modal.show();
+
+        } catch (error) {
+            console.error('Failed to load error details:', error);
+            alert('Failed to load error details');
+        }
+    }
+
+    async function markAsResolved() {
+        const notes = document.getElementById('resolution-notes').value;
+
+        if (!notes.trim()) {
+            alert('Please provide resolution notes');
+            return;
+        }
+
+        try {
+            await axios.put('/api/ErrorTracking/MarkResolved', {
+                errorGroupId: currentErrorGroupId,
+                resolutionNotes: notes
+            });
+
+            alert('Error marked as resolved!');
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('errorDetailsModal'));
+            modal.hide();
+
+            loadErrors(currentPage);
+            loadStats();
+
+        } catch (error) {
+            console.error('Failed to mark error as resolved:', error);
+            alert('Failed to mark error as resolved');
+        }
+    }
+
+    function applyFilters() {
+        const source = document.getElementById('filter-source').value;
+        const statusCode = document.getElementById('filter-statusCode').value;
+        const resolved = document.getElementById('filter-resolved').value;
+        const dateRange = document.getElementById('filter-dateRange').value;
+        const search = document.getElementById('filter-search').value;
+
+        currentFilters = {};
+
+        if (source) currentFilters.source = parseInt(source);
+        if (statusCode) currentFilters.statusCode = parseInt(statusCode);
+        if (resolved) currentFilters.isResolved = resolved === 'true';
+        if (search) currentFilters.searchTerm = search;
+
+        if (dateRange) {
+            const hours = parseInt(dateRange);
+            currentFilters.startDate = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+        }
+
+        currentPage = 1;
+        loadErrors(1);
+    }
+
+    function refreshErrors() {
+        loadStats();
+        loadErrors(currentPage);
+    }
+
+    function updatePagination(page, totalPages, totalCount) {
+        document.getElementById('pagination-info').textContent =
+            `Showing page ${page} of ${totalPages} (${totalCount} total errors)`;
+
+        const pagination = document.getElementById('pagination');
+
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        // Previous button
+        html += `
+            <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadErrors(${page - 1}); return false;">Previous</a>
+            </li>
+        `;
+
+        // Page numbers
+        for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+            html += `
+                <li class="page-item ${i === page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadErrors(${i}); return false;">${i}</a>
+                </li>
+            `;
+        }
+
+        // Next button
+        html += `
+            <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadErrors(${page + 1}); return false;">Next</a>
+            </li>
+        `;
+
+        pagination.innerHTML = html;
+        currentPage = page;
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>

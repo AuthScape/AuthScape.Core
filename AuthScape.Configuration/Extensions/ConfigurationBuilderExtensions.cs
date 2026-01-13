@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using AuthScape.Configuration.Options;
 using AuthScape.Configuration.Providers;
+using AuthScape.Models;
 
 namespace AuthScape.Configuration.Extensions;
 
@@ -12,22 +13,110 @@ namespace AuthScape.Configuration.Extensions;
 public static class ConfigurationBuilderExtensions
 {
     /// <summary>
-    /// Adds AuthScape configuration sources in the correct priority order.
-    /// Priority (lowest to highest): Shared JSON → Project JSON → User Secrets → Env Variables → Key Vault/AWS
+    /// Adds AuthScape configuration sources based on the specified source priority.
     /// </summary>
     /// <param name="builder">The configuration builder.</param>
     /// <param name="environment">The host environment.</param>
+    /// <param name="source">Which configuration source to prioritize.</param>
     /// <param name="configureOptions">Optional action to configure options.</param>
     /// <returns>The configuration builder for chaining.</returns>
     public static IConfigurationBuilder AddAuthScapeConfiguration(
         this IConfigurationBuilder builder,
         IHostEnvironment environment,
+        ConfigurationSource source = ConfigurationSource.Default,
         Action<AuthScapeConfigurationOptions>? configureOptions = null)
     {
         var options = new AuthScapeConfigurationOptions();
         configureOptions?.Invoke(options);
 
-        // 1. Shared JSON files (lowest priority - base configuration)
+        switch (source)
+        {
+            case ConfigurationSource.ProjectOnly:
+                // Only use project appsettings.json
+                builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: options.EnableHotReload);
+                builder.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: options.EnableHotReload);
+                break;
+
+            case ConfigurationSource.SharedOnly:
+                // Only use shared authscape.json
+                AddSharedConfiguration(builder, environment, options);
+                break;
+
+            case ConfigurationSource.EnvironmentOnly:
+                // Only use environment variables and secrets
+                builder.AddEnvironmentVariables();
+                if (!string.IsNullOrEmpty(options.EnvironmentVariablePrefix))
+                {
+                    builder.AddEnvironmentVariables(options.EnvironmentVariablePrefix);
+                }
+                AddSecrets(builder, environment, options);
+                break;
+
+            case ConfigurationSource.SharedSettings:
+                // Prioritize shared over project: appsettings → shared → env → secrets
+                builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: options.EnableHotReload);
+                builder.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: options.EnableHotReload);
+                AddSharedConfiguration(builder, environment, options);
+                builder.AddEnvironmentVariables();
+                if (!string.IsNullOrEmpty(options.EnvironmentVariablePrefix))
+                {
+                    builder.AddEnvironmentVariables(options.EnvironmentVariablePrefix);
+                }
+                AddSecrets(builder, environment, options);
+                break;
+
+            case ConfigurationSource.EnvironmentVariables:
+                // Prioritize environment: JSON → env (highest) → secrets
+                AddSharedConfiguration(builder, environment, options);
+                builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: options.EnableHotReload);
+                builder.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: options.EnableHotReload);
+                builder.AddEnvironmentVariables();
+                if (!string.IsNullOrEmpty(options.EnvironmentVariablePrefix))
+                {
+                    builder.AddEnvironmentVariables(options.EnvironmentVariablePrefix);
+                }
+                AddSecrets(builder, environment, options);
+                break;
+
+            case ConfigurationSource.ProjectSettings:
+            case ConfigurationSource.Default:
+            default:
+                // Default: shared → project → user secrets → env → key vault/aws
+                AddSharedConfiguration(builder, environment, options);
+                builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: options.EnableHotReload);
+                builder.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: options.EnableHotReload);
+
+                // User Secrets (development only)
+                if (environment.IsDevelopment())
+                {
+                    try
+                    {
+                        var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
+                        if (entryAssembly != null)
+                        {
+                            builder.AddUserSecrets(entryAssembly, optional: true);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if user secrets not configured
+                    }
+                }
+
+                builder.AddEnvironmentVariables();
+                if (!string.IsNullOrEmpty(options.EnvironmentVariablePrefix))
+                {
+                    builder.AddEnvironmentVariables(options.EnvironmentVariablePrefix);
+                }
+                AddSecrets(builder, environment, options);
+                break;
+        }
+
+        return builder;
+    }
+
+    private static void AddSharedConfiguration(IConfigurationBuilder builder, IHostEnvironment environment, AuthScapeConfigurationOptions options)
+    {
         if (options.UseSharedConfiguration)
         {
             var sharedPath = options.SharedConfigurationPath
@@ -42,49 +131,21 @@ public static class ConfigurationBuilderExtensions
                 builder.AddJsonFile(envConfig, optional: true, reloadOnChange: options.EnableHotReload);
             }
         }
+    }
 
-        // 2. Project-specific JSON files (overrides shared)
-        builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: options.EnableHotReload);
-        builder.AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: options.EnableHotReload);
-
-        // 3. User Secrets (development only)
-        if (environment.IsDevelopment())
-        {
-            // Try to add user secrets from the entry assembly
-            try
-            {
-                var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
-                if (entryAssembly != null)
-                {
-                    builder.AddUserSecrets(entryAssembly, optional: true);
-                }
-            }
-            catch
-            {
-                // Ignore if user secrets not configured
-            }
-        }
-
-        // 4. Environment variables (medium priority)
-        builder.AddEnvironmentVariables();
-        if (!string.IsNullOrEmpty(options.EnvironmentVariablePrefix))
-        {
-            builder.AddEnvironmentVariables(options.EnvironmentVariablePrefix);
-        }
-
-        // 5. Azure Key Vault (high priority - production secrets)
+    private static void AddSecrets(IConfigurationBuilder builder, IHostEnvironment environment, AuthScapeConfigurationOptions options)
+    {
+        // Azure Key Vault
         if (options.AzureKeyVault?.Enabled == true && !string.IsNullOrEmpty(options.AzureKeyVault.VaultUri))
         {
             AddAzureKeyVault(builder, options.AzureKeyVault);
         }
 
-        // 6. AWS Secrets Manager (high priority - production secrets)
+        // AWS Secrets Manager
         if (options.AwsSecretsManager?.Enabled == true && !string.IsNullOrEmpty(options.AwsSecretsManager.SecretId))
         {
             builder.Add(new AwsSecretsManagerConfigurationSource(options.AwsSecretsManager));
         }
-
-        return builder;
     }
 
     /// <summary>
@@ -100,7 +161,7 @@ public static class ConfigurationBuilderExtensions
             .GetSection("AuthScapeConfiguration")
             .Get<AuthScapeConfigurationOptions>() ?? new AuthScapeConfigurationOptions();
 
-        return builder.AddAuthScapeConfiguration(environment, opt =>
+        return builder.AddAuthScapeConfiguration(environment, ConfigurationSource.Default, opt =>
         {
             opt.UseSharedConfiguration = options.UseSharedConfiguration;
             opt.SharedConfigurationPath = options.SharedConfigurationPath;

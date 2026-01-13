@@ -1,0 +1,370 @@
+@page
+@model AuthScape.IDP.Areas.Admin.Pages.System.ErrorTrackingSettingsModel
+@{
+    ViewData["Title"] = "Error Tracking Settings";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Error Tracking Settings</h2>
+            <p class="text-muted mb-0">Configure which errors to track and how to handle them</p>
+        </div>
+        <div>
+            <a href="/Admin/System/ErrorLogs" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Errors
+            </a>
+        </div>
+    </div>
+
+    <form id="settingsForm">
+        <input type="hidden" id="settings-id" name="id">
+
+        <!-- HTTP Status Code Tracking -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">HTTP Status Code Tracking</h5>
+                <small class="text-muted">Select which HTTP status codes should be tracked</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track400Errors" name="track400Errors">
+                            <label class="form-check-label" for="track400Errors">
+                                <strong>400 Bad Request</strong>
+                                <p class="text-muted small mb-0">Track malformed requests</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track401Errors" name="track401Errors">
+                            <label class="form-check-label" for="track401Errors">
+                                <strong>401 Unauthorized</strong>
+                                <p class="text-muted small mb-0">Track authentication failures</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track403Errors" name="track403Errors">
+                            <label class="form-check-label" for="track403Errors">
+                                <strong>403 Forbidden</strong>
+                                <p class="text-muted small mb-0">Track authorization failures</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track404Errors" name="track404Errors">
+                            <label class="form-check-label" for="track404Errors">
+                                <strong>404 Not Found</strong>
+                                <p class="text-muted small mb-0">Track missing resources</p>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track500Errors" name="track500Errors">
+                            <label class="form-check-label" for="track500Errors">
+                                <strong>500 Internal Server Error</strong>
+                                <p class="text-muted small mb-0">Track server-side errors (recommended)</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track502Errors" name="track502Errors">
+                            <label class="form-check-label" for="track502Errors">
+                                <strong>502 Bad Gateway</strong>
+                                <p class="text-muted small mb-0">Track gateway errors</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="track503Errors" name="track503Errors">
+                            <label class="form-check-label" for="track503Errors">
+                                <strong>503 Service Unavailable</strong>
+                                <p class="text-muted small mb-0">Track service outages</p>
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Custom Status Codes</strong></label>
+                            <input type="text" class="form-control" id="customStatusCodes" name="customStatusCodes" placeholder="e.g., 429,409,422">
+                            <small class="text-muted">Comma-separated list of additional status codes to track</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Frontend Tracking -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Frontend Tracking</h5>
+                <small class="text-muted">Configure error tracking for React/JavaScript applications</small>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="enableFrontendTracking" name="enableFrontendTracking">
+                    <label class="form-check-label" for="enableFrontendTracking">
+                        <strong>Enable Frontend Error Tracking</strong>
+                        <p class="text-muted small mb-0">Track JavaScript errors from the React application</p>
+                    </label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Batch Interval (seconds)</label>
+                    <input type="number" class="form-control" id="frontendBatchIntervalSeconds" name="frontendBatchIntervalSeconds" min="10" max="300" value="30">
+                    <small class="text-muted">How often frontend errors should be sent to the server (default: 30 seconds)</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Capture Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Data Capture Settings</h5>
+                <small class="text-muted">Control what data is captured with each error</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="captureRequestBody" name="captureRequestBody">
+                            <label class="form-check-label" for="captureRequestBody">
+                                <strong>Capture Request Bodies</strong>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="captureResponseBody" name="captureResponseBody">
+                            <label class="form-check-label" for="captureResponseBody">
+                                <strong>Capture Response Bodies</strong>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="captureHeaders" name="captureHeaders">
+                            <label class="form-check-label" for="captureHeaders">
+                                <strong>Capture HTTP Headers</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="capturePerformanceMetrics" name="capturePerformanceMetrics">
+                            <label class="form-check-label" for="capturePerformanceMetrics">
+                                <strong>Capture Performance Metrics</strong>
+                                <p class="text-muted small mb-0">Response time, memory usage, etc.</p>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="linkToAnalyticsSessions" name="linkToAnalyticsSessions">
+                            <label class="form-check-label" for="linkToAnalyticsSessions">
+                                <strong>Link to Analytics Sessions</strong>
+                                <p class="text-muted small mb-0">Associate errors with user sessions</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label class="form-label">Maximum Body Size (KB)</label>
+                    <input type="number" class="form-control" id="maxBodySizeKB" name="maxBodySizeKB" min="1" max="500" value="50">
+                    <small class="text-muted">Maximum size of request/response bodies to capture (bodies larger than this will be truncated)</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Security & Privacy</h5>
+                <small class="text-muted">Protect sensitive data from being logged</small>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="autoRedactSensitiveData" name="autoRedactSensitiveData">
+                    <label class="form-check-label" for="autoRedactSensitiveData">
+                        <strong>Auto-Redact Sensitive Data</strong>
+                        <p class="text-muted small mb-0">Automatically redact passwords, tokens, API keys, credit cards, etc.</p>
+                    </label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Custom Redaction Fields</label>
+                    <input type="text" class="form-control" id="customRedactionFields" name="customRedactionFields" placeholder="e.g., ssn,creditCard,bankAccount">
+                    <small class="text-muted">Comma-separated list of additional field names to redact</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Retention -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Data Retention</h5>
+                <small class="text-muted">Control how long error data is stored</small>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Retention Period (days)</label>
+                    <input type="number" class="form-control" id="retentionPeriodDays" name="retentionPeriodDays" min="1" max="365" value="90">
+                    <small class="text-muted">Error logs older than this will be automatically deleted</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications (Future Enhancement) -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Notifications</h5>
+                <small class="text-muted">Get notified when critical errors occur</small>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="enableErrorNotifications" name="enableErrorNotifications">
+                    <label class="form-check-label" for="enableErrorNotifications">
+                        <strong>Enable Error Notifications</strong>
+                        <p class="text-muted small mb-0">Send notifications to admins when errors occur</p>
+                    </label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notify For Status Codes</label>
+                    <input type="text" class="form-control" id="notifyForStatusCodes" name="notifyForStatusCodes" placeholder="e.g., 500,502,503">
+                    <small class="text-muted">Only send notifications for these status codes</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" onclick="loadSettings()">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSettings();
+
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await saveSettings();
+        });
+    });
+
+    async function loadSettings() {
+        try {
+            const response = await axios.get('/api/ErrorTracking/GetSettings');
+            const settings = response.data;
+
+            // Populate form fields
+            document.getElementById('settings-id').value = settings.id;
+            document.getElementById('track400Errors').checked = settings.track400Errors;
+            document.getElementById('track401Errors').checked = settings.track401Errors;
+            document.getElementById('track403Errors').checked = settings.track403Errors;
+            document.getElementById('track404Errors').checked = settings.track404Errors;
+            document.getElementById('track500Errors').checked = settings.track500Errors;
+            document.getElementById('track502Errors').checked = settings.track502Errors;
+            document.getElementById('track503Errors').checked = settings.track503Errors;
+            document.getElementById('customStatusCodes').value = settings.customStatusCodes || '';
+
+            document.getElementById('enableFrontendTracking').checked = settings.enableFrontendTracking;
+            document.getElementById('frontendBatchIntervalSeconds').value = settings.frontendBatchIntervalSeconds;
+
+            document.getElementById('captureRequestBody').checked = settings.captureRequestBody;
+            document.getElementById('captureResponseBody').checked = settings.captureResponseBody;
+            document.getElementById('captureHeaders').checked = settings.captureHeaders;
+            document.getElementById('capturePerformanceMetrics').checked = settings.capturePerformanceMetrics;
+            document.getElementById('linkToAnalyticsSessions').checked = settings.linkToAnalyticsSessions;
+            document.getElementById('maxBodySizeKB').value = settings.maxBodySizeKB;
+
+            document.getElementById('autoRedactSensitiveData').checked = settings.autoRedactSensitiveData;
+            document.getElementById('customRedactionFields').value = settings.customRedactionFields || '';
+
+            document.getElementById('retentionPeriodDays').value = settings.retentionPeriodDays;
+
+            document.getElementById('enableErrorNotifications').checked = settings.enableErrorNotifications;
+            document.getElementById('notifyForStatusCodes').value = settings.notifyForStatusCodes || '';
+
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+
+            // Show detailed error information
+            let errorMessage = 'Failed to load settings.\n\n';
+
+            if (error.response) {
+                errorMessage += 'Status: ' + error.response.status + '\n';
+                errorMessage += 'Error: ' + JSON.stringify(error.response.data) + '\n\n';
+
+                if (error.response.status === 500) {
+                    errorMessage += 'This appears to be a server error. Check the browser console for details.';
+                }
+            } else if (error.request) {
+                errorMessage += 'No response received from server.\n';
+                errorMessage += 'Request: ' + error.request;
+            } else {
+                errorMessage += 'Error: ' + error.message;
+            }
+
+            alert(errorMessage);
+        }
+    }
+
+    async function saveSettings() {
+        try {
+            const settings = {
+                Id: parseInt(document.getElementById('settings-id').value) || 0,
+                Track400Errors: document.getElementById('track400Errors').checked,
+                Track401Errors: document.getElementById('track401Errors').checked,
+                Track403Errors: document.getElementById('track403Errors').checked,
+                Track404Errors: document.getElementById('track404Errors').checked,
+                Track500Errors: document.getElementById('track500Errors').checked,
+                Track502Errors: document.getElementById('track502Errors').checked,
+                Track503Errors: document.getElementById('track503Errors').checked,
+                CustomStatusCodes: document.getElementById('customStatusCodes').value || '',
+
+                EnableFrontendTracking: document.getElementById('enableFrontendTracking').checked,
+                FrontendBatchIntervalSeconds: parseInt(document.getElementById('frontendBatchIntervalSeconds').value) || 30,
+
+                CaptureRequestBody: document.getElementById('captureRequestBody').checked,
+                CaptureResponseBody: document.getElementById('captureResponseBody').checked,
+                CaptureHeaders: document.getElementById('captureHeaders').checked,
+                CapturePerformanceMetrics: document.getElementById('capturePerformanceMetrics').checked,
+                LinkToAnalyticsSessions: document.getElementById('linkToAnalyticsSessions').checked,
+                MaxBodySizeKB: parseInt(document.getElementById('maxBodySizeKB').value) || 50,
+
+                AutoRedactSensitiveData: document.getElementById('autoRedactSensitiveData').checked,
+                CustomRedactionFields: document.getElementById('customRedactionFields').value || '',
+
+                RetentionPeriodDays: parseInt(document.getElementById('retentionPeriodDays').value) || 90,
+
+                EnableErrorNotifications: document.getElementById('enableErrorNotifications').checked,
+                NotifyForStatusCodes: document.getElementById('notifyForStatusCodes').value || ''
+            };
+
+            await axios.post('/api/ErrorTracking/UpdateSettings', settings);
+
+            alert('Settings saved successfully!');
+
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+
+            // Show detailed error information
+            let errorMessage = 'Failed to save settings.\n\n';
+
+            if (error.response) {
+                errorMessage += 'Status: ' + error.response.status + '\n';
+                errorMessage += 'Error: ' + JSON.stringify(error.response.data) + '\n\n';
+
+                if (error.response.status === 404) {
+                    errorMessage += 'Settings not found in database. Try refreshing the page first.';
+                } else if (error.response.status === 500) {
+                    errorMessage += 'Server error occurred. Check the browser console for details.';
+                } else if (error.response.status === 400) {
+                    errorMessage += 'Invalid request data. Check the browser console for details.';
+                }
+            } else if (error.request) {
+                errorMessage += 'No response received from server.';
+            } else {
+                errorMessage += 'Error: ' + error.message;
+            }
+
+            alert(errorMessage);
+        }
+    }
+</script>

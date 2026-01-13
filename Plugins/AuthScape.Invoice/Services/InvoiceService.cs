@@ -50,15 +50,17 @@ namespace Services
         readonly IUserManagementService userManagementService;
         readonly IStripePayService stripePayService;
         readonly AppSettings appSettings;
-        readonly INotificationService notificationService;
+        // REMOVED: Legacy notification service with empty implementations
+        // readonly INotificationService notificationService;
 
-        public InvoiceService(DatabaseContext databaseContext, IUserManagementService userManagementService, IStripePayService stripePayService, INotificationService notificationService, IOptions<AppSettings> appSettings)
+        public InvoiceService(DatabaseContext databaseContext, IUserManagementService userManagementService, IStripePayService stripePayService, IOptions<AppSettings> appSettings)
         {
             this.databaseContext = databaseContext;
             this.userManagementService = userManagementService;
             this.stripePayService = stripePayService;
             this.appSettings = appSettings.Value;
-            this.notificationService = notificationService;
+            // REMOVED: Legacy notification service assignment
+            // this.notificationService = notificationService;
         }
 
         public async Task<List<InvoiceLineItemsName>> GetListItemNames()
@@ -447,14 +449,15 @@ namespace Services
             {
                 string paymentLink = appSettings.LoginRedirectUrl + "/portal/invoice/detail?invoiceId=" + invoice.Id + "&secret=" + invoice.Secret;
 
-                if (invoice.CompanyId != null && invoice.LocationId != null)
-                {
-                    await notificationService.SendInvoice(invoice.CompanyId.Value, invoice.LocationId.Value, new InvoiceEmail()
-                    {
-                        amountdue = invoice.BalanceDue.ToString("C"),
-                        paylink = paymentLink
-                    });
-                }
+                // REMOVED: Legacy notification service call (empty implementation)
+                // if (invoice.CompanyId != null && invoice.LocationId != null)
+                // {
+                //     await notificationService.SendInvoice(invoice.CompanyId.Value, invoice.LocationId.Value, new InvoiceEmail()
+                //     {
+                //         amountdue = invoice.BalanceDue.ToString("C"),
+                //         paylink = paymentLink
+                //     });
+                // }
             }
         }
 

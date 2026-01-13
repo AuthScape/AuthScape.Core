@@ -28,5 +28,20 @@
         "DebugTarget": "IIS Express"
       }
     ]
+  },
+  {
+    "Name": "IIS Express",
+    "Projects": [
+      {
+        "Path": "API\\API.csproj",
+        "Action": "Start",
+        "DebugTarget": "IIS Express"
+      },
+      {
+        "Path": "IDP\\IDP.csproj",
+        "Action": "Start",
+        "DebugTarget": "IIS Express"
+      }
+    ]
   }
 ]
