@@ -2,6 +2,7 @@ using IDP.Services.IdentityServer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -36,11 +37,11 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
         {
             try
             {
-                var newValue = (currentValue == "1" || currentValue.Equals("true", System.StringComparison.OrdinalIgnoreCase)) ? "0" : "1";
+                var newValue = (currentValue == "1" || currentValue.Equals("true", StringComparison.OrdinalIgnoreCase)) ? "0" : "1";
                 await settingsService.UpdateSettingAsync(name, newValue);
                 SuccessMessage = $"Setting '{name}' updated successfully";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error updating setting: {ex.Message}";
             }
@@ -55,7 +56,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 await settingsService.UpdateSettingAsync(name, value);
                 SuccessMessage = $"Setting '{name}' updated successfully";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error updating setting: {ex.Message}";
             }
@@ -70,7 +71,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 await settingsService.CreateSettingAsync(name, value, settingTypeId);
                 SuccessMessage = $"Setting '{name}' created successfully";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error creating setting: {ex.Message}";
             }
@@ -85,7 +86,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 await settingsService.DeleteSettingAsync(name);
                 SuccessMessage = $"Setting '{name}' deleted successfully";
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error deleting setting: {ex.Message}";
             }

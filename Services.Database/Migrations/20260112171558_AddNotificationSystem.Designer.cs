@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Services.Context;
 
@@ -11,9 +12,11 @@ using Services.Context;
 namespace Services.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260112171558_AddNotificationSystem")]
+    partial class AddNotificationSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -57,7 +60,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("AnalyticsConversions", (string)null);
+                    b.ToTable("AnalyticsConversions");
                 });
 
             modelBuilder.Entity("AuthScape.Analytics.Models.AnalyticsEvent", b =>
@@ -118,7 +121,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("AnalyticsEvents", (string)null);
+                    b.ToTable("AnalyticsEvents");
                 });
 
             modelBuilder.Entity("AuthScape.Analytics.Models.AnalyticsMail", b =>
@@ -147,7 +150,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AnalyticsMails", (string)null);
+                    b.ToTable("AnalyticsMails");
                 });
 
             modelBuilder.Entity("AuthScape.Analytics.Models.AnalyticsMailTracking", b =>
@@ -204,7 +207,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("AnalyticsMailId");
 
-                    b.ToTable("AnalyticsMailTrackings", (string)null);
+                    b.ToTable("AnalyticsMailTrackings");
                 });
 
             modelBuilder.Entity("AuthScape.Analytics.Models.AnalyticsPageView", b =>
@@ -252,7 +255,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("AnalyticsPageViews", (string)null);
+                    b.ToTable("AnalyticsPageViews");
                 });
 
             modelBuilder.Entity("AuthScape.Analytics.Models.AnalyticsSession", b =>
@@ -300,7 +303,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AnalyticsSessions", (string)null);
+                    b.ToTable("AnalyticsSessions");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
@@ -357,7 +360,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("PageTypeId");
 
-                    b.ToTable("Pages", (string)null);
+                    b.ToTable("Pages");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageBlockList", b =>
@@ -391,7 +394,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PageBlockLists", (string)null);
+                    b.ToTable("PageBlockLists");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageImageAsset", b =>
@@ -427,7 +430,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PageImageAssets", (string)null);
+                    b.ToTable("PageImageAssets");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageRoot", b =>
@@ -463,7 +466,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PageRoots", (string)null);
+                    b.ToTable("PageRoots");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageType", b =>
@@ -489,7 +492,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PageTypes", (string)null);
+                    b.ToTable("PageTypes");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.Attribute", b =>
@@ -519,7 +522,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("DocumentComponentId");
 
-                    b.ToTable("Attributes", (string)null);
+                    b.ToTable("Attributes");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.DocumentComponent", b =>
@@ -570,7 +573,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("DocumentTypeId");
 
-                    b.ToTable("DocumentComponents", (string)null);
+                    b.ToTable("DocumentComponents");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.DocumentMapping", b =>
@@ -627,7 +630,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("DocumentComponentId");
 
-                    b.ToTable("DocumentMappings", (string)null);
+                    b.ToTable("DocumentMappings");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.DocumentMatchMemory", b =>
@@ -653,7 +656,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DocumentMatchMemories", (string)null);
+                    b.ToTable("DocumentMatchMemories");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.DocumentSheet", b =>
@@ -672,7 +675,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Sheets", (string)null);
+                    b.ToTable("Sheets");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.DocumentType", b =>
@@ -702,7 +705,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DocumentTypes", (string)null);
+                    b.ToTable("DocumentTypes");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Mapping.Models.SheetAttribute", b =>
@@ -721,7 +724,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("AttributeId");
 
-                    b.ToTable("SheetAttributes", (string)null);
+                    b.ToTable("SheetAttributes");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Models.DocumentFolder", b =>
@@ -779,7 +782,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("SegmentId");
 
-                    b.ToTable("DocumentFolders", (string)null);
+                    b.ToTable("DocumentFolders");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Models.DocumentItem", b =>
@@ -835,7 +838,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("DocumentFolderId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Models.DocumentSegment", b =>
@@ -850,7 +853,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DocumentSegments", (string)null);
+                    b.ToTable("DocumentSegments");
                 });
 
             modelBuilder.Entity("AuthScape.Document.Models.SharedDocument", b =>
@@ -866,7 +869,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("UserId", "DocumentId");
 
-                    b.ToTable("SharedDocuments", (string)null);
+                    b.ToTable("SharedDocuments");
                 });
 
             modelBuilder.Entity("AuthScape.Marketplace.Models.AnalyticsMarketplaceImpressionsClicks", b =>
@@ -901,7 +904,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AnalyticsMarketplaceImpressionsClicks", (string)null);
+                    b.ToTable("AnalyticsMarketplaceImpressionsClicks");
                 });
 
             modelBuilder.Entity("AuthScape.Marketplace.Models.ProductCardCategory", b =>
@@ -941,7 +944,7 @@ namespace Services.Database.Migrations
                     b.HasIndex("CompanyId", "PlatformId", "Name")
                         .HasDatabaseName("IX_ProductCardCategory_Company_Platform_Name");
 
-                    b.ToTable("ProductCardCategories", (string)null);
+                    b.ToTable("ProductCardCategories");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Authentication.ThirdPartyAuthentication", b =>
@@ -987,373 +990,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("ThirdPartyAuthenticationType");
 
-                    b.ToTable("ThirdPartyAuthentications", (string)null);
-                });
-
-            modelBuilder.Entity("AuthScape.Models.ErrorTracking.ErrorGroup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("newsequentialid()");
-
-                    b.Property<string>("Endpoint")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Environment")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ErrorMessage")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ErrorSignature")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("ErrorType")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTimeOffset>("FirstSeen")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsResolved")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset>("LastSeen")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("OccurrenceCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ResolutionNotes")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<long?>("ResolvedByUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SampleStackTrace")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Source")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StatusCode")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Environment");
-
-                    b.HasIndex("ErrorSignature")
-                        .IsUnique();
-
-                    b.HasIndex("FirstSeen");
-
-                    b.HasIndex("IsResolved");
-
-                    b.HasIndex("LastSeen");
-
-                    b.HasIndex("Source");
-
-                    b.HasIndex("StatusCode");
-
-                    b.HasIndex("IsResolved", "LastSeen");
-
-                    b.ToTable("ErrorGroups", (string)null);
-                });
-
-            modelBuilder.Entity("AuthScape.Models.ErrorTracking.ErrorLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("newsequentialid()");
-
-                    b.Property<string>("AdditionalMetadata")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("AnalyticsSessionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ApplicationVersion")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Browser")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("BrowserVersion")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ComponentName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DatabaseProvider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("DeviceType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Endpoint")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("Environment")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("ErrorGroupId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ErrorMessage")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ErrorType")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("HttpMethod")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("IPAddress")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsResolved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MachineName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<long?>("MemoryUsageMB")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("OperatingSystem")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("QueryString")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("RequestBody")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("RequestBodyTruncated")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("RequestHeaders")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<string>("ResolutionNotes")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<long?>("ResolvedByUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ResponseBody")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("ResponseBodyTruncated")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ResponseHeaders")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<long?>("ResponseTimeMs")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Source")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StackTrace")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StatusCode")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ThreadCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserAgent")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AnalyticsSessionId");
-
-                    b.HasIndex("Created");
-
-                    b.HasIndex("Environment");
-
-                    b.HasIndex("ErrorGroupId");
-
-                    b.HasIndex("IsResolved");
-
-                    b.HasIndex("Source");
-
-                    b.HasIndex("StatusCode");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("IsResolved", "Created");
-
-                    b.HasIndex("Source", "StatusCode", "Created");
-
-                    b.ToTable("ErrorLogs", (string)null);
-                });
-
-            modelBuilder.Entity("AuthScape.Models.ErrorTracking.ErrorTrackingSettings", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AutoRedactSensitiveData")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CaptureHeaders")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CapturePerformanceMetrics")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CaptureRequestBody")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("CaptureResponseBody")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CustomRedactionFields")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("CustomStatusCodes")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("EnableErrorNotifications")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("EnableFrontendTracking")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("FrontendBatchIntervalSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("LinkToAnalyticsSessions")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxBodySizeKB")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("Modified")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NotifyForStatusCodes")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("RetentionPeriodDays")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Track400Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track401Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track403Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track404Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track500Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track502Errors")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Track503Errors")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ErrorTrackingSettings", (string)null);
+                    b.ToTable("ThirdPartyAuthentications");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Invite.InviteSettings", b =>
@@ -1396,7 +1033,7 @@ namespace Services.Database.Migrations
                         .IsUnique()
                         .HasFilter("[CompanyId] IS NOT NULL");
 
-                    b.ToTable("InviteSettings", (string)null);
+                    b.ToTable("InviteSettings");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Invite.UserInvite", b =>
@@ -1453,7 +1090,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("UserInvites", (string)null);
+                    b.ToTable("UserInvites");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Logging.Logging", b =>
@@ -1529,7 +1166,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Loggings", (string)null);
+                    b.ToTable("Loggings");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Marketing.InterestSignup", b =>
@@ -1567,7 +1204,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InterestSignups", (string)null);
+                    b.ToTable("InterestSignups");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Notifications.Notification", b =>
@@ -1577,7 +1214,7 @@ namespace Services.Database.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("newsequentialid()");
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("Category")
                         .HasColumnType("int");
 
                     b.Property<long?>("CompanyId")
@@ -1632,8 +1269,6 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("Created");
@@ -1644,42 +1279,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("Notifications", (string)null);
-                });
-
-            modelBuilder.Entity("AuthScape.Models.Notifications.NotificationCategoryConfig", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset>("Modified")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("NotificationCategoryConfigs", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Notifications.NotificationPreference", b =>
@@ -1689,7 +1289,7 @@ namespace Services.Database.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("newsequentialid()");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int>("Category")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("Created")
@@ -1712,12 +1312,10 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId", "CategoryId")
+                    b.HasIndex("UserId", "Category")
                         .IsUnique();
 
-                    b.ToTable("NotificationPreferences", (string)null);
+                    b.ToTable("NotificationPreferences");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Coupons.Coupon", b =>
@@ -1741,7 +1339,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Coupons", (string)null);
+                    b.ToTable("Coupons");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.Plan", b =>
@@ -1784,7 +1382,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Plans", (string)null);
+                    b.ToTable("Plans");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlan", b =>
@@ -1883,7 +1481,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("StripeProductId");
 
-                    b.ToTable("SubscriptionPlans", (string)null);
+                    b.ToTable("SubscriptionPlans");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlanRole", b =>
@@ -1901,7 +1499,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("SubscriptionPlanRoles", (string)null);
+                    b.ToTable("SubscriptionPlanRoles");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.PromoCode", b =>
@@ -2029,7 +1627,7 @@ namespace Services.Database.Migrations
                     b.HasIndex("StripePromotionCodeId")
                         .HasFilter("[StripePromotionCodeId] IS NOT NULL");
 
-                    b.ToTable("PromoCodes", (string)null);
+                    b.ToTable("PromoCodes");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.StoreCredit", b =>
@@ -2070,7 +1668,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StoreCredits", (string)null);
+                    b.ToTable("StoreCredits");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Stripe.StripeInvoice", b =>
@@ -2200,7 +1798,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("StripeInvoices", (string)null);
+                    b.ToTable("StripeInvoices");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Stripe.StripeInvoiceLineItem", b =>
@@ -2257,7 +1855,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("StripeInvoiceId");
 
-                    b.ToTable("StripeInvoiceLineItems", (string)null);
+                    b.ToTable("StripeInvoiceLineItems");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Stripe.Subscription", b =>
@@ -2353,7 +1951,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("Subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Stripe.SubscriptionItem", b =>
@@ -2406,7 +2004,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("SubscriptionItems", (string)null);
+                    b.ToTable("SubscriptionItems");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.StripeConnectAccount", b =>
@@ -2455,7 +2053,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("StripeConnectAccountId");
 
-                    b.ToTable("StripeConnectAccounts", (string)null);
+                    b.ToTable("StripeConnectAccounts");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Wallet", b =>
@@ -2485,7 +2083,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Wallets", (string)null);
+                    b.ToTable("Wallets");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletPaymentMethod", b =>
@@ -2543,7 +2141,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("WalletPaymentMethods", (string)null);
+                    b.ToTable("WalletPaymentMethods");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.WalletTransaction", b =>
@@ -2581,7 +2179,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("WalletTransactions", (string)null);
+                    b.ToTable("WalletTransactions");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Settings.Settings", b =>
@@ -2604,7 +2202,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Settings", (string)null);
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Stylesheets.Stylesheet", b =>
@@ -2625,7 +2223,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Stylesheets", (string)null);
+                    b.ToTable("Stylesheets");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Users.AppUser", b =>
@@ -2767,7 +2365,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Companies", (string)null);
+                    b.ToTable("Companies");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Users.Location", b =>
@@ -2810,7 +2408,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Users.Role", b =>
@@ -2866,7 +2464,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("FlowProjectId");
 
-                    b.ToTable("FlowEdges", (string)null);
+                    b.ToTable("FlowEdges");
                 });
 
             modelBuilder.Entity("AuthScape.NodeService.Models.FlowNode", b =>
@@ -2899,7 +2497,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("FlowProjectId");
 
-                    b.ToTable("FlowNodes", (string)null);
+                    b.ToTable("FlowNodes");
                 });
 
             modelBuilder.Entity("AuthScape.NodeService.Models.FlowProject", b =>
@@ -2923,7 +2521,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FlowProjects", (string)null);
+                    b.ToTable("FlowProjects");
                 });
 
             modelBuilder.Entity("AuthScape.NodeService.Models.FlowViewport", b =>
@@ -2949,7 +2547,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("FlowProjectId");
 
-                    b.ToTable("FlowViewports", (string)null);
+                    b.ToTable("FlowViewports");
                 });
 
             modelBuilder.Entity("AuthScape.Plugins.Invoices.Models.Invoice", b =>
@@ -3017,7 +2615,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("Invoices", (string)null);
+                    b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("AuthScape.Plugins.Invoices.Models.InvoiceLineItem", b =>
@@ -3060,7 +2658,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("InvoiceLineItemNameId");
 
-                    b.ToTable("InvoiceLineItems", (string)null);
+                    b.ToTable("InvoiceLineItems");
                 });
 
             modelBuilder.Entity("AuthScape.Plugins.Invoices.Models.InvoiceLineItemsName", b =>
@@ -3077,7 +2675,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InvoiceLineItemNames", (string)null);
+                    b.ToTable("InvoiceLineItemNames");
                 });
 
             modelBuilder.Entity("AuthScape.Plugins.Invoices.Models.InvoicePayment", b =>
@@ -3101,7 +2699,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("InvoicePayments", (string)null);
+                    b.ToTable("InvoicePayments");
                 });
 
             modelBuilder.Entity("AuthScape.PrivateLabel.Models.DnsRecord", b =>
@@ -3190,7 +2788,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("DnsRecords", (string)null);
+                    b.ToTable("DnsRecords");
                 });
 
             modelBuilder.Entity("AuthScape.PrivateLabel.Models.PrivateLabelField", b =>
@@ -3217,7 +2815,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PrivateLabelFields", (string)null);
+                    b.ToTable("PrivateLabelFields");
                 });
 
             modelBuilder.Entity("AuthScape.PrivateLabel.Models.PrivateLabelSelectedFields", b =>
@@ -3236,7 +2834,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("PrivateLabelFieldId");
 
-                    b.ToTable("PrivateLabelSelectedFields", (string)null);
+                    b.ToTable("PrivateLabelSelectedFields");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.Ticket", b =>
@@ -3323,7 +2921,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("TicketTypeId");
 
-                    b.ToTable("Tickets", (string)null);
+                    b.ToTable("Tickets");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketAttachment", b =>
@@ -3360,7 +2958,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketAttachments", (string)null);
+                    b.ToTable("TicketAttachments");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketMessage", b =>
@@ -3395,7 +2993,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketMessages", (string)null);
+                    b.ToTable("TicketMessages");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketParticipant", b =>
@@ -3408,7 +3006,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("TicketId", "UserId");
 
-                    b.ToTable("TicketParticipants", (string)null);
+                    b.ToTable("TicketParticipants");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketStatus", b =>
@@ -3431,7 +3029,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TicketStatuses", (string)null);
+                    b.ToTable("TicketStatuses");
                 });
 
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketType", b =>
@@ -3448,7 +3046,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TicketTypes", (string)null);
+                    b.ToTable("TicketTypes");
                 });
 
             modelBuilder.Entity("AuthScape.UserManageSystem.Models.CompanyDomain", b =>
@@ -3467,7 +3065,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CompanyDomains", (string)null);
+                    b.ToTable("CompanyDomains");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CompanyCustomField", b =>
@@ -3486,7 +3084,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("CustomFieldId");
 
-                    b.ToTable("CompanyCustomFields", (string)null);
+                    b.ToTable("CompanyCustomFields");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CustomField", b =>
@@ -3528,7 +3126,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("TabId");
 
-                    b.ToTable("CustomFields", (string)null);
+                    b.ToTable("CustomFields");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CustomFieldTab", b =>
@@ -3550,7 +3148,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CustomFieldsTab", (string)null);
+                    b.ToTable("CustomFieldsTab");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.LocationCustomField", b =>
@@ -3569,7 +3167,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("CustomFieldId");
 
-                    b.ToTable("LocationCustomFields", (string)null);
+                    b.ToTable("LocationCustomFields");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.UserCustomField", b =>
@@ -3588,7 +3186,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("CustomFieldId");
 
-                    b.ToTable("UserCustomFields", (string)null);
+                    b.ToTable("UserCustomFields");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
@@ -3736,7 +3334,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Fido2Credentials", (string)null);
+                    b.ToTable("Fido2Credentials");
                 });
 
             modelBuilder.Entity("Models.Kanban.KanbanAssignedTo", b =>
@@ -3751,7 +3349,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("KanbanCardId");
 
-                    b.ToTable("KanbanAssignedTos", (string)null);
+                    b.ToTable("KanbanAssignedTos");
                 });
 
             modelBuilder.Entity("Models.Kanban.KanbanCard", b =>
@@ -3785,7 +3383,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("KanbanColumnId");
 
-                    b.ToTable("KanbanCards", (string)null);
+                    b.ToTable("KanbanCards");
                 });
 
             modelBuilder.Entity("Models.Kanban.KanbanCardCollaborator", b =>
@@ -3809,7 +3407,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("KanbanCardCollaborators", (string)null);
+                    b.ToTable("KanbanCardCollaborators");
                 });
 
             modelBuilder.Entity("Models.Kanban.KanbanColumn", b =>
@@ -3838,7 +3436,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("KanbanColumns", (string)null);
+                    b.ToTable("KanbanColumns");
                 });
 
             modelBuilder.Entity("Models.SomeSheet", b =>
@@ -3893,7 +3491,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SomeSheet", (string)null);
+                    b.ToTable("SomeSheet");
                 });
 
             modelBuilder.Entity("Models.Users.Permission", b =>
@@ -3909,7 +3507,7 @@ namespace Services.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("Models.Users.UserLocations", b =>
@@ -3924,7 +3522,7 @@ namespace Services.Database.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("UserLocations", (string)null);
+                    b.ToTable("UserLocations");
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>
@@ -4297,11 +3895,6 @@ namespace Services.Database.Migrations
 
             modelBuilder.Entity("AuthScape.Models.Notifications.Notification", b =>
                 {
-                    b.HasOne("AuthScape.Models.Notifications.NotificationCategoryConfig", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("AuthScape.Models.Users.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
@@ -4317,8 +3910,6 @@ namespace Services.Database.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Category");
-
                     b.Navigation("Company");
 
                     b.Navigation("Location");
@@ -4328,19 +3919,11 @@ namespace Services.Database.Migrations
 
             modelBuilder.Entity("AuthScape.Models.Notifications.NotificationPreference", b =>
                 {
-                    b.HasOne("AuthScape.Models.Notifications.NotificationCategoryConfig", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AuthScape.Models.Users.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });

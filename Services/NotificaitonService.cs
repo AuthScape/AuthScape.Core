@@ -3,14 +3,16 @@ using Models.Email;
 
 namespace Services
 {
-    public interface INotificationService
+    // DEPRECATED: Use AuthScape.API.Services.INotificationService instead for the full notification system
+    // This interface is kept for backward compatibility with ticket/invoice notifications
+    public interface ILegacyNotificationService
     {
         Task NotifyTicketCreated(Ticket ticket);
         Task NotifyTicketMessageCreated(long ticketId, string fromEmail, string message, string firstName, string lastName);
         Task SendInvoice(long companyId, long LocationId, InvoiceEmail invoiceEmail);
     }
 
-    public class NotificationService : INotificationService
+    public class LegacyNotificationService : ILegacyNotificationService
     {
         public async Task NotifyTicketCreated(Ticket ticket)
         {

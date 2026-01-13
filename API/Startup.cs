@@ -1,12 +1,15 @@
 using Authscape.IdentityServer.Services;
 using Authscape.Reporting.Services;
 using AuthScape.Analytics.Services;
+using AuthScape.API.Services;
 using AuthScape.AzureCloudService;
 using AuthScape.ContentManagement.Models.Hubs;
 using AuthScape.ContentManagement.Services;
 using AuthScape.Controllers;
+using AuthScape.Core.Hubs;
 using AuthScape.Document.Mapping.Services;
 using AuthScape.DocumentProcessing.Services;
+using AuthScape.ErrorTracking.Services;
 using AuthScape.Flows.Services;
 using AuthScape.Kanban.Services;
 using AuthScape.Logging.Services;
@@ -69,7 +72,7 @@ namespace API
                  {
                      // Note: the validation handler uses OpenID Connect discovery
                      // to retrieve the issuer signing keys used to validate tokens.
-                     options.SetIssuer("https://localhost:44303/");
+                     options.SetIssuer("https://localhost:5001/");
                      options.AddAudiences("resource_server_1");
 
                      // Configure the validation handler to use introspection and register the client
@@ -102,7 +105,7 @@ namespace API
                 services.AddScoped<IAuthsomeService, AuthsomeService>();
                 services.AddScoped<IIdentityServerService, IdentityServerService>();
                 services.AddScoped<ILogService, LogService>();
-                services.AddScoped<INotificationService, NotificationService>();
+                services.AddScoped<AuthScape.API.Services.INotificationService, AuthScape.API.Services.NotificationService>();
 
                 services.AddScoped<IContentManagementService, ContentManagementService>();
 
@@ -146,6 +149,9 @@ namespace API
 
                 services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+                services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
+                services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
+
                 services.AddScoped<IKanbanService, KanbanService>();
 
 
@@ -174,7 +180,6 @@ namespace API
                     services.EnableDetailedErrors = true;
                 });
 
-
                 services.AddScoped<IFormRecognizerService, FormRecognizerService>(provider =>
                     ActivatorUtilities.CreateInstance<FormRecognizerService>(provider, "", "https://namehere.cognitiveservices.azure.com/")
                 );
@@ -201,6 +206,7 @@ namespace API
             {
                 endpoints.MapHub<SpreadsheetHub>("/chat");
                 endpoints.MapHub<PageBuilderHub>("/pagebuilder");
+                endpoints.MapHub<NotificationHub>("/notifications");
             });
 
             // remove if not using wwwroot folder...

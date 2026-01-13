@@ -4,7 +4,10 @@ using IDP.Services.IdentityServer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace IDP.Areas.Admin.Pages.IdentityServer
@@ -78,7 +81,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             {
                 try
                 {
-                    var settings = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, string>>(Provider.AdditionalSettings);
+                    var settings = JsonSerializer.Deserialize<Dictionary<string, string>>(Provider.AdditionalSettings);
                     if (settings != null)
                     {
                         settings.TryGetValue("TenantId", out var tenantId);
@@ -145,7 +148,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                 SuccessMessage = $"{Provider.DisplayName} configured successfully";
                 return RedirectToPage("/IdentityServer/SSOProviders", new { area = "Admin" });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 var errorDetails = ex.Message;
                 if (ex.InnerException != null)

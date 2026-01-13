@@ -1,4 +1,5 @@
 using AuthScape.Configuration.Extensions;
+using AuthScape.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -15,9 +16,11 @@ namespace API
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
-                    // Add AuthScape configuration with multi-provider support
-                    // Priority: Shared JSON -> Project JSON -> User Secrets -> Env Variables -> Key Vault/AWS
-                    config.AddAuthScapeConfiguration(context.HostingEnvironment);
+                    // Add AuthScape configuration with explicit source priority
+                    // Use ConfigurationSource.ProjectOnly to only load from appsettings.json
+                    config.AddAuthScapeConfiguration(
+                        context.HostingEnvironment,
+                        ConfigurationSource.ProjectOnly);
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

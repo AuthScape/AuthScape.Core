@@ -4,9 +4,11 @@ using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Models;
 using AuthScape.Marketplace.Models;
 using AuthScape.Models.Authentication;
+using AuthScape.Models.ErrorTracking;
 using AuthScape.Models.Invite;
 using AuthScape.Models.Logging;
 using AuthScape.Models.Marketing;
+using AuthScape.Models.Notifications;
 using AuthScape.Models.PaymentGateway;
 using AuthScape.Models.PaymentGateway.Coupons;
 using AuthScape.Models.PaymentGateway.Plans;
@@ -285,6 +287,22 @@ namespace Services.Context
         #region Interest Signups (CommandDeck Marketing)
 
         public DbSet<InterestSignup> InterestSignups { get; set; }
+
+        #endregion
+
+        #region Notifications
+
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<NotificationPreference> NotificationPreferences { get; set; }
+        public DbSet<NotificationCategoryConfig> NotificationCategoryConfigs { get; set; }
+
+        #endregion
+
+        #region Error Tracking
+
+        public DbSet<ErrorLog> ErrorLogs { get; set; }
+        public DbSet<ErrorGroup> ErrorGroups { get; set; }
+        public DbSet<ErrorTrackingSettings> ErrorTrackingSettings { get; set; }
 
         #endregion
 
@@ -954,6 +972,109 @@ namespace Services.Context
                   .WithMany(u => u.GiftedCredit)
                   .HasForeignKey(rf => rf.GiftFromId)
                   .OnDelete(DeleteBehavior.ClientSetNull);
+            });
+
+            // Notification configuration
+            builder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Company)
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Location)
+                    .WithMany()
+                    .HasForeignKey(e => e.LocationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Category)
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.CompanyId);
+                entity.HasIndex(e => e.LocationId);
+                entity.HasIndex(e => e.CategoryId);
+                entity.HasIndex(e => e.Created);
+                entity.HasIndex(e => new { e.UserId, e.IsRead });
+            });
+
+            // NotificationPreference configuration
+            builder.Entity<NotificationPreference>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Category)
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.UserId, e.CategoryId }).IsUnique();
+            });
+
+            builder.Entity<NotificationCategoryConfig>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Error Tracking configuration
+            builder.Entity<ErrorLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
+
+                // Indexes for efficient querying
+                entity.HasIndex(e => e.ErrorGroupId);
+                entity.HasIndex(e => e.StatusCode);
+                entity.HasIndex(e => e.Source);
+                entity.HasIndex(e => e.Environment);
+                entity.HasIndex(e => e.Created);
+                entity.HasIndex(e => e.IsResolved);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.AnalyticsSessionId);
+                entity.HasIndex(e => new { e.Source, e.StatusCode, e.Created });
+                entity.HasIndex(e => new { e.IsResolved, e.Created });
+            });
+
+            builder.Entity<ErrorGroup>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
+
+                // Unique signature for error grouping
+                entity.HasIndex(e => e.ErrorSignature).IsUnique();
+
+                // Indexes for efficient querying
+                entity.HasIndex(e => e.Source);
+                entity.HasIndex(e => e.Environment);
+                entity.HasIndex(e => e.StatusCode);
+                entity.HasIndex(e => e.IsResolved);
+                entity.HasIndex(e => e.FirstSeen);
+                entity.HasIndex(e => e.LastSeen);
+                entity.HasIndex(e => new { e.IsResolved, e.LastSeen });
+            });
+
+            builder.Entity<ErrorTrackingSettings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
             });
 
             // keep at the bottom
