@@ -161,6 +161,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Sitemap", "Plugin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.Configuration", "AuthScape.Configuration\AuthScape.Configuration.csproj", "{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ErrorTracking", "ErrorTracking", "{A7646182-ED8B-4D63-A89F-8516A71547DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthScape.ErrorTracking", "Plugins\AuthScape.ErrorTracking\AuthScape.ErrorTracking.csproj", "{A4F1F9A7-B659-6C26-0DF9-86796A6C837D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -379,6 +383,10 @@ Global
 		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07EDDBE0-3CDA-6347-60E3-0CA4C4F94F59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4F1F9A7-B659-6C26-0DF9-86796A6C837D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4F1F9A7-B659-6C26-0DF9-86796A6C837D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4F1F9A7-B659-6C26-0DF9-86796A6C837D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4F1F9A7-B659-6C26-0DF9-86796A6C837D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -451,6 +459,8 @@ Global
 		{4E2F2971-B2A1-4488-8CAA-40EB0FB5DD5A} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{5A24654C-5475-420A-8919-1903BFA778D2} = {307CF662-F266-40BE-A171-FEB48FCE66DF}
 		{A353E9BC-CDDB-4B77-8A03-5C449FC07839} = {6B740F85-C459-48CF-84AF-1C9EF2A36B0C}
+		{A7646182-ED8B-4D63-A89F-8516A71547DA} = {43A9892B-E649-4A50-BB34-F8673EAF5973}
+		{A4F1F9A7-B659-6C26-0DF9-86796A6C837D} = {A7646182-ED8B-4D63-A89F-8516A71547DA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {11328C71-22BA-46C6-9F11-1C391681FE61}

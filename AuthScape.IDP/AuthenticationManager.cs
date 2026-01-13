@@ -188,12 +188,17 @@ namespace AuthScape.IDP
 
             services.AddRazorPages();
 
+            // Add SignalR for real-time error tracking notifications
+            services.AddSignalR();
 
             //ThirdPartyAuthService.AddThirdPartyAutentication(services);
         }
 
         public void RegisterConfigure(IApplicationBuilder app)
         {
+            // ErrorTrackingMiddleware MUST be first to catch all exceptions before other handlers
+            app.UseMiddleware(typeof(ErrorTrackingMiddleware));
+
             app.UseCors("default");
 
             app.UseSession();
@@ -222,13 +227,12 @@ namespace AuthScape.IDP
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseMiddleware(typeof(ErrorTrackingMiddleware));
-
             app.UseEndpoints(options =>
             {
                 options.MapControllers();
                 options.MapDefaultControllerRoute();
                 options.MapRazorPages();
+                options.MapHub<AuthScape.ErrorTracking.Hubs.ErrorTrackingHub>("/errortracking");
             });
         }
     }

@@ -9,6 +9,7 @@ using AuthScape.Controllers;
 using AuthScape.Core.Hubs;
 using AuthScape.Document.Mapping.Services;
 using AuthScape.DocumentProcessing.Services;
+using AuthScape.ErrorTracking.Hubs;
 using AuthScape.ErrorTracking.Services;
 using AuthScape.Flows.Services;
 using AuthScape.Kanban.Services;
@@ -207,6 +208,7 @@ namespace API
                 endpoints.MapHub<SpreadsheetHub>("/chat");
                 endpoints.MapHub<PageBuilderHub>("/pagebuilder");
                 endpoints.MapHub<NotificationHub>("/notifications");
+                endpoints.MapHub<ErrorTrackingHub>("/errortracking");
             });
 
             // remove if not using wwwroot folder...

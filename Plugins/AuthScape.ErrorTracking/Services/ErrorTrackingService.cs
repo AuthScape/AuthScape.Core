@@ -2,14 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AuthScape.ErrorTracking.Hubs;
 using AuthScape.Models;
 using AuthScape.Models.ErrorTracking;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Services.Context;
 using UAParser;
@@ -25,15 +29,24 @@ public class ErrorTrackingService : IErrorTrackingService
     private readonly DatabaseContext _context;
     private readonly IErrorGroupingService _groupingService;
     private readonly ILogger<ErrorTrackingService> _logger;
+    private readonly IHubContext<ErrorTrackingHub>? _hubContext;
+    private readonly IHttpClientFactory? _httpClientFactory;
+    private readonly IConfiguration? _configuration;
 
     public ErrorTrackingService(
         DatabaseContext context,
         IErrorGroupingService groupingService,
-        ILogger<ErrorTrackingService> logger)
+        ILogger<ErrorTrackingService> logger,
+        IHubContext<ErrorTrackingHub>? hubContext = null,
+        IHttpClientFactory? httpClientFactory = null,
+        IConfiguration? configuration = null)
     {
         _context = context;
         _groupingService = groupingService;
         _logger = logger;
+        _hubContext = hubContext;
+        _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -48,13 +61,22 @@ public class ErrorTrackingService : IErrorTrackingService
     {
         try
         {
+            _logger.LogInformation("LogError called for {ExceptionType}", exception.GetType().Name);
+
             // Get settings to determine if we should track this error
             var settings = await GetOrCreateSettings();
+            _logger.LogInformation("Settings retrieved. Track500Errors={Track500}", settings.Track500Errors);
 
             var statusCode = httpContext.Response.StatusCode;
+            _logger.LogInformation("Status code: {StatusCode}", statusCode);
 
             if (!ShouldTrackStatusCode(statusCode, settings))
+            {
+                _logger.LogWarning("Status code {StatusCode} is not configured to be tracked", statusCode);
                 return Guid.Empty;
+            }
+
+            _logger.LogInformation("Status code {StatusCode} will be tracked", statusCode);
 
             // Parse user agent
             var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
@@ -141,7 +163,8 @@ public class ErrorTrackingService : IErrorTrackingService
                     LastSeen = DateTimeOffset.UtcNow,
                     IsResolved = false,
                     SampleStackTrace = stackTrace,
-                    Environment = GetEnvironmentFromConfig()
+                    Environment = GetEnvironmentFromConfig(),
+                    ResolutionNotes = string.Empty // Required - cannot be NULL
                 };
 
                 _context.ErrorGroups.Add(errorGroup);
@@ -152,50 +175,67 @@ public class ErrorTrackingService : IErrorTrackingService
                 errorGroup.LastSeen = DateTimeOffset.UtcNow;
             }
 
-            // Create error log entry
+            // Create error log entry - all string fields must have values (NOT NULL constraints)
             var errorLog = new ErrorLog
             {
                 Id = Guid.NewGuid(),
                 ErrorGroupId = errorGroup.Id,
-                ErrorMessage = exception.Message,
-                ErrorType = errorType,
-                StackTrace = stackTrace,
+                ErrorMessage = exception.Message ?? string.Empty,
+                ErrorType = errorType ?? string.Empty,
+                StackTrace = stackTrace ?? string.Empty,
                 StatusCode = statusCode,
-                Endpoint = endpoint,
-                HttpMethod = httpContext.Request.Method,
-                RequestBody = requestBody,
+                Endpoint = endpoint ?? string.Empty,
+                HttpMethod = httpContext.Request.Method ?? string.Empty,
+                RequestBody = requestBody ?? string.Empty,
                 RequestBodyTruncated = requestBodyTruncated,
-                QueryString = httpContext.Request.QueryString.ToString(),
-                RequestHeaders = settings.CaptureHeaders ? SerializeHeaders(httpContext.Request.Headers) : null,
+                ResponseBody = string.Empty,
+                ResponseBodyTruncated = false,
+                QueryString = httpContext.Request.QueryString.ToString() ?? string.Empty,
+                RequestHeaders = settings.CaptureHeaders ? (SerializeHeaders(httpContext.Request.Headers) ?? string.Empty) : string.Empty,
+                ResponseHeaders = string.Empty,
                 UserId = userId,
-                IPAddress = httpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = userAgent,
-                Browser = clientInfo.UA.Family,
-                BrowserVersion = clientInfo.UA.Major,
-                OperatingSystem = clientInfo.OS.Family,
-                DeviceType = clientInfo.Device.Family,
+                Username = httpContext.User?.Identity?.Name ?? string.Empty,
+                UserEmail = string.Empty,
+                IPAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                UserAgent = userAgent ?? string.Empty,
+                Browser = clientInfo.UA.Family ?? string.Empty,
+                BrowserVersion = clientInfo.UA.Major ?? string.Empty,
+                OperatingSystem = clientInfo.OS.Family ?? string.Empty,
+                DeviceType = clientInfo.Device.Family ?? string.Empty,
                 AnalyticsSessionId = analyticsSessionId,
                 Environment = GetEnvironmentFromConfig(),
-                MachineName = Environment.MachineName,
+                DatabaseProvider = string.Empty,
+                MachineName = Environment.MachineName ?? string.Empty,
+                ApplicationVersion = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? string.Empty,
                 ResponseTimeMs = responseTimeMs,
                 MemoryUsageMB = memoryUsageMB,
                 ThreadCount = threadCount,
                 Source = source,
+                ComponentName = string.Empty,
                 IsResolved = false,
-                Created = DateTimeOffset.UtcNow
+                Created = DateTimeOffset.UtcNow,
+                AdditionalMetadata = string.Empty,
+                ResolutionNotes = string.Empty
             };
 
+            _logger.LogInformation("Adding ErrorLog to context with ID {ErrorLogId}", errorLog.Id);
             _context.ErrorLogs.Add(errorLog);
-            await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Error logged: {errorLog.Id} - {exception.Message}");
+            _logger.LogInformation("Calling SaveChangesAsync...");
+            var saved = await _context.SaveChangesAsync();
+            _logger.LogInformation("SaveChangesAsync completed. Rows affected: {RowsAffected}", saved);
+
+            _logger.LogInformation("Error logged successfully: {ErrorLogId} - {Message}", errorLog.Id, exception.Message);
+
+            // Send real-time notification via SignalR
+            await NotifyNewError(errorLog);
 
             return errorLog.Id;
         }
         catch (Exception ex)
         {
-            // Don't let error tracking crash the application
-            _logger.LogError(ex, "Failed to log error to database");
+            // Don't let error tracking crash the applicationB
+            _logger.LogError(ex, "Failed to log error to database: {ExceptionMessage}", ex.Message);
             return Guid.Empty;
         }
     }
@@ -229,15 +269,16 @@ public class ErrorTrackingService : IErrorTrackingService
                     ErrorSignature = errorSignature,
                     ErrorMessage = _groupingService.GetConciseErrorMessage(error.Message),
                     ErrorType = _groupingService.GetSimpleErrorType(error.ErrorType ?? "JavaScriptError"),
-                    Endpoint = error.Url,
+                    Endpoint = error.Url ?? string.Empty,
                     StatusCode = 0, // Frontend errors don't have HTTP status codes
                     Source = ErrorSource.Frontend,
                     OccurrenceCount = 1,
                     FirstSeen = DateTimeOffset.UtcNow,
                     LastSeen = DateTimeOffset.UtcNow,
                     IsResolved = false,
-                    SampleStackTrace = error.StackTrace,
-                    Environment = GetEnvironmentFromConfig()
+                    SampleStackTrace = error.StackTrace ?? string.Empty,
+                    Environment = GetEnvironmentFromConfig(),
+                    ResolutionNotes = string.Empty // Required - cannot be NULL
                 };
 
                 _context.ErrorGroups.Add(errorGroup);
@@ -261,35 +302,51 @@ public class ErrorTrackingService : IErrorTrackingService
                 deviceType = clientInfo.Device.Family;
             }
 
-            // Create error log entry
+            // Create error log entry - all string fields must have values (NOT NULL constraints)
             var errorLog = new ErrorLog
             {
                 Id = Guid.NewGuid(),
                 ErrorGroupId = errorGroup.Id,
-                ErrorMessage = error.Message,
+                ErrorMessage = error.Message ?? string.Empty,
                 ErrorType = error.ErrorType ?? "JavaScriptError",
-                StackTrace = error.StackTrace,
+                StackTrace = error.StackTrace ?? string.Empty,
                 StatusCode = 0,
-                Endpoint = error.Url,
+                Endpoint = error.Url ?? string.Empty,
                 HttpMethod = "GET", // Frontend errors typically from page loads
+                RequestBody = string.Empty,
+                RequestBodyTruncated = false,
+                ResponseBody = string.Empty,
+                ResponseBodyTruncated = false,
+                QueryString = string.Empty,
+                RequestHeaders = string.Empty,
+                ResponseHeaders = string.Empty,
                 UserId = error.UserId,
-                IPAddress = error.IPAddress,
-                UserAgent = error.UserAgent,
-                Browser = browser,
-                BrowserVersion = browserVersion,
-                OperatingSystem = os,
-                DeviceType = deviceType,
+                Username = string.Empty,
+                UserEmail = string.Empty,
+                IPAddress = error.IPAddress ?? string.Empty,
+                UserAgent = error.UserAgent ?? string.Empty,
+                Browser = browser ?? string.Empty,
+                BrowserVersion = browserVersion ?? string.Empty,
+                OperatingSystem = os ?? string.Empty,
+                DeviceType = deviceType ?? string.Empty,
                 AnalyticsSessionId = error.SessionId,
                 Environment = GetEnvironmentFromConfig(),
-                ComponentName = error.ComponentName,
+                DatabaseProvider = string.Empty,
+                MachineName = string.Empty,
+                ApplicationVersion = string.Empty,
+                ComponentName = error.ComponentName ?? string.Empty,
                 Source = ErrorSource.Frontend,
                 IsResolved = false,
-                AdditionalMetadata = error.Metadata,
+                AdditionalMetadata = error.Metadata ?? string.Empty,
+                ResolutionNotes = string.Empty,
                 Created = DateTimeOffset.UtcNow
             };
 
             _context.ErrorLogs.Add(errorLog);
             await _context.SaveChangesAsync();
+
+            // Send real-time notification via SignalR
+            await NotifyNewError(errorLog);
 
             return errorLog.Id;
         }
@@ -436,7 +493,13 @@ public class ErrorTrackingService : IErrorTrackingService
         {
             settings = new ErrorTrackingSettings
             {
+                Track400Errors = true,
+                Track401Errors = true,
+                Track403Errors = true,
+                Track404Errors = true,
                 Track500Errors = true,
+                Track502Errors = true,
+                Track503Errors = true,
                 EnableFrontendTracking = true,
                 FrontendBatchIntervalSeconds = 30,
                 RetentionPeriodDays = 90,
@@ -588,5 +651,80 @@ public class ErrorTrackingService : IErrorTrackingService
             "production" => Stage.Production,
             _ => Stage.Development
         };
+    }
+
+    /// <summary>
+    /// Sends a real-time notification to all connected clients when a new error is logged.
+    /// Uses SignalR directly if hub context is available (IDP), otherwise calls IDP API endpoint (API).
+    /// </summary>
+    private async Task NotifyNewError(ErrorLog errorLog)
+    {
+        var notification = new
+        {
+            errorLog.Id,
+            errorLog.ErrorGroupId,
+            errorLog.ErrorMessage,
+            errorLog.ErrorType,
+            errorLog.StatusCode,
+            errorLog.Endpoint,
+            errorLog.HttpMethod,
+            errorLog.Browser,
+            errorLog.OperatingSystem,
+            Source = errorLog.Source.ToString(),
+            errorLog.IsResolved,
+            errorLog.Created
+        };
+
+        // If we have a hub context (running on IDP), use SignalR directly
+        if (_hubContext != null)
+        {
+            try
+            {
+                await _hubContext.Clients.Group("error_tracking").SendAsync("NewError", notification);
+
+                if (errorLog.ErrorGroupId.HasValue)
+                {
+                    await _hubContext.Clients.Group($"error_group_{errorLog.ErrorGroupId}").SendAsync("NewOccurrence", notification);
+                }
+
+                _logger.LogDebug("SignalR notification sent directly for error {ErrorId}", errorLog.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send SignalR notification for error {ErrorId}", errorLog.Id);
+            }
+        }
+        // Otherwise (running on API), call IDP endpoint to broadcast
+        else if (_httpClientFactory != null && _configuration != null)
+        {
+            try
+            {
+                var idpUrl = _configuration.GetValue<string>("AppSettings:IDPUrl");
+                if (string.IsNullOrEmpty(idpUrl))
+                {
+                    _logger.LogDebug("IDPUrl not configured, skipping SignalR notification");
+                    return;
+                }
+
+                var client = _httpClientFactory.CreateClient();
+                var json = JsonSerializer.Serialize(notification);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync($"{idpUrl}/api/ErrorTrackingHub/NotifyNewError", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogDebug("SignalR notification sent via IDP for error {ErrorId}", errorLog.Id);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to send SignalR notification via IDP: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send SignalR notification via IDP for error {ErrorId}", errorLog.Id);
+            }
+        }
     }
 }

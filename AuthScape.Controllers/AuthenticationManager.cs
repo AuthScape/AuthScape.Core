@@ -101,12 +101,10 @@ namespace AuthScape.Controllers
         {
             ApplyMigration(app);
 
-            app.UseCors("default");
+            // ErrorTrackingMiddleware MUST be first to catch all exceptions before other handlers
+            app.UseMiddleware(typeof(ErrorTrackingMiddleware));
 
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            app.UseCors("default");
 
             if (!env.IsDevelopment())
             {
@@ -116,8 +114,6 @@ namespace AuthScape.Controllers
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-
-            app.UseMiddleware(typeof(ErrorTrackingMiddleware));
 
             app.UseEndpoints(endpoints =>
             {

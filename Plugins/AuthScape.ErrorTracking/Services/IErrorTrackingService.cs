@@ -47,10 +47,10 @@ public class ErrorGroupQueryDto
     public bool? IsResolved { get; set; }
     public DateTimeOffset? StartDate { get; set; }
     public DateTimeOffset? EndDate { get; set; }
-    public string SearchTerm { get; set; }
+    public string? SearchTerm { get; set; } = "";
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
-    public string SortBy { get; set; } = "LastSeen";
+    public string? SortBy { get; set; } = "LastSeen";
     public bool SortDescending { get; set; } = true;
 }
 
