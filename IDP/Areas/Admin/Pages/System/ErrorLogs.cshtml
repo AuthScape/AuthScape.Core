@@ -175,102 +175,180 @@
     </div>
 </div>
 
-<!-- Error Details Modal -->
+<!-- Error Details Modal - Modern Design -->
 <div class="modal fade" id="errorDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title">Error Details</h5>
-                    <p class="text-muted mb-0 small" id="modal-subtitle"></p>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <!-- Header with gradient background -->
+            <div class="modal-header border-0 text-white py-4" id="modal-header-bg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="d-flex align-items-center w-100">
+                    <div class="error-icon-wrapper me-3" style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px;">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-1 fw-bold">Error Details</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white bg-opacity-25" id="detail-source-badge">API</span>
+                            <span class="opacity-75 small" id="modal-subtitle"></span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <!-- Error Group Summary -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <h6 class="text-muted mb-2">Error Message</h6>
-                        <p id="detail-message" class="mb-3"></p>
 
-                        <div class="row">
-                            <div class="col-md-4">
-                                <small class="text-muted">Error Type</small>
-                                <p class="mb-2"><code id="detail-type"></code></p>
-                            </div>
-                            <div class="col-md-4">
-                                <small class="text-muted">Endpoint</small>
-                                <p class="mb-2"><code id="detail-endpoint"></code></p>
-                            </div>
-                            <div class="col-md-4">
-                                <small class="text-muted">Status Code</small>
-                                <p class="mb-2"><span class="badge" id="detail-statusCode"></span></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <div class="mb-2">
-                                    <small class="text-muted">Occurrences</small>
-                                    <h4 class="mb-0" id="detail-occurrences"></h4>
+            <div class="modal-body p-0">
+                <!-- Error Summary Card -->
+                <div class="p-4 bg-light border-bottom">
+                    <div class="row g-4">
+                        <!-- Error Message -->
+                        <div class="col-lg-8">
+                            <div class="error-message-card bg-white rounded-3 p-4 h-100 shadow-sm">
+                                <div class="d-flex align-items-start mb-3">
+                                    <span class="badge rounded-pill me-2" id="detail-statusCode" style="font-size: 0.9rem;"></span>
+                                    <code class="text-muted small" id="detail-type"></code>
                                 </div>
-                                <div class="mb-2">
-                                    <small class="text-muted">First Seen</small>
-                                    <p class="mb-0" id="detail-firstSeen"></p>
-                                </div>
-                                <div>
-                                    <small class="text-muted">Last Seen</small>
-                                    <p class="mb-0" id="detail-lastSeen"></p>
+                                <h5 class="mb-3 text-dark" id="detail-message" style="line-height: 1.5;"></h5>
+                                <div class="d-flex align-items-center text-muted small">
+                                    <i class="fas fa-link me-2"></i>
+                                    <code class="bg-light px-2 py-1 rounded" id="detail-endpoint" style="font-size: 0.85rem;"></code>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Stats Cards -->
+                        <div class="col-lg-4">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="stat-card bg-white rounded-3 p-3 shadow-sm text-center">
+                                        <div class="stat-icon mb-2" style="color: #667eea;">
+                                            <i class="fas fa-chart-line fa-lg"></i>
+                                        </div>
+                                        <h3 class="mb-0 fw-bold" id="detail-occurrences-count" style="color: #667eea;"></h3>
+                                        <small class="text-muted">Total Occurrences</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card bg-white rounded-3 p-3 shadow-sm">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-clock text-info me-2 small"></i>
+                                            <small class="text-muted">First Seen</small>
+                                        </div>
+                                        <p class="mb-0 fw-semibold small" id="detail-firstSeen"></p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card bg-white rounded-3 p-3 shadow-sm">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-history text-warning me-2 small"></i>
+                                            <small class="text-muted">Last Seen</small>
+                                        </div>
+                                        <p class="mb-0 fw-semibold small" id="detail-lastSeen"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Stack Trace -->
-                <div class="mb-4">
-                    <h6 class="text-muted mb-2">Stack Trace</h6>
-                    <pre id="detail-stackTrace" class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 12px;"></pre>
+                <!-- Tabs Section -->
+                <div class="px-4 pt-4">
+                    <ul class="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-3" id="errorDetailTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-3 px-4" id="stacktrace-tab" data-bs-toggle="pill" data-bs-target="#stacktrace-panel" type="button">
+                                <i class="fas fa-code me-2"></i>Stack Trace
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-3 px-4" id="occurrences-tab" data-bs-toggle="pill" data-bs-target="#occurrences-panel" type="button">
+                                <i class="fas fa-list me-2"></i>Occurrences
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-3 px-4" id="resolution-tab" data-bs-toggle="pill" data-bs-target="#resolution-panel" type="button">
+                                <i class="fas fa-check-circle me-2"></i>Resolution
+                            </button>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Recent Occurrences -->
-                <div>
-                    <h6 class="text-muted mb-2">Recent Occurrences</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>User</th>
-                                    <th>IP Address</th>
-                                    <th>Browser</th>
-                                    <th>Response Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detail-occurrences">
-                            </tbody>
-                        </table>
+                <!-- Tab Content -->
+                <div class="tab-content p-4" id="errorDetailTabContent">
+                    <!-- Stack Trace Panel -->
+                    <div class="tab-pane fade show active" id="stacktrace-panel" role="tabpanel">
+                        <div class="stack-trace-wrapper position-relative">
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" onclick="copyStackTrace()" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <pre id="detail-stackTrace" class="stack-trace-box m-0"></pre>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Resolution Section -->
-                <div class="mt-4" id="resolution-section">
-                    <hr>
-                    <h6 class="text-muted mb-3">Mark as Resolved</h6>
-                    <div class="mb-3">
-                        <label class="form-label">Resolution Notes</label>
-                        <textarea class="form-control" id="resolution-notes" rows="3" placeholder="Describe how this error was resolved..."></textarea>
+                    <!-- Occurrences Panel -->
+                    <div class="tab-pane fade" id="occurrences-panel" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="border-0 rounded-start">
+                                            <i class="fas fa-clock text-muted me-2"></i>Time
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="fas fa-user text-muted me-2"></i>User
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="fas fa-globe text-muted me-2"></i>IP Address
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="fas fa-desktop text-muted me-2"></i>Browser
+                                        </th>
+                                        <th class="border-0 rounded-end text-end">
+                                            <i class="fas fa-tachometer-alt text-muted me-2"></i>Response Time
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-occurrences-table">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <button class="btn btn-success" onclick="markAsResolved()">
-                        <i class="fas fa-check"></i> Mark as Resolved
-                    </button>
-                </div>
 
-                <div class="mt-4 d-none" id="resolved-info">
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> This error has been marked as resolved.
-                        <div class="mt-2" id="resolved-details"></div>
+                    <!-- Resolution Panel -->
+                    <div class="tab-pane fade" id="resolution-panel" role="tabpanel">
+                        <div id="resolution-section">
+                            <div class="text-center py-4 mb-4">
+                                <div class="resolution-icon mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-tools fa-2x text-white"></i>
+                                </div>
+                                <h5 class="mb-2">Mark This Error as Resolved</h5>
+                                <p class="text-muted mb-0">Document the fix to help your team track resolutions</p>
+                            </div>
+
+                            <div class="bg-light rounded-3 p-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-sticky-note text-muted me-2"></i>Resolution Notes
+                                    </label>
+                                    <textarea class="form-control border-0 shadow-sm" id="resolution-notes" rows="4" placeholder="Describe the root cause and how this error was fixed..." style="resize: none;"></textarea>
+                                </div>
+                                <button class="btn btn-success btn-lg w-100 shadow-sm" onclick="markAsResolved()">
+                                    <i class="fas fa-check-circle me-2"></i>Mark as Resolved
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-none" id="resolved-info">
+                            <div class="text-center py-4">
+                                <div class="resolved-icon mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-check fa-2x text-white"></i>
+                                </div>
+                                <h5 class="text-success mb-2">Error Resolved</h5>
+                                <p class="text-muted mb-4">This error has been marked as resolved</p>
+
+                                <div class="bg-light rounded-3 p-4 text-start">
+                                    <div id="resolved-details"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -287,19 +365,264 @@
     .badge-status-5xx { background-color: #dc3545; }
 
     .cursor-pointer { cursor: pointer; }
+
+    /* Modern Modal Styles */
+    #errorDetailsModal .modal-content {
+        border: none;
+    }
+
+    #errorDetailsModal .nav-pills .nav-link {
+        color: #6c757d;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    #errorDetailsModal .nav-pills .nav-link:hover {
+        background-color: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+
+    #errorDetailsModal .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .stack-trace-box {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #e2e8f0;
+        padding: 1.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .stack-trace-box::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .stack-trace-box::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+
+    .stack-trace-box::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+    }
+
+    .stack-trace-box::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .stat-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .error-message-card {
+        border-left: 4px solid #667eea;
+    }
+
+    #errorDetailsModal .table th {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #495057;
+        padding: 1rem;
+    }
+
+    #errorDetailsModal .table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    #errorDetailsModal .table tbody tr {
+        transition: background-color 0.15s ease;
+    }
+
+    #errorDetailsModal .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    .occurrence-time {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .occurrence-time .time-dot {
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+    }
+
+    .browser-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    .response-time-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .response-time-badge.fast {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .response-time-badge.medium {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .response-time-badge.slow {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    /* Header gradient variations based on status code */
+    .modal-header-4xx {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    }
+
+    .modal-header-5xx {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script>
     let currentPage = 1;
     let currentFilters = {};
     let currentErrorGroupId = null;
+    let connection = null;
 
     // Load stats on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadStats();
         loadErrors();
+        initSignalR();
     });
+
+    // Initialize SignalR connection for real-time updates
+    async function initSignalR() {
+        try {
+            // Connect to the IDP's own SignalR hub (same origin)
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl('/errortracking')
+                .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            // Handle new error events
+            connection.on('NewError', function(error) {
+                console.log('New error received:', error);
+                showNewErrorToast(error);
+                loadStats();
+                // Only auto-refresh if on first page with no specific filters
+                if (currentPage === 1 && Object.keys(currentFilters).length === 0) {
+                    loadErrors(1);
+                }
+            });
+
+            // Handle reconnection
+            connection.onreconnected(function() {
+                console.log('SignalR reconnected');
+                joinErrorTracking();
+            });
+
+            connection.onclose(function() {
+                console.log('SignalR connection closed');
+                updateConnectionStatus(false);
+            });
+
+            await connection.start();
+            console.log('SignalR connected');
+            await joinErrorTracking();
+            updateConnectionStatus(true);
+        } catch (err) {
+            console.error('SignalR connection error:', err);
+            updateConnectionStatus(false);
+        }
+    }
+
+    async function joinErrorTracking() {
+        if (connection && connection.state === signalR.HubConnectionState.Connected) {
+            await connection.invoke('JoinErrorTracking');
+        }
+    }
+
+    function updateConnectionStatus(connected) {
+        const refreshBtn = document.querySelector('button[onclick="refreshErrors()"]');
+        if (refreshBtn) {
+            if (connected) {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> <span class="badge bg-success ms-1" title="Real-time updates active"><i class="fas fa-bolt"></i></span>';
+            } else {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            }
+        }
+    }
+
+    function showNewErrorToast(error) {
+        // Create toast notification for new error
+        const toastContainer = document.getElementById('toast-container') || createToastContainer();
+
+        const toast = document.createElement('div');
+        toast.className = 'toast show';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong class="me-auto">New Error</strong>
+                <small>Just now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                <strong>${error.statusCode}</strong> - ${escapeHtml(error.errorMessage?.substring(0, 100) || 'Unknown error')}
+                <div class="mt-2">
+                    <small class="text-muted">${error.endpoint || 'N/A'}</small>
+                </div>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        container.style.zIndex = '1080';
+        document.body.appendChild(container);
+        return container;
+    }
 
     async function loadStats() {
         try {
@@ -426,47 +749,101 @@
 
             const firstError = data.occurrences[0];
             const errorGroup = firstError.errorGroup || {};
+            const statusCode = firstError.statusCode;
+
+            // Update header gradient based on status code
+            const modalHeader = document.getElementById('modal-header-bg');
+            modalHeader.classList.remove('modal-header-4xx', 'modal-header-5xx');
+            if (statusCode >= 500) {
+                modalHeader.classList.add('modal-header-5xx');
+            } else if (statusCode >= 400) {
+                modalHeader.classList.add('modal-header-4xx');
+            }
+
+            // Update source badge
+            const sourceBadge = document.getElementById('detail-source-badge');
+            const sourceText = firstError.source === 1 ? 'API' : firstError.source === 2 ? 'IDP' : 'Frontend';
+            sourceBadge.textContent = sourceText;
 
             // Populate modal
-            document.getElementById('modal-subtitle').textContent = `Error ID: ${errorGroupId}`;
+            document.getElementById('modal-subtitle').textContent = `ID: ${errorGroupId.substring(0, 8)}...`;
             document.getElementById('detail-message').textContent = firstError.errorMessage;
             document.getElementById('detail-type').textContent = firstError.errorType;
-            document.getElementById('detail-endpoint').textContent = firstError.endpoint || 'N/A';
+            document.getElementById('detail-endpoint').textContent = `${firstError.httpMethod || 'GET'} ${firstError.endpoint || 'N/A'}`;
 
             const statusBadge = document.getElementById('detail-statusCode');
-            statusBadge.textContent = firstError.statusCode;
-            statusBadge.className = `badge ${firstError.statusCode >= 500 ? 'bg-danger' : 'bg-warning'}`;
+            statusBadge.textContent = statusCode;
+            statusBadge.className = `badge rounded-pill ${statusCode >= 500 ? 'bg-danger' : 'bg-warning text-dark'}`;
 
-            document.getElementById('detail-occurrences').textContent = errorGroup.occurrenceCount || data.occurrences.length;
+            document.getElementById('detail-occurrences-count').textContent = errorGroup.occurrenceCount || data.occurrences.length;
             document.getElementById('detail-firstSeen').textContent = formatDate(errorGroup.firstSeen || firstError.created);
             document.getElementById('detail-lastSeen').textContent = formatDate(errorGroup.lastSeen || firstError.created);
             document.getElementById('detail-stackTrace').textContent = firstError.stackTrace || 'No stack trace available';
 
-            // Recent occurrences
-            const occurrencesTbody = document.getElementById('detail-occurrences');
-            occurrencesTbody.innerHTML = data.occurrences.map(occ => `
-                <tr>
-                    <td><small>${formatDate(occ.created)}</small></td>
-                    <td><small>${occ.username || occ.userEmail || 'Anonymous'}</small></td>
-                    <td><small>${occ.ipAddress || 'N/A'}</small></td>
-                    <td><small>${occ.browser || 'Unknown'} ${occ.browserVersion || ''}</small></td>
-                    <td><small>${occ.responseTimeMs ? occ.responseTimeMs + 'ms' : 'N/A'}</small></td>
-                </tr>
-            `).join('');
+            // Recent occurrences table
+            const occurrencesTbody = document.getElementById('detail-occurrences-table');
+            occurrencesTbody.innerHTML = data.occurrences.map(occ => {
+                const responseTime = occ.responseTimeMs;
+                let responseClass = 'fast';
+                if (responseTime > 1000) responseClass = 'slow';
+                else if (responseTime > 500) responseClass = 'medium';
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="occurrence-time">
+                                <span class="time-dot"></span>
+                                <span>${formatDate(occ.created)}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-medium">${occ.username || occ.userEmail || 'Anonymous'}</span>
+                        </td>
+                        <td>
+                            <code class="bg-light px-2 py-1 rounded small">${occ.ipAddress || 'N/A'}</code>
+                        </td>
+                        <td>
+                            <span class="browser-badge">
+                                <i class="fas fa-${getBrowserIcon(occ.browser)}"></i>
+                                ${occ.browser || 'Unknown'} ${occ.browserVersion || ''}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            ${responseTime ? `<span class="response-time-badge ${responseClass}">${responseTime}ms</span>` : '<span class="text-muted">N/A</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
 
             // Resolution section
             if (firstError.isResolved) {
                 document.getElementById('resolution-section').classList.add('d-none');
                 document.getElementById('resolved-info').classList.remove('d-none');
                 document.getElementById('resolved-details').innerHTML = `
-                    <strong>Resolved at:</strong> ${formatDate(firstError.resolvedAt)}<br>
-                    <strong>Notes:</strong> ${escapeHtml(firstError.resolutionNotes || 'No notes provided')}
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1">Resolved At</small>
+                            <span class="fw-semibold">${formatDate(firstError.resolvedAt)}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block mb-1">Resolved By</small>
+                            <span class="fw-semibold">User #${firstError.resolvedByUserId || 'Unknown'}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <small class="text-muted d-block mb-1">Resolution Notes</small>
+                    <p class="mb-0">${escapeHtml(firstError.resolutionNotes || 'No notes provided')}</p>
                 `;
             } else {
                 document.getElementById('resolution-section').classList.remove('d-none');
                 document.getElementById('resolved-info').classList.add('d-none');
                 document.getElementById('resolution-notes').value = '';
             }
+
+            // Reset tabs to first tab
+            const firstTab = document.querySelector('#stacktrace-tab');
+            const bsTab = new bootstrap.Tab(firstTab);
+            bsTab.show();
 
             const modal = new bootstrap.Modal(document.getElementById('errorDetailsModal'));
             modal.show();
@@ -475,6 +852,35 @@
             console.error('Failed to load error details:', error);
             alert('Failed to load error details');
         }
+    }
+
+    function getBrowserIcon(browser) {
+        if (!browser) return 'globe';
+        const b = browser.toLowerCase();
+        if (b.includes('chrome')) return 'chrome';
+        if (b.includes('firefox')) return 'firefox';
+        if (b.includes('safari')) return 'safari';
+        if (b.includes('edge')) return 'edge';
+        if (b.includes('opera')) return 'opera';
+        if (b.includes('ie') || b.includes('internet explorer')) return 'internet-explorer';
+        return 'globe';
+    }
+
+    function copyStackTrace() {
+        const stackTrace = document.getElementById('detail-stackTrace').textContent;
+        navigator.clipboard.writeText(stackTrace).then(() => {
+            // Show a brief toast or change button text
+            const btn = event.target.closest('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
     }
 
     async function markAsResolved() {

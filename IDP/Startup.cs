@@ -1,3 +1,4 @@
+using AuthScape.ErrorTracking.Hubs;
 using AuthScape.ErrorTracking.Services;
 using AuthScape.IDP;
 using AuthScape.Models.Users;
@@ -86,6 +87,9 @@ namespace IDP
 
                 services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
                 services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
+
+                // Add SignalR for real-time error tracking updates
+                services.AddSignalR();
 
                 // Add HttpClientFactory for MCP proxy calls
                 services.AddHttpClient();

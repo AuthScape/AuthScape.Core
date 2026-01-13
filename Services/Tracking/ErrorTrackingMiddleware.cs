@@ -1,28 +1,38 @@
 using AuthScape.Models.Exceptions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 
 namespace Services.Tracking
 {
     public class ErrorTrackingMiddleware
     {
-        private readonly RequestDelegate next;
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ErrorTrackingMiddleware> _logger;
 
-        public ErrorTrackingMiddleware(RequestDelegate next)
+        // Cache reflection results for performance
+        private static Type? _errorTrackingServiceType;
+        private static Type? _errorSourceType;
+        private static MethodInfo? _logErrorMethod;
+        private static bool _reflectionInitialized;
+        private static readonly object _lockObj = new();
+
+        public ErrorTrackingMiddleware(RequestDelegate next, ILogger<ErrorTrackingMiddleware> logger)
         {
-            this.next = next;
+            _next = next;
+            _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context /* other dependencies */)
+        public async Task Invoke(HttpContext context)
         {
             var sw = Stopwatch.StartNew();
 
             try
             {
-                await next(context);
+                await _next(context);
             }
             catch (Exception ex)
             {
@@ -37,81 +47,173 @@ namespace Services.Tracking
 
             if (ex is NotFoundException)
             {
-                code = HttpStatusCode.NotFound;
+                code = HttpStatusCode.NotFound; // 404
             }
             else if (ex is UnauthorizedException)
             {
-                code = HttpStatusCode.Unauthorized;
+                code = HttpStatusCode.Unauthorized; // 401
             }
             else if (ex is BadRequestException)
             {
-                code = HttpStatusCode.BadRequest;
+                code = HttpStatusCode.BadRequest; // 400
+            }
+            else if (ex is ForbiddenException)
+            {
+                code = HttpStatusCode.Forbidden; // 403
+            }
+            else if (ex is BadGatewayException)
+            {
+                code = HttpStatusCode.BadGateway; // 502
+            }
+            else if (ex is ServiceUnavailableException)
+            {
+                code = HttpStatusCode.ServiceUnavailable; // 503
+            }
+            else if (ex is NotImplementedHttpException)
+            {
+                code = HttpStatusCode.NotImplemented; // 501
+            }
+            else if (ex is GatewayTimeoutException)
+            {
+                code = HttpStatusCode.GatewayTimeout; // 504
             }
 
             // Set status code before logging
             context.Response.StatusCode = (int)code;
 
-            // Try to get error tracking service if registered (optional dependency)
-            try
-            {
-                // Use reflection to avoid compile-time dependency
-                var errorTrackingServiceType = Type.GetType("AuthScape.ErrorTracking.Services.IErrorTrackingService, AuthScape.ErrorTracking");
-                if (errorTrackingServiceType != null)
-                {
-                    var errorTrackingService = context.RequestServices.GetService(errorTrackingServiceType);
-                    if (errorTrackingService != null)
-                    {
-                        // Get ErrorSource enum value
-                        var errorSourceType = Type.GetType("AuthScape.Models.ErrorTracking.ErrorSource, AuthScape.Models");
-                        var source = DetermineErrorSource(context, errorSourceType);
-
-                        // Get analytics session ID if available
-                        Guid? sessionId = null;
-                        if (context.Request.Cookies.TryGetValue("analyticsSessionId", out var sessionIdStr))
-                        {
-                            Guid.TryParse(sessionIdStr, out var parsedSessionId);
-                            sessionId = parsedSessionId;
-                        }
-
-                        // Call LogError method via reflection
-                        var logErrorMethod = errorTrackingServiceType.GetMethod("LogError");
-                        if (logErrorMethod != null)
-                        {
-                            var task = (Task)logErrorMethod.Invoke(errorTrackingService, new object[] { ex, context, source, responseTimeMs, sessionId });
-                            await task;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Don't let error tracking crash the application
-            }
+            // Try to log to error tracking service using reflection
+            await TryLogErrorAsync(context, ex, responseTimeMs);
 
             var result = JsonConvert.SerializeObject(new
             {
-                error = ex.Message
+                error = ex.Message,
+                statusCode = (int)code,
+                traceId = context.TraceIdentifier
             });
 
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(result);
         }
 
-        private object DetermineErrorSource(HttpContext context, Type errorSourceType)
+        private async Task TryLogErrorAsync(HttpContext context, Exception ex, long responseTimeMs)
         {
-            // Check if request is from API or IDP based on path or host
+            try
+            {
+                InitializeReflection();
+
+                if (_errorTrackingServiceType == null || _logErrorMethod == null)
+                {
+                    _logger.LogWarning("ErrorTracking: Service type or method not found via reflection. Type: {Type}, Method: {Method}",
+                        _errorTrackingServiceType?.Name ?? "null", _logErrorMethod?.Name ?? "null");
+                    return;
+                }
+
+                var errorTrackingService = context.RequestServices.GetService(_errorTrackingServiceType);
+                if (errorTrackingService == null)
+                {
+                    _logger.LogWarning("ErrorTracking: IErrorTrackingService not registered in DI container");
+                    return;
+                }
+
+                // Determine error source
+                var source = GetErrorSource(context);
+
+                // Get analytics session ID if available
+                Guid? sessionId = null;
+                if (context.Request.Cookies.TryGetValue("analyticsSessionId", out var sessionIdStr))
+                {
+                    if (Guid.TryParse(sessionIdStr, out var parsedSessionId))
+                    {
+                        sessionId = parsedSessionId;
+                    }
+                }
+
+                _logger.LogInformation("ErrorTracking: Logging error {ExceptionType} with status {StatusCode}",
+                    ex.GetType().Name, context.Response.StatusCode);
+
+                // Call: Task<Guid> LogError(Exception exception, HttpContext httpContext, ErrorSource source, long? responseTimeMs = null, Guid? sessionId = null)
+                var result = _logErrorMethod.Invoke(errorTrackingService, new object?[] { ex, context, source, responseTimeMs, sessionId });
+
+                if (result is Task<Guid> guidTask)
+                {
+                    var errorId = await guidTask;
+                    _logger.LogInformation("ErrorTracking: Error logged successfully with ID {ErrorId}", errorId);
+                }
+                else if (result is Task task)
+                {
+                    await task;
+                    _logger.LogInformation("ErrorTracking: Error logged successfully");
+                }
+            }
+            catch (Exception logEx)
+            {
+                // Don't let error tracking crash the application
+                _logger.LogError(logEx, "ErrorTracking: Failed to log error to tracking system");
+            }
+        }
+
+        private static void InitializeReflection()
+        {
+            if (_reflectionInitialized)
+            {
+                return;
+            }
+
+            lock (_lockObj)
+            {
+                if (_reflectionInitialized)
+                {
+                    return;
+                }
+
+                try
+                {
+                    // Find the ErrorTracking assembly
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    var errorTrackingAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AuthScape.ErrorTracking");
+
+                    if (errorTrackingAssembly != null)
+                    {
+                        _errorTrackingServiceType = errorTrackingAssembly.GetType("AuthScape.ErrorTracking.Services.IErrorTrackingService");
+                        _logErrorMethod = _errorTrackingServiceType?.GetMethod("LogError");
+                    }
+
+                    // Find ErrorSource enum in AuthScape.Models
+                    var modelsAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AuthScape.Models");
+                    if (modelsAssembly != null)
+                    {
+                        _errorSourceType = modelsAssembly.GetType("AuthScape.Models.ErrorTracking.ErrorSource");
+                    }
+                }
+                catch
+                {
+                    // Ignore reflection errors
+                }
+
+                _reflectionInitialized = true;
+            }
+        }
+
+        private static object GetErrorSource(HttpContext context)
+        {
             var path = context.Request.Path.ToString().ToLower();
             var host = context.Request.Host.ToString().ToLower();
 
-            int sourceValue = 1; // Default to API
+            // API = 1, IDP = 2
+            int sourceValue = 1;
 
-            if (path.StartsWith("/api/") || host.Contains("api."))
-                sourceValue = 1; // API
-            else if (path.StartsWith("/identity/") || path.StartsWith("/account/") || host.Contains("idp.") || host.Contains("identity."))
+            if (path.StartsWith("/identity/") || path.StartsWith("/account/") ||
+                host.Contains("idp.") || host.Contains("identity."))
+            {
                 sourceValue = 2; // IDP
+            }
 
-            // Convert int to enum value
-            return errorSourceType != null ? Enum.ToObject(errorSourceType, sourceValue) : sourceValue;
+            if (_errorSourceType != null)
+            {
+                return Enum.ToObject(_errorSourceType, sourceValue);
+            }
+
+            return sourceValue;
         }
     }
 }
