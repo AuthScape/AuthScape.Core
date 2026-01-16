@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using AuthScape.IDP.Controllers;
 using AuthScape.Models.Users;
 using CoreBackpack.Time;
 using Microsoft.AspNetCore.Authentication;
@@ -27,7 +28,7 @@ using System.Web;
 
 namespace mvcTest.Areas.Identity.Pages.Account
 {
-    public class RegisterModel : PageModel
+    public class RegisterModel : AuthScapePageModel
     {
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
@@ -45,7 +46,7 @@ namespace mvcTest.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
             DatabaseContext databaseContext,
-            IOptions<AppSettings> appSettings)
+            IOptions<AppSettings> appSettings) : base(databaseContext)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -134,6 +135,11 @@ namespace mvcTest.Areas.Identity.Pages.Account
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             ShowCompanyField = appSettings.EnableCompanyMode;
+
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                await EnablePrivateLabelExperience(returnUrl);
+            }
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)

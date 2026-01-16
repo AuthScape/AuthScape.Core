@@ -45,6 +45,7 @@
     <ProjectReference Include="..\Plugins\AuthScape.ErrorTracking\AuthScape.ErrorTracking.csproj" />
     <ProjectReference Include="..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.CRM\AuthScape.CRM.csproj" />
   </ItemGroup>
 
 </Project>

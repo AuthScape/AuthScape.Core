@@ -37,9 +37,9 @@ public class ErrorTrackingService : IErrorTrackingService
         DatabaseContext context,
         IErrorGroupingService groupingService,
         ILogger<ErrorTrackingService> logger,
-        IHubContext<ErrorTrackingHub>? hubContext = null,
-        IHttpClientFactory? httpClientFactory = null,
-        IConfiguration? configuration = null)
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        IHubContext<ErrorTrackingHub> hubContext)
     {
         _context = context;
         _groupingService = groupingService;
@@ -47,6 +47,9 @@ public class ErrorTrackingService : IErrorTrackingService
         _hubContext = hubContext;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+
+        _logger.LogInformation("ErrorTrackingService initialized. HubContext={HasHub}, HttpClientFactory={HasHttp}, Configuration={HasConfig}",
+            _hubContext != null, _httpClientFactory != null, _configuration != null);
     }
 
     /// <summary>
@@ -302,6 +305,19 @@ public class ErrorTrackingService : IErrorTrackingService
                 deviceType = clientInfo.Device.Family;
             }
 
+            // Look up username and email from UserId if provided
+            string username = string.Empty;
+            string userEmail = string.Empty;
+            if (error.UserId.HasValue)
+            {
+                var user = await _context.Users.FindAsync(error.UserId.Value);
+                if (user != null)
+                {
+                    username = $"{user.FirstName} {user.LastName}".Trim();
+                    userEmail = user.Email ?? string.Empty;
+                }
+            }
+
             // Create error log entry - all string fields must have values (NOT NULL constraints)
             var errorLog = new ErrorLog
             {
@@ -321,8 +337,8 @@ public class ErrorTrackingService : IErrorTrackingService
                 RequestHeaders = string.Empty,
                 ResponseHeaders = string.Empty,
                 UserId = error.UserId,
-                Username = string.Empty,
-                UserEmail = string.Empty,
+                Username = username,
+                UserEmail = userEmail,
                 IPAddress = error.IPAddress ?? string.Empty,
                 UserAgent = error.UserAgent ?? string.Empty,
                 Browser = browser ?? string.Empty,
@@ -675,38 +691,21 @@ public class ErrorTrackingService : IErrorTrackingService
             errorLog.Created
         };
 
-        // If we have a hub context (running on IDP), use SignalR directly
-        if (_hubContext != null)
+        // Check if we should use HTTP to call IDP (when IDPUrl is configured, we're on the API)
+        var idpUrl = _configuration?.GetValue<string>("AppSettings:IDPUrl");
+        var useHttpToIdp = !string.IsNullOrEmpty(idpUrl) && _httpClientFactory != null;
+
+        _logger.LogInformation("NotifyNewError: Starting notification for error {ErrorId}. HubContext={HasHub}, UseHttpToIdp={UseHttp}, IdpUrl={IdpUrl}",
+            errorLog.Id, _hubContext != null, useHttpToIdp, idpUrl ?? "not configured");
+
+        // If IDPUrl is configured, we're on the API - call IDP via HTTP
+        if (useHttpToIdp)
         {
             try
             {
-                await _hubContext.Clients.Group("error_tracking").SendAsync("NewError", notification);
+                _logger.LogInformation("NotifyNewError: Sending notification via HTTP to IDP at {IdpUrl}", idpUrl);
 
-                if (errorLog.ErrorGroupId.HasValue)
-                {
-                    await _hubContext.Clients.Group($"error_group_{errorLog.ErrorGroupId}").SendAsync("NewOccurrence", notification);
-                }
-
-                _logger.LogDebug("SignalR notification sent directly for error {ErrorId}", errorLog.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to send SignalR notification for error {ErrorId}", errorLog.Id);
-            }
-        }
-        // Otherwise (running on API), call IDP endpoint to broadcast
-        else if (_httpClientFactory != null && _configuration != null)
-        {
-            try
-            {
-                var idpUrl = _configuration.GetValue<string>("AppSettings:IDPUrl");
-                if (string.IsNullOrEmpty(idpUrl))
-                {
-                    _logger.LogDebug("IDPUrl not configured, skipping SignalR notification");
-                    return;
-                }
-
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory!.CreateClient();
                 var json = JsonSerializer.Serialize(notification);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -714,17 +713,42 @@ public class ErrorTrackingService : IErrorTrackingService
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogDebug("SignalR notification sent via IDP for error {ErrorId}", errorLog.Id);
+                    _logger.LogInformation("SignalR notification sent via IDP for error {ErrorId}", errorLog.Id);
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to send SignalR notification via IDP: {StatusCode}", response.StatusCode);
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Failed to send SignalR notification via IDP: {StatusCode} - {ResponseBody}", response.StatusCode, responseBody);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to send SignalR notification via IDP for error {ErrorId}", errorLog.Id);
             }
+        }
+        // No IDPUrl configured means we're on the IDP - use SignalR directly
+        else if (_hubContext != null)
+        {
+            try
+            {
+                _logger.LogInformation("NotifyNewError: Sending SignalR notification directly to 'error_tracking' group");
+                await _hubContext.Clients.Group("error_tracking").SendAsync("NewError", notification);
+
+                if (errorLog.ErrorGroupId.HasValue)
+                {
+                    await _hubContext.Clients.Group($"error_group_{errorLog.ErrorGroupId}").SendAsync("NewOccurrence", notification);
+                }
+
+                _logger.LogInformation("SignalR notification sent directly for error {ErrorId}", errorLog.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send SignalR notification for error {ErrorId}", errorLog.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("NotifyNewError: No SignalR hub context or IDP URL configured - real-time notifications disabled");
         }
     }
 }

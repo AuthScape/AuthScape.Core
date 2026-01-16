@@ -1,4 +1,6 @@
-﻿using AuthScape.Models.Exceptions;
+﻿using AuthScape.CRM.Interfaces;
+using AuthScape.CRM.Models.Enums;
+using AuthScape.Models.Exceptions;
 using AuthScape.Models.Users;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
@@ -9,6 +11,7 @@ using CoreBackpack;
 using CoreBackpack.Time;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Models.Users;
 using Newtonsoft.Json;
@@ -72,8 +75,18 @@ namespace AuthScape.UserManageSystem.Services
         readonly IAzureBlobStorage azureBlobStorage;
         readonly IUserManagementService userManagementService;
         readonly AppSettings appSettings;
+        private readonly ICrmSyncService? _crmSyncService;
+        private readonly ILogger<UserManagementSystemService>? _logger;
 
-        public UserManagementSystemService(DatabaseContext databaseContext, IOptions<AppSettings> appSettings, IAzureBlobStorage azureBlobStorage, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IUserManagementService userManagementService)
+        public UserManagementSystemService(
+            DatabaseContext databaseContext,
+            IOptions<AppSettings> appSettings,
+            IAzureBlobStorage azureBlobStorage,
+            SignInManager<AppUser> signInManager,
+            UserManager<AppUser> userManager,
+            IUserManagementService userManagementService,
+            ICrmSyncService? crmSyncService = null,
+            ILogger<UserManagementSystemService>? logger = null)
         {
             this.databaseContext = databaseContext;
 
@@ -82,6 +95,36 @@ namespace AuthScape.UserManageSystem.Services
             this.userManagementService = userManagementService;
             this.azureBlobStorage = azureBlobStorage;
             this.appSettings = appSettings.Value;
+            _crmSyncService = crmSyncService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Triggers CRM sync for an entity if CRM service is configured
+        /// </summary>
+        private async Task TriggerCrmSyncAsync(AuthScapeEntityType entityType, long entityId)
+        {
+            if (_crmSyncService == null) return;
+
+            try
+            {
+                var result = await _crmSyncService.TriggerOutboundSyncAsync(entityType, entityId);
+                if (result.Success)
+                {
+                    _logger?.LogInformation("CRM sync triggered for {EntityType} {EntityId}: {Message}",
+                        entityType, entityId, result.Message);
+                }
+                else if (result.Errors.Any())
+                {
+                    _logger?.LogWarning("CRM sync for {EntityType} {EntityId} completed with errors: {Errors}",
+                        entityType, entityId, string.Join(", ", result.Errors));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't throw - CRM sync failure should not break the main operation
+                _logger?.LogError(ex, "Error triggering CRM sync for {EntityType} {EntityId}", entityType, entityId);
+            }
         }
 
         public async Task<List<Role>> GetAllRoles()
@@ -844,6 +887,8 @@ namespace AuthScape.UserManageSystem.Services
 
                 await databaseContext.SaveChangesAsync();
 
+                // Trigger CRM sync for user update
+                await TriggerCrmSyncAsync(AuthScapeEntityType.User, usr.Id);
 
                 return responseItems;
 
@@ -983,6 +1028,8 @@ namespace AuthScape.UserManageSystem.Services
                     await databaseContext.SaveChangesAsync();
                 }
 
+                // Trigger CRM sync for new user
+                await TriggerCrmSyncAsync(AuthScapeEntityType.User, newUser.Id);
 
                 return newUser.Id;
             }
@@ -1368,12 +1415,20 @@ namespace AuthScape.UserManageSystem.Services
                 await databaseContext.SaveChangesAsync();
             }
 
+            // Trigger CRM sync for company (use company.Id for new companies, param.Id for existing)
+            var companyId = company?.Id ?? param.Id;
+            if (companyId > 0)
+            {
+                await TriggerCrmSyncAsync(AuthScapeEntityType.Company, companyId);
+            }
+
             return responseItems;
         }
 
         public async Task<List<UpdatedResponseItem>> UpdateLocation(LocationEditParam param)
         {
             var responseItems = new List<UpdatedResponseItem>();
+            long? locationIdForSync = null; // Track the location ID for CRM sync
 
             if (param.Id == -1)
             {
@@ -1414,6 +1469,8 @@ namespace AuthScape.UserManageSystem.Services
                 }
 
                 await databaseContext.Locations.AddAsync(newLocation);
+                await databaseContext.SaveChangesAsync();
+                locationIdForSync = newLocation.Id;
             }
             else
             {
@@ -1423,6 +1480,7 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (location != null)
                 {
+                    locationIdForSync = location.Id;
                     if (param.Title != location.Title)
                     {
                         location.Title = param.Title;
@@ -1497,6 +1555,12 @@ namespace AuthScape.UserManageSystem.Services
                 }
             }
             await databaseContext.SaveChangesAsync();
+
+            // Trigger CRM sync for location
+            if (locationIdForSync.HasValue && locationIdForSync.Value > 0)
+            {
+                await TriggerCrmSyncAsync(AuthScapeEntityType.Location, locationIdForSync.Value);
+            }
 
             return responseItems;
         }

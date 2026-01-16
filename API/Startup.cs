@@ -9,7 +9,6 @@ using AuthScape.Controllers;
 using AuthScape.Core.Hubs;
 using AuthScape.Document.Mapping.Services;
 using AuthScape.DocumentProcessing.Services;
-using AuthScape.ErrorTracking.Hubs;
 using AuthScape.ErrorTracking.Services;
 using AuthScape.Flows.Services;
 using AuthScape.Kanban.Services;
@@ -30,6 +29,8 @@ using AuthScape.Spreadsheet.Models.Hubs;
 using AuthScape.StripePayment.Services;
 using AuthScape.TicketSystem.Services;
 using AuthScape.UserManageSystem.Services;
+using AuthScape.CRM.Hubs;
+using AuthScape.CRM.Services;
 using Authsome;
 using CoreBackpack.Azure;
 using CoreBackpack.Services;
@@ -73,7 +74,7 @@ namespace API
                  {
                      // Note: the validation handler uses OpenID Connect discovery
                      // to retrieve the issuer signing keys used to validate tokens.
-                     options.SetIssuer("https://localhost:5001/");
+                     options.SetIssuer("https://localhost:44303/");
                      options.AddAudiences("resource_server_1");
 
                      // Configure the validation handler to use introspection and register the client
@@ -153,6 +154,9 @@ namespace API
                 services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
                 services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
 
+                // Add HttpClientFactory for error tracking notifications to IDP
+                services.AddHttpClient();
+
                 services.AddScoped<IKanbanService, KanbanService>();
 
 
@@ -208,7 +212,8 @@ namespace API
                 endpoints.MapHub<SpreadsheetHub>("/chat");
                 endpoints.MapHub<PageBuilderHub>("/pagebuilder");
                 endpoints.MapHub<NotificationHub>("/notifications");
-                endpoints.MapHub<ErrorTrackingHub>("/errortracking");
+                endpoints.MapHub<CrmSyncHub>("/crmsync");
+                // ErrorTrackingHub is only mapped in IDP - API sends notifications via HTTP to IDP
             });
 
             // remove if not using wwwroot folder...

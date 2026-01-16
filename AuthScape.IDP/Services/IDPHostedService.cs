@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AuthScape.Models.Users;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
 using Services.Context;
@@ -18,10 +21,11 @@ namespace IDP.Services
             using var scope = _serviceProvider.CreateScope();
 
             var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.EnsureCreatedAsync(cancellationToken);
 
             await CreateApplicationsAsync();
             await CreateScopesAsync();
+            await CreateRolesAsync();
 
             async Task CreateApplicationsAsync()
             {
@@ -80,23 +84,28 @@ namespace IDP.Services
                 // Note: no client registration is created for resource_server_2
                 // as it uses local token validation instead of introspection.
 
-                // update page types
-                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                // Seed page types (only if none exist)
+                if (!await context.PageTypes.AnyAsync(cancellationToken))
                 {
-                    Title = "Link",
-                    IsLink = true
-                });
+                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                    {
+                        Title = "Link",
+                        IsLink = true
+                    }, cancellationToken);
 
-                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
-                {
-                    Title = "Page",
-                });
+                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                    {
+                        Title = "Page",
+                    }, cancellationToken);
 
-                await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
-                {
-                    Title = "Home Page",
-                    IsHomepage = true
-                });
+                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
+                    {
+                        Title = "Home Page",
+                        IsHomepage = true
+                    }, cancellationToken);
+
+                    await context.SaveChangesAsync(cancellationToken);
+                }
             }
 
             async Task CreateScopesAsync()
@@ -115,6 +124,22 @@ namespace IDP.Services
                     };
 
                     await manager.CreateAsync(descriptor);
+                }
+            }
+
+            async Task CreateRolesAsync()
+            {
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+
+                // Seed default roles
+                string[] defaultRoles = { "Admin", "User" };
+
+                foreach (var roleName in defaultRoles)
+                {
+                    if (!await roleManager.RoleExistsAsync(roleName))
+                    {
+                        await roleManager.CreateAsync(new Role { Name = roleName });
+                    }
                 }
             }
         }

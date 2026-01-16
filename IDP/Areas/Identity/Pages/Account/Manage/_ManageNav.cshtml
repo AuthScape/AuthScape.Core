@@ -1,4 +1,4 @@
-﻿@using AuthScape.Models.Users;
+@using AuthScape.Models.Users;
 @inject SignInManager<AppUser> SignInManager
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
@@ -11,13 +11,13 @@
     }
 
     .nav-section-title {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--gray-500);
-        padding: 1rem 0 0.5rem;
-        margin-top: 1rem;
+        letter-spacing: 0.08em;
+        color: var(--gray-400);
+        padding: 1.25rem 0.75rem 0.5rem;
+        margin-top: 0.5rem;
     }
 
     .nav-section-title:first-child {
@@ -26,18 +26,18 @@
     }
 
     .manage-nav .nav-item {
-        margin-bottom: 0.25rem;
+        margin-bottom: 2px;
     }
 
     .manage-nav .nav-link {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding: 0.75rem 1rem;
+        padding: 0.65rem 0.75rem;
         border-radius: 8px;
         text-decoration: none;
-        color: var(--gray-700);
-        font-size: 0.9375rem;
+        color: var(--gray-600);
+        font-size: 0.875rem;
         font-weight: 500;
         transition: all 0.15s ease;
         border: 2px solid transparent;
@@ -50,24 +50,48 @@
 
     .manage-nav .nav-link.active,
     .manage-nav .nav-link[aria-current="page"] {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        background: linear-gradient(135deg, rgba(99, 179, 237, 0.1), rgba(139, 92, 246, 0.1));
         color: var(--primary-color);
         font-weight: 600;
         border-color: var(--primary-color);
     }
 
     .manage-nav .nav-link i {
-        font-size: 1.125rem;
+        font-size: 1rem;
         flex-shrink: 0;
-        width: 20px;
+        width: 18px;
         text-align: center;
+        opacity: 0.7;
+    }
+
+    .manage-nav .nav-link:hover i,
+    .manage-nav .nav-link.active i {
+        opacity: 1;
+    }
+
+    .nav-badge {
+        margin-left: auto;
+        background: var(--accent-blue);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+    }
+
+    .nav-badge.badge-warning {
+        background: #f59e0b;
+    }
+
+    .nav-badge.badge-success {
+        background: var(--accent-green);
     }
 </style>
 
 <ul class="manage-nav">
 
     <!-- Profile & Identity -->
-    <li class="nav-section-title">Profile &amp; Identity</li>
+    <li class="nav-section-title">Profile & Identity</li>
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">
             <i class="fa fa-user"></i>Profile
@@ -93,25 +117,20 @@
     }
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.LanguageRegionTimeZoneNavClass(ViewContext)" id="language-region" asp-page="./LanguageRegion">
-            <i class="fa fa-language"></i>Language &amp; Region &amp; Time zone
+            <i class="fa fa-language"></i>Language & Region
         </a>
     </li>
 
     <!-- Security -->
-    <li class="nav-section-title mt-3">Security</li>
+    <li class="nav-section-title">Security</li>
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">
-            <i class="fa fa-shield"></i>Two-factor authentication
+            <i class="fa fa-shield"></i>Two-factor auth
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link" id="login-alerts" asp-page="./LoginAlerts">
             <i class="fa fa-bell"></i>Login alerts
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" id="external-logins-security" asp-page="./ExternalLogins">
-            <i class="fa fa-external-link"></i>External Logins
         </a>
     </li>
     <li class="nav-item">
@@ -121,7 +140,7 @@
     </li>
 
     <!-- Data & Privacy -->
-    <li class="nav-section-title mt-3">Data &amp; Privacy</li>
+    <li class="nav-section-title">Data & Privacy</li>
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">
             <i class="fa fa-database"></i>Personal data
@@ -139,15 +158,15 @@
     </li>
 
     <!-- Billing & Subscriptions -->
-    <li class="nav-section-title mt-3">Billing &amp; Subscriptions</li>
+    <li class="nav-section-title">Billing</li>
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.PaymentsNavClass(ViewContext)" id="payments" asp-page="./Payments">
-            <i class="fa fa-credit-card"></i>Payments &amp; Billing
+            <i class="fa fa-credit-card"></i>Payments & Billing
         </a>
     </li>
 
     <!-- Notifications -->
-    <li class="nav-section-title mt-3">Notifications</li>
+    <li class="nav-section-title">Notifications</li>
     <li class="nav-item">
         <a class="nav-link @ManageNavPages.EmailNotificationsNavClass(ViewContext)" id="email-notifications" asp-page="./EmailNotifications">
             <i class="fa fa-envelope-o"></i>Email notifications
@@ -167,7 +186,7 @@
     @if (User.IsInRole("Admin"))
     {
         <!-- Administration -->
-        <li class="nav-section-title mt-3">Administration</li>
+        <li class="nav-section-title">Administration</li>
         <li class="nav-item">
             <a class="nav-link" href="/Admin">
                 <i class="fa fa-cog"></i>Admin Dashboard

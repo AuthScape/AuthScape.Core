@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.CRM</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ZuechB</Authors>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.CRM</Product>
+    <Description>CRM integration plugin for AuthScape - supports Microsoft Dynamics 365, HubSpot, Google Contacts, and more</Description>
+    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CoreBackpack" Version="1.0.42" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="OpenIddict.Validation" Version="7.2.0" />
+    <PackageReference Include="OpenIddict.Validation.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\AuthScape.Models\AuthScape.Models.csproj" />
+    <ProjectReference Include="..\..\AuthScape.Services\AuthScape.Services.csproj" />
+    <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
+    <ProjectReference Include="..\AuthScape.CRM.Models\AuthScape.CRM.Models.csproj" />
+  </ItemGroup>
+
+</Project>

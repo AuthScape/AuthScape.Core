@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\..\Models\Models.csproj" />
     <ProjectReference Include="..\..\..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\..\..\Services\Services.csproj" />
+    <ProjectReference Include="..\..\AuthScape.CRM\AuthScape.CRM.csproj" />
     <ProjectReference Include="..\..\AuthScape.UserManagementSystem.Models\AuthScape.UserManageSystem.Models.csproj" />
   </ItemGroup>
 

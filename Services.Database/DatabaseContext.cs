@@ -1,5 +1,6 @@
 ﻿using AuthScape.Analytics.Models;
 using AuthScape.ContentManagement.Models;
+using AuthScape.CRM.Models;
 using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Models;
 using AuthScape.Marketplace.Models;
@@ -303,6 +304,17 @@ namespace Services.Context
         public DbSet<ErrorLog> ErrorLogs { get; set; }
         public DbSet<ErrorGroup> ErrorGroups { get; set; }
         public DbSet<ErrorTrackingSettings> ErrorTrackingSettings { get; set; }
+
+        #endregion
+
+        #region CRM Integration
+
+        public DbSet<CrmConnection> CrmConnections { get; set; }
+        public DbSet<CrmEntityMapping> CrmEntityMappings { get; set; }
+        public DbSet<CrmFieldMapping> CrmFieldMappings { get; set; }
+        public DbSet<CrmRelationshipMapping> CrmRelationshipMappings { get; set; }
+        public DbSet<CrmExternalId> CrmExternalIds { get; set; }
+        public DbSet<CrmSyncLog> CrmSyncLogs { get; set; }
 
         #endregion
 
@@ -1076,6 +1088,88 @@ namespace Services.Context
             {
                 entity.HasKey(e => e.Id);
             });
+
+            #region CRM Integration
+
+            builder.Entity<CrmConnection>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.CompanyId);
+                entity.HasIndex(e => e.Provider);
+                entity.HasIndex(e => e.IsEnabled);
+
+                // Optional foreign key to Company for multi-tenant support
+                // Use NoAction to avoid cascade path conflicts
+                entity.HasOne<Company>()
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<CrmEntityMapping>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.CrmConnectionId);
+                entity.HasIndex(e => new { e.CrmConnectionId, e.CrmEntityName }).IsUnique();
+
+                entity.HasOne(e => e.CrmConnection)
+                    .WithMany(e => e.EntityMappings)
+                    .HasForeignKey(e => e.CrmConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<CrmFieldMapping>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.CrmEntityMappingId);
+                entity.HasIndex(e => new { e.CrmEntityMappingId, e.AuthScapeField, e.CrmField }).IsUnique();
+
+                entity.HasOne(e => e.CrmEntityMapping)
+                    .WithMany(e => e.FieldMappings)
+                    .HasForeignKey(e => e.CrmEntityMappingId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<CrmExternalId>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Unique indexes defined via attributes on the model
+                entity.HasIndex(e => new { e.CrmConnectionId, e.AuthScapeEntityType, e.AuthScapeEntityId }).IsUnique();
+                entity.HasIndex(e => new { e.CrmConnectionId, e.CrmEntityName, e.CrmEntityId }).IsUnique();
+
+                entity.HasOne(e => e.CrmConnection)
+                    .WithMany(e => e.ExternalIds)
+                    .HasForeignKey(e => e.CrmConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<CrmSyncLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.CrmConnectionId);
+                entity.HasIndex(e => e.SyncedAt);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => new { e.CrmConnectionId, e.SyncedAt });
+
+                entity.HasOne(e => e.CrmConnection)
+                    .WithMany(e => e.SyncLogs)
+                    .HasForeignKey(e => e.CrmConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Use NoAction to avoid cascade path conflict
+                // CrmConnection -> CrmEntityMapping -> CrmSyncLog would create multiple cascade paths
+                entity.HasOne(e => e.CrmEntityMapping)
+                    .WithMany()
+                    .HasForeignKey(e => e.CrmEntityMappingId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            #endregion
 
             // keep at the bottom
             base.OnModelCreating(builder);
