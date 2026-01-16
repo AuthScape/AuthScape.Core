@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AuthScape.ErrorTracking.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace IDP.Controllers
 {
@@ -14,10 +15,12 @@ namespace IDP.Controllers
     public class ErrorTrackingHubController : ControllerBase
     {
         private readonly IHubContext<ErrorTrackingHub> _hubContext;
+        private readonly ILogger<ErrorTrackingHubController> _logger;
 
-        public ErrorTrackingHubController(IHubContext<ErrorTrackingHub> hubContext)
+        public ErrorTrackingHubController(IHubContext<ErrorTrackingHub> hubContext, ILogger<ErrorTrackingHubController> logger)
         {
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         /// <summary>
@@ -26,11 +29,16 @@ namespace IDP.Controllers
         [HttpPost("NotifyNewError")]
         public async Task<IActionResult> NotifyNewError([FromBody] ErrorNotification notification)
         {
+            _logger.LogInformation("ErrorTrackingHubController: Received notification for error {ErrorId} (StatusCode: {StatusCode})",
+                notification.Id, notification.StatusCode);
+
             await _hubContext.Clients.Group("error_tracking").SendAsync("NewError", notification);
+            _logger.LogInformation("ErrorTrackingHubController: Broadcasted 'NewError' to 'error_tracking' group");
 
             if (notification.ErrorGroupId.HasValue)
             {
                 await _hubContext.Clients.Group($"error_group_{notification.ErrorGroupId}").SendAsync("NewOccurrence", notification);
+                _logger.LogInformation("ErrorTrackingHubController: Broadcasted 'NewOccurrence' to error group {ErrorGroupId}", notification.ErrorGroupId);
             }
 
             return Ok();

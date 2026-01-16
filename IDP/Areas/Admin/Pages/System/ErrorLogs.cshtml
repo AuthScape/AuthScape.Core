@@ -528,16 +528,20 @@
     // Initialize SignalR connection for real-time updates
     async function initSignalR() {
         try {
+            console.log('[SignalR] Initializing connection to /errortracking...');
+
             // Connect to the IDP's own SignalR hub (same origin)
             connection = new signalR.HubConnectionBuilder()
-                .withUrl('/errortracking')
+                .withUrl('/errortracking', {
+                    withCredentials: true
+                })
                 .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-                .configureLogging(signalR.LogLevel.Information)
+                .configureLogging(signalR.LogLevel.Debug)
                 .build();
 
             // Handle new error events
             connection.on('NewError', function(error) {
-                console.log('New error received:', error);
+                console.log('[SignalR] NewError event received:', error);
                 showNewErrorToast(error);
                 loadStats();
                 // Only auto-refresh if on first page with no specific filters
@@ -546,30 +550,51 @@
                 }
             });
 
-            // Handle reconnection
-            connection.onreconnected(function() {
-                console.log('SignalR reconnected');
-                joinErrorTracking();
+            // Handle new occurrence events (for specific error groups)
+            connection.on('NewOccurrence', function(error) {
+                console.log('[SignalR] NewOccurrence event received:', error);
             });
 
-            connection.onclose(function() {
-                console.log('SignalR connection closed');
+            // Handle reconnection
+            connection.onreconnecting(function(error) {
+                console.log('[SignalR] Reconnecting...', error);
+                updateConnectionStatus(false);
+            });
+
+            connection.onreconnected(function(connectionId) {
+                console.log('[SignalR] Reconnected with connectionId:', connectionId);
+                joinErrorTracking();
+                updateConnectionStatus(true);
+            });
+
+            connection.onclose(function(error) {
+                console.log('[SignalR] Connection closed', error);
                 updateConnectionStatus(false);
             });
 
             await connection.start();
-            console.log('SignalR connected');
+            console.log('[SignalR] Connected! State:', connection.state);
             await joinErrorTracking();
             updateConnectionStatus(true);
         } catch (err) {
-            console.error('SignalR connection error:', err);
+            console.error('[SignalR] Connection error:', err);
             updateConnectionStatus(false);
+            // Retry connection after 5 seconds
+            setTimeout(initSignalR, 5000);
         }
     }
 
     async function joinErrorTracking() {
         if (connection && connection.state === signalR.HubConnectionState.Connected) {
-            await connection.invoke('JoinErrorTracking');
+            try {
+                console.log('[SignalR] Joining error_tracking group...');
+                await connection.invoke('JoinErrorTracking');
+                console.log('[SignalR] Successfully joined error_tracking group');
+            } catch (err) {
+                console.error('[SignalR] Failed to join error_tracking group:', err);
+            }
+        } else {
+            console.warn('[SignalR] Cannot join group - not connected. State:', connection?.state);
         }
     }
 

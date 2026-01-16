@@ -152,7 +152,8 @@ namespace AuthScape.IDP
 
 
             services.AddCors();
-            services.AddControllersWithViews();
+            services.AddControllersWithViews()
+                .AddApplicationPart(typeof(AuthScape.CRM.Controllers.CrmConnectionController).Assembly);
 
             //services.AddTransient<ISendGridService, SendGridService>();
             //services.AddTransient<ITwilioService, TwilioService>();

@@ -77,6 +77,30 @@ namespace Services.Tracking
             {
                 code = HttpStatusCode.GatewayTimeout; // 504
             }
+            else if (ex is TooManyRequestsException)
+            {
+                code = HttpStatusCode.TooManyRequests; // 429
+            }
+            else if (ex is UnprocessableEntityException)
+            {
+                code = HttpStatusCode.UnprocessableEntity; // 422
+            }
+            else if (ex is ConflictException)
+            {
+                code = HttpStatusCode.Conflict; // 409
+            }
+            else if (ex is RequestTimeoutException)
+            {
+                code = HttpStatusCode.RequestTimeout; // 408
+            }
+            else if (ex is MethodNotAllowedException)
+            {
+                code = HttpStatusCode.MethodNotAllowed; // 405
+            }
+            else if (ex is GoneException)
+            {
+                code = HttpStatusCode.Gone; // 410
+            }
 
             // Set status code before logging
             context.Response.StatusCode = (int)code;

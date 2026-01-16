@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
     <ProjectReference Include="..\Plugins\NodeService\AuthScape.NodeService.Models\AuthScape.Flows.Models.csproj" />
     <ProjectReference Include="..\Plugins\Tickets\AuthScape.TicketSystem.Modals\AuthScape.TicketSystem.Modals.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.CRM.Models\AuthScape.CRM.Models.csproj" />
   </ItemGroup>
 
 </Project>

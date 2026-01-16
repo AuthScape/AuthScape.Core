@@ -1,211 +1,936 @@
-﻿@page
+@page
 @model LoginModel
 
 @{
     ViewData["Title"] = "Log in";
+    Layout = null;
 }
 
-<style>
-    @Html.Raw(Model.MinifiedCSS)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AuthScape</title>
+    <link rel="stylesheet" href="~/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/main.css" />
+    <style>
+        @Html.Raw(Model.MinifiedCSS)
 
-    .line-container {
-        display: flex;
-        align-items: center;
-        text-align: center;
-        margin: 20px;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .line-container::before,
-    .line-container::after {
-        content: '';
-        flex: 1;
-        border-top: 1px solid #000;
-    }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
 
-    .line-container::before {
-        margin-right: 10px;
-    }
+        .login-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
 
-    .line-container::after {
-        margin-left: 10px;
-    }
+        /* Left side - Animated AI Background */
+        .brand-side {
+            flex: 1;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d0d1f 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
 
-</style>
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
 
-<section class="ftco-section" style="padding-bottom:20px;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5">
-                <div class="wrap">
-                    <div class="login-wrap p-5">
-                        <div>
-                            <div class="w-100">
-                                <h3 class="mb-4">Sign In</h3>
-                            </div>
-                        </div>
-                        
-                        
-                        <div>
-                            <form id="account" method="post">
-                                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                                <div class="form-floating mb-2">
-                                    <label asp-for="Input.Email" class="form-label">Email</label>
-                                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                                    <span asp-validation-for="Input.Email" class="text-danger"></span>
-                                </div>
-                                <div class="form-floating mb-2 d-flex align-items-center justify-content-between">
-                                    <label asp-for="Input.Password" class="form-label">Password</label>
-                                    <a id="forgot-password" asp-page="./ForgotPassword" asp-route-returnUrl="@(Model.ReturnUrl)" class="ms-3">Forgot your password?</a>
-                                </div>
-                                <div class="form-floating mb-2">
-                                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                                </div>
-                                <span asp-validation-for="Input.Password" class="text-danger"></span>
-                                <div class="checkbox ml-3 mb-3">
-                                    <label asp-for="Input.RememberMe" class="form-label">
-                                        <input class="form-check-input" asp-for="Input.RememberMe" />
-                                        @Html.DisplayNameFor(m => m.Input.RememberMe)
-                                    </label>
-                                </div>
-                                
-                                <div>
-                                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Sign in</button>
-                                </div>
-                                <div>
-                                    <div class="line-container">or</div>
-                                </div>
-                            </form>
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(99, 179, 237, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+            box-shadow: 0 0 10px rgba(99, 179, 237, 0.8), 0 0 20px rgba(99, 179, 237, 0.4);
+        }
 
-                            <div class="pt-2">
-                                <button id="login-passkey" class="w-100 btn btn-lg btn-secondary" onclick="login()">Sign in with passkey</button>
-                            </div>
-                            
-                        </div>
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 12s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; animation-duration: 14s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 11s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1s; animation-duration: 16s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; animation-duration: 13s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 15s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 2s; animation-duration: 12s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 4s; animation-duration: 14s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 1s; animation-duration: 11s; }
+        .particle:nth-child(10) { left: 15%; animation-delay: 3s; animation-duration: 16s; }
+        .particle:nth-child(11) { left: 25%; animation-delay: 0s; animation-duration: 13s; }
+        .particle:nth-child(12) { left: 35%; animation-delay: 2s; animation-duration: 15s; }
+        .particle:nth-child(13) { left: 45%; animation-delay: 4s; animation-duration: 12s; }
+        .particle:nth-child(14) { left: 55%; animation-delay: 1s; animation-duration: 14s; }
+        .particle:nth-child(15) { left: 65%; animation-delay: 3s; animation-duration: 11s; }
+        .particle:nth-child(16) { left: 75%; animation-delay: 5s; animation-duration: 16s; }
+        .particle:nth-child(17) { left: 85%; animation-delay: 2s; animation-duration: 13s; }
+        .particle:nth-child(18) { left: 95%; animation-delay: 4s; animation-duration: 15s; }
+        .particle:nth-child(19) { left: 5%; animation-delay: 1s; animation-duration: 12s; }
+        .particle:nth-child(20) { left: 50%; animation-delay: 3s; animation-duration: 14s; }
 
-                        <div class="d-flex col-md-6">
-                            <section>
-                                @{
-                                    if ((Model.ExternalLogins?.Count ?? 0) == 0) { }
-                                    else
-                                    {
-                                        <hr/>
-                                        <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                                            <div>
-                                                <p>
-                                                    @foreach (var provider in Model.ExternalLogins!)
-                                                    {
-                                                        <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Sign in with @provider.DisplayName account">@provider.DisplayName</button>
-                                                    }
-                                                </p>
-                                            </div>
-                                        </form>
-                                    }
-                                }
-                            </section>
-                        </div>
-                    </div>
-                </div>
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(80vh) scale(1);
+            }
+            90% {
+                opacity: 1;
+                transform: translateY(10vh) scale(1);
+            }
+            100% {
+                transform: translateY(-10vh) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Glowing orbs */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: pulse 8s infinite ease-in-out;
+            z-index: 1;
+        }
+
+        .glow-orb-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(99, 179, 237, 0.3);
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .glow-orb-2 {
+            width: 200px;
+            height: 200px;
+            background: rgba(139, 92, 246, 0.3);
+            bottom: 30%;
+            right: 20%;
+            animation-delay: 2s;
+        }
+
+        .glow-orb-3 {
+            width: 150px;
+            height: 150px;
+            background: rgba(16, 185, 129, 0.25);
+            top: 60%;
+            left: 30%;
+            animation-delay: 4s;
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Grid lines */
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(99, 179, 237, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 179, 237, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 1;
+        }
+
+        @@keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+        }
+
+        /* Brand content */
+        .brand-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            color: white;
+        }
+
+        .brand-logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #63b3ed 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-tagline {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .features-list {
+            margin-top: 3rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(99, 179, 237, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(99, 179, 237, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .feature-text h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+            color: white;
+        }
+
+        .feature-text p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        /* Right side - Form */
+        .form-side {
+            flex: 1;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 60px;
+            overflow-y: auto;
+        }
+
+        .form-wrapper {
+            max-width: 420px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        /* Social login buttons */
+        .social-login {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .social-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            background: #f9fafb;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #63b3ed;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .forgot-link {
+            font-size: 0.85rem;
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+        }
+
+        .remember-me label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d5a 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(26, 26, 46, 0.2);
+        }
+
+        .passkey-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .passkey-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .passkey-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .signup-link a {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .text-danger {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .brand-side {
+                display: none;
+            }
+            .form-side {
+                padding: 40px 30px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .form-side {
+                padding: 30px 20px;
+            }
+            .social-login {
+                flex-direction: column;
+            }
+        }
+
+        /* Neural network canvas */
+        #neural-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 35, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-icon.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+        }
+
+        .modal-icon.error svg {
+            width: 32px;
+            height: 32px;
+            color: #ef4444;
+        }
+
+        .modal-icon.info {
+            background: linear-gradient(135deg, rgba(99, 179, 237, 0.1), rgba(139, 92, 246, 0.1));
+        }
+
+        .modal-icon.info svg {
+            width: 32px;
+            height: 32px;
+            color: #63b3ed;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .modal-message {
+            font-size: 0.95rem;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d5a 100%);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(26, 26, 46, 0.2);
+        }
+
+        .modal-btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-close svg {
+            width: 16px;
+            height: 16px;
+            color: #6b7280;
+        }
+
+        .modal-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Side - Animated Background -->
+        <div class="brand-side">
+            <div class="grid-lines"></div>
+            <div class="glow-orb glow-orb-1"></div>
+            <div class="glow-orb glow-orb-2"></div>
+            <div class="glow-orb glow-orb-3"></div>
+
+            <div class="particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
             </div>
-        </div>
-    </div>
-</section>
 
+            <canvas id="neural-canvas"></canvas>
 
-<section class="ftco-section" style="padding-top:0;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5">
-                <div class="wrap">
-                    <div class="login-wrap pt-3">
-                        <div>
-                            <p class="text-center">
-                                Don't have an account?
-                                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Sign up</a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-@*<div class="row">
-    <div class="col-md-4">
-        <section>
-            <form id="account" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
-                </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
-                </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
-                        <input class="form-check-input" asp-for="Input.RememberMe" />
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
-                    </label>
-                </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </form>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
+            <div class="brand-content">
+                @if (!string.IsNullOrEmpty(Model.CompanyLogo))
                 {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
+                    <img src="@Model.CompanyLogo" alt="@Model.CompanyName" style="max-height: 60px; margin-bottom: 1rem;" />
                 }
                 else
                 {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
+                    <div class="brand-logo">AuthScape</div>
+                }
+                <p class="brand-tagline">
+                    @(Model.CompanyName ?? "Secure, intelligent identity management for the modern enterprise.")
+                </p>
+
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">🔐</div>
+                        <div class="feature-text">
+                            <h4>Enterprise Security</h4>
+                            <p>Bank-grade encryption & compliance</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-text">
+                            <h4>Lightning Fast</h4>
+                            <p>Sub-second authentication</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🌐</div>
+                        <div class="feature-text">
+                            <h4>Global Scale</h4>
+                            <p>Multi-region deployment ready</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Login Form -->
+        <div class="form-side">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h1>Welcome back</h1>
+                    <p>Sign in to continue to your account</p>
+                </div>
+
+                @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+                {
+                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <div class="social-login">
+                            @foreach (var provider in Model.ExternalLogins!)
+                            {
+                                <button type="submit" class="social-btn" name="provider" value="@provider.Name">
+                                    @if (provider.Name.ToLower() == "google")
+                                    {
+                                        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                                    }
+                                    @provider.DisplayName
+                                </button>
+                            }
                         </div>
                     </form>
+                    <div class="divider"><span>or continue with email</span></div>
                 }
-            }
-        </section>
-    </div>
-</div>*@
 
-@section Scripts {
+                <form id="account" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Email">Email Address</label>
+                        <input asp-for="Input.Email" type="email" placeholder="name@company.com" autocomplete="username" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label asp-for="Input.Password">Password</label>
+                            <a asp-page="./ForgotPassword" asp-route-returnUrl="@Model.ReturnUrl" class="forgot-link">Forgot password?</a>
+                        </div>
+                        <input asp-for="Input.Password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="remember-me">
+                        <input asp-for="Input.RememberMe" type="checkbox" />
+                        <label asp-for="Input.RememberMe">Remember me</label>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="login-submit">Sign In</button>
+                </form>
+
+                <button type="button" class="passkey-btn" onclick="loginWithPasskey()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <circle cx="12" cy="16" r="1"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Sign in with Passkey
+                </button>
+
+                <p class="signup-link">
+                    Don't have an account? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-container">
+            <button class="modal-close" onclick="closeModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+            <div id="modal-icon" class="modal-icon error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>
+            </div>
+            <h2 id="modal-title" class="modal-title">No Passkey Found</h2>
+            <p id="modal-message" class="modal-message">
+                You don't have a passkey set up for this account yet. Please sign in with your email and password, then set up a passkey in your account settings.
+            </p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-primary" onclick="closeModal()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
 
-    <script type="text/javascript">
+    <script>
+        // Modal Functions
+        function showModal(type, title, message, actions) {
+            const modal = document.getElementById('modal');
+            const modalIcon = document.getElementById('modal-icon');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
 
-        // Helper functions for encoding/decoding
+            // Set icon based on type
+            modalIcon.className = 'modal-icon ' + type;
+            if (type === 'error') {
+                modalIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>`;
+            } else if (type === 'info') {
+                modalIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="12" cy="16" r="1"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>`;
+            }
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeModalOnOverlay(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Neural Network Animation
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let nodes = [];
+        let animationId;
+
+        function resize() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+            initNodes();
+        }
+
+        function initNodes() {
+            nodes = [];
+            const nodeCount = Math.floor((canvas.width * canvas.height) / 15000);
+
+            for (let i = 0; i < nodeCount; i++) {
+                nodes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1,
+                    opacity: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        function drawNetwork() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connections
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 150) {
+                        const opacity = (1 - dist / 150) * 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        ctx.strokeStyle = `rgba(99, 179, 237, ${opacity})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw and update nodes
+            for (let node of nodes) {
+                // Draw node
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(99, 179, 237, ${node.opacity})`;
+                ctx.fill();
+
+                // Add glow
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(99, 179, 237, ${node.opacity * 0.3})`;
+                ctx.fill();
+
+                // Update position
+                node.x += node.vx;
+                node.y += node.vy;
+
+                // Bounce off walls
+                if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+                if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+            }
+
+            animationId = requestAnimationFrame(drawNetwork);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        drawNetwork();
+
+        // Passkey Login
         function base64urlToArrayBuffer(base64url) {
             const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
             const binary = atob(base64);
@@ -226,62 +951,79 @@
                 .replace(/=+$/, '');
         }
 
-        // Login Flow
-        async function login() {
-            const username = "brandonzuech@gmail.com";
+        async function loginWithPasskey() {
+            const username = document.querySelector('input[name="Input.Email"]').value || "user@example.com";
 
-            // Step 1: Get assertion options from server
-            const optionsResponse = await fetch(`/Home/GetAssertionOptions?username=${encodeURIComponent(username)}`);
-            const options = await optionsResponse.json();
+            try {
+                // Step 1: Get assertion options from server
+                const optionsResponse = await fetch(`/Home/GetAssertionOptions?username=${encodeURIComponent(username)}`);
+                const options = await optionsResponse.json();
 
-            // Step 2: Convert options for WebAuthn API
-            const publicKey = {
-                ...options,
-                challenge: base64urlToArrayBuffer(options.challenge),
-                allowCredentials: options.allowCredentials?.map(cred => ({
-                    ...cred,
-                    id: base64urlToArrayBuffer(cred.id)
-                }))
-            };
+                // Step 2: Convert options for WebAuthn API
+                const publicKey = {
+                    ...options,
+                    challenge: base64urlToArrayBuffer(options.challenge),
+                    allowCredentials: options.allowCredentials?.map(cred => ({
+                        ...cred,
+                        id: base64urlToArrayBuffer(cred.id)
+                    }))
+                };
 
-            // Step 3: Get assertion using browser API
-            const assertion = await navigator.credentials.get({ publicKey });
+                // Step 3: Get assertion using browser API
+                const assertion = await navigator.credentials.get({ publicKey });
 
-            // Step 4: Format response for server
-            const response = {
-                id: assertion.id,
-                rawId: arrayBufferToBase64url(assertion.rawId),
-                type: assertion.type,
-                response: {
-                    authenticatorData: arrayBufferToBase64url(assertion.response.authenticatorData),
-                    clientDataJSON: arrayBufferToBase64url(assertion.response.clientDataJSON),
-                    signature: arrayBufferToBase64url(assertion.response.signature),
-                    userHandle: assertion.response.userHandle ?
-                        arrayBufferToBase64url(assertion.response.userHandle) : null
+                // Step 4: Format response for server
+                const response = {
+                    id: assertion.id,
+                    rawId: arrayBufferToBase64url(assertion.rawId),
+                    type: assertion.type,
+                    response: {
+                        authenticatorData: arrayBufferToBase64url(assertion.response.authenticatorData),
+                        clientDataJSON: arrayBufferToBase64url(assertion.response.clientDataJSON),
+                        signature: arrayBufferToBase64url(assertion.response.signature),
+                        userHandle: assertion.response.userHandle ?
+                            arrayBufferToBase64url(assertion.response.userHandle) : null
+                    }
+                };
+
+                // Step 5: Verify assertion with server
+                const verificationResponse = await fetch('/Home/VerifyAssertion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(response)
+                });
+
+                if (verificationResponse.ok) {
+                    const data = await verificationResponse.text();
+                    window.location.href = data;
+                } else {
+                    const errorText = await verificationResponse.text();
+                    showModal('error', 'Authentication Failed', errorText || 'Unable to verify your passkey. Please try again or use email/password.');
                 }
-            };
+            } catch (error) {
+                console.error('Passkey login error:', error);
 
-            // Step 5: Verify assertion with server
-            const verificationResponse = await fetch('/Home/VerifyAssertion', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(response)
-            });
+                // Provide more specific error messages
+                let title = 'No Passkey Found';
+                let message = 'You don\'t have a passkey set up for this account yet. Please sign in with your email and password, then set up a passkey in your account settings.';
 
-            if (verificationResponse.ok) {
-                // alert('Login successful!');
-                // Redirect or update UI here
+                if (error.name === 'NotAllowedError') {
+                    title = 'Passkey Cancelled';
+                    message = 'The passkey authentication was cancelled. You can try again or sign in with your email and password.';
+                } else if (error.name === 'SecurityError') {
+                    title = 'Security Error';
+                    message = 'A security error occurred. Please make sure you\'re using a secure connection (HTTPS) and try again.';
+                } else if (error.name === 'NotSupportedError') {
+                    title = 'Not Supported';
+                    message = 'Passkey authentication is not supported on this device or browser. Please sign in with your email and password.';
+                } else if (error.message && error.message.includes('No credentials')) {
+                    title = 'No Passkey Found';
+                    message = 'No passkey is registered for this account. Please sign in with your email and password first, then set up a passkey in your account settings.';
+                }
 
-                const data = await verificationResponse.text();
-                // const jsonData = await verificationResponse.json();
-
-                window.location.href = data;
-
-
-            } else {
-                alert('Login failed: ' + await verificationResponse.text());
+                showModal('info', title, message);
             }
         }
-
     </script>
-}
+</body>
+</html>

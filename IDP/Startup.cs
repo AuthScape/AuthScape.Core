@@ -1,3 +1,4 @@
+using AuthScape.CRM.Extensions;
 using AuthScape.ErrorTracking.Hubs;
 using AuthScape.ErrorTracking.Services;
 using AuthScape.IDP;
@@ -93,6 +94,9 @@ namespace IDP
 
                 // Add HttpClientFactory for MCP proxy calls
                 services.AddHttpClient();
+
+                // Add CRM integration services
+                services.AddAuthScapeCrm();
 
                 ThirdPartyAuthService.AddThirdPartyAutentication(services);
 

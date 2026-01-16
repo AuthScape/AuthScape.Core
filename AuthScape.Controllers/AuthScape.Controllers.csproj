@@ -36,5 +36,6 @@
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.CRM\AuthScape.CRM.csproj" />
   </ItemGroup>
 </Project>

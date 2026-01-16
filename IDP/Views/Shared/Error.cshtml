@@ -2,16 +2,124 @@
 
 @{ ViewData["Title"] = "Error"; }
 
+<style>
+    .error-container {
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+    }
 
-<div class="jumbotron">
-    <h2>Ooooops, something went really bad! :(</h2>
-    <p class="lead text-left">
-        @if (!string.IsNullOrEmpty(Model.Error))
-        {
-<strong>@Model.Error</strong>}
+    .error-code {
+        font-size: 8rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #12d48a 0%, #0ea5e9 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
 
-        @if (!string.IsNullOrEmpty(Model.ErrorDescription))
-        {
-<small>@Model.ErrorDescription</small>}
+    .error-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .error-message {
+        font-size: 1rem;
+        color: #6b7280;
+        max-width: 500px;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .error-details {
+        background: #f3f4f6;
+        border-radius: 0.5rem;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        max-width: 600px;
+        width: 100%;
+        text-align: left;
+    }
+
+    .error-details strong {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .error-details small {
+        display: block;
+        margin-top: 0.5rem;
+        color: #6b7280;
+    }
+
+    .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #12d48a 0%, #10b981 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+    }
+
+    .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(18, 212, 138, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .error-illustration {
+        width: 200px;
+        height: 200px;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+</style>
+
+<div class="error-container">
+    <svg class="error-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="80" fill="#f3f4f6"/>
+        <circle cx="100" cy="100" r="60" fill="#e5e7eb"/>
+        <path d="M70 85 L85 100 L70 115" stroke="#12d48a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M130 85 L115 100 L130 115" stroke="#12d48a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M75 140 Q100 125 125 140" stroke="#6b7280" stroke-width="4" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <div class="error-code">Oops!</div>
+    <h1 class="error-title">Something went wrong</h1>
+    <p class="error-message">
+        We encountered an unexpected error. This could be a temporary issue or the page you're looking for might not exist.
     </p>
+
+    @if (!string.IsNullOrEmpty(Model.Error) || !string.IsNullOrEmpty(Model.ErrorDescription))
+    {
+        <div class="error-details">
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <strong>@Model.Error</strong>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorDescription))
+            {
+                <small>@Model.ErrorDescription</small>
+            }
+        </div>
+    }
+
+    <a href="/" class="btn-home">
+        <i class="fa fa-home"></i>
+        Back to Home
+    </a>
 </div>
