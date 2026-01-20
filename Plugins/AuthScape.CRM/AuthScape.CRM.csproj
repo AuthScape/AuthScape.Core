@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
     <ProjectReference Include="..\..\AuthScape.Models\AuthScape.Models.csproj" />
     <ProjectReference Include="..\..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
