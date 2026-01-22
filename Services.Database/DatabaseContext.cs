@@ -1,6 +1,6 @@
 ﻿using AuthScape.Analytics.Models;
 using AuthScape.ContentManagement.Models;
-using AuthScape.CRM.Models;
+using AuthScape.UserManageSystem.Models.CRM;
 using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Models;
 using AuthScape.Marketplace.Models;
@@ -31,6 +31,7 @@ using Models.Kanban;
 using Models.Users;
 using OpenIddict.EntityFrameworkCore.Models;
 using Services.Database;
+using AuthScape.Services.Database;
 
 namespace Services.Context
 {
@@ -285,7 +286,7 @@ namespace Services.Context
 
         #endregion
 
-        #region Interest Signups (CommandDeck Marketing)
+        #region Interest Signups
 
         public DbSet<InterestSignup> InterestSignups { get; set; }
 
@@ -992,21 +993,6 @@ namespace Services.Context
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
 
-                entity.HasOne(e => e.User)
-                    .WithMany()
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.Company)
-                    .WithMany()
-                    .HasForeignKey(e => e.CompanyId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(e => e.Location)
-                    .WithMany()
-                    .HasForeignKey(e => e.LocationId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
                 entity.HasOne(e => e.Category)
                     .WithMany()
                     .HasForeignKey(e => e.CategoryId)
@@ -1025,11 +1011,6 @@ namespace Services.Context
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasDefaultValueSql(GetNewGuidSql());
-
-                entity.HasOne(e => e.User)
-                    .WithMany()
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.Category)
                     .WithMany()

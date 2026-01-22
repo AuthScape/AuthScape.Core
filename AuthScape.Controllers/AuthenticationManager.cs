@@ -1,5 +1,5 @@
 ﻿using AuthScape.Configuration.Extensions;
-using AuthScape.CRM.Extensions;
+using AuthScape.UserManageSystem.CRM.Extensions;
 using AuthScape.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -68,7 +68,7 @@ namespace AuthScape.Controllers
 
             // clean the payload from null values
             services.AddControllers()
-                .AddApplicationPart(typeof(AuthScape.CRM.Controllers.CrmConnectionController).Assembly)
+                .AddApplicationPart(typeof(AuthScape.UserManageSystem.CRM.Controllers.CrmConnectionController).Assembly)
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;

@@ -7,7 +7,7 @@
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Models</Product>
-    <Version>1.2.416</Version>
+    <Version>1.2.520</Version>
     <PackageId>AuthScape.Models</PackageId>
     <AssemblyName>AuthScape.Models</AssemblyName>
     <Description>Available soon</Description>
@@ -30,10 +30,10 @@
 
   <ItemGroup>
     <PackageReference Include="Fido2.Models" Version="4.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
     <PackageReference Include="OpenIddict" Version="7.2.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />

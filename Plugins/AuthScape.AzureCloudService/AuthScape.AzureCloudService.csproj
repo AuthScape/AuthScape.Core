@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.AzureCloudService</PackageId>
     <Title>AuthScape.AzureCloudService</Title>
-    <Version>1.2.416</Version>
+    <Version>1.2.520</Version>
     <Authors>$(AssemblyName)ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.AzureCloudService</Product>
@@ -17,8 +17,8 @@
     <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageReference Include="Azure.Identity" Version="1.17.1" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 

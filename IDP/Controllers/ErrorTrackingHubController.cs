@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using AuthScape.ErrorTracking.Hubs;
+using AuthScape.IDP.Hubs;
+using AuthScape.IDP.Services.ErrorTracking;
+using AuthScape.Models.ErrorTracking;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -9,17 +12,23 @@ namespace IDP.Controllers
 {
     /// <summary>
     /// Controller to receive error notifications from the API and broadcast them via SignalR.
+    /// Also handles logging errors from API when ErrorTracking is centralized in IDP.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ErrorTrackingHubController : ControllerBase
     {
         private readonly IHubContext<ErrorTrackingHub> _hubContext;
+        private readonly IErrorTrackingService _errorTrackingService;
         private readonly ILogger<ErrorTrackingHubController> _logger;
 
-        public ErrorTrackingHubController(IHubContext<ErrorTrackingHub> hubContext, ILogger<ErrorTrackingHubController> logger)
+        public ErrorTrackingHubController(
+            IHubContext<ErrorTrackingHub> hubContext,
+            IErrorTrackingService errorTrackingService,
+            ILogger<ErrorTrackingHubController> logger)
         {
             _hubContext = hubContext;
+            _errorTrackingService = errorTrackingService;
             _logger = logger;
         }
 
@@ -43,6 +52,53 @@ namespace IDP.Controllers
 
             return Ok();
         }
+
+        /// <summary>
+        /// Receives and logs errors from the API. This is called by the ErrorTrackingMiddleware
+        /// in the API when it catches exceptions.
+        /// </summary>
+        [HttpPost("LogErrorFromApi")]
+        [AllowAnonymous] // API doesn't have auth tokens for IDP
+        public async Task<IActionResult> LogErrorFromApi([FromBody] ApiErrorDto error)
+        {
+            try
+            {
+                _logger.LogInformation("ErrorTrackingHubController: Received error from API - {ErrorType}: {Message}",
+                    error.ErrorType, error.Message);
+
+                // Convert to FrontendErrorDto format for the service
+                var frontendError = new FrontendErrorDto
+                {
+                    Message = error.Message,
+                    ErrorType = error.ErrorType,
+                    StackTrace = error.StackTrace,
+                    Url = error.Url,
+                    UserAgent = error.UserAgent,
+                    IPAddress = error.IpAddress ?? HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    SessionId = error.SessionId,
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        error.StatusCode,
+                        error.Source,
+                        error.ResponseTimeMs,
+                        error.Endpoint,
+                        error.Method,
+                        FromApi = true
+                    })
+                };
+
+                var errorId = await _errorTrackingService.LogFrontendError(frontendError);
+
+                _logger.LogInformation("ErrorTrackingHubController: API error logged with ID {ErrorId}", errorId);
+
+                return Ok(new { errorId, success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ErrorTrackingHubController: Failed to log error from API");
+                return StatusCode(500, new { success = false, error = "Failed to log error" });
+            }
+        }
     }
 
     public class ErrorNotification
@@ -59,5 +115,24 @@ namespace IDP.Controllers
         public string? Source { get; set; }
         public bool IsResolved { get; set; }
         public DateTimeOffset Created { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for errors sent from API to IDP
+    /// </summary>
+    public class ApiErrorDto
+    {
+        public string Message { get; set; } = string.Empty;
+        public string ErrorType { get; set; } = string.Empty;
+        public string? StackTrace { get; set; }
+        public string? Url { get; set; }
+        public int StatusCode { get; set; }
+        public int Source { get; set; } // 1 = API, 2 = IDP
+        public long ResponseTimeMs { get; set; }
+        public Guid? SessionId { get; set; }
+        public string? UserAgent { get; set; }
+        public string? IpAddress { get; set; }
+        public string? Endpoint { get; set; }
+        public string? Method { get; set; }
     }
 }

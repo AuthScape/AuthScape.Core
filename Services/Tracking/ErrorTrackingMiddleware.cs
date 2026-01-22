@@ -1,10 +1,13 @@
 using AuthScape.Models.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Text;
 
 namespace Services.Tracking
 {
@@ -12,18 +15,20 @@ namespace Services.Tracking
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorTrackingMiddleware> _logger;
+        private readonly IConfiguration _configuration;
 
-        // Cache reflection results for performance
+        // Cache reflection results for performance (used when ErrorTracking is available locally - IDP)
         private static Type? _errorTrackingServiceType;
         private static Type? _errorSourceType;
         private static MethodInfo? _logErrorMethod;
         private static bool _reflectionInitialized;
         private static readonly object _lockObj = new();
 
-        public ErrorTrackingMiddleware(RequestDelegate next, ILogger<ErrorTrackingMiddleware> logger)
+        public ErrorTrackingMiddleware(RequestDelegate next, ILogger<ErrorTrackingMiddleware> logger, IConfiguration configuration)
         {
             _next = next;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task Invoke(HttpContext context)
@@ -105,7 +110,7 @@ namespace Services.Tracking
             // Set status code before logging
             context.Response.StatusCode = (int)code;
 
-            // Try to log to error tracking service using reflection
+            // Try to log to error tracking service
             await TryLogErrorAsync(context, ex, responseTimeMs);
 
             var result = JsonConvert.SerializeObject(new
@@ -123,20 +128,37 @@ namespace Services.Tracking
         {
             try
             {
+                // First, try to use local ErrorTracking service (available in IDP)
+                if (await TryLogErrorLocallyAsync(context, ex, responseTimeMs))
+                {
+                    return;
+                }
+
+                // If local service not available (API), send to IDP via HTTP
+                await TryLogErrorToIdpAsync(context, ex, responseTimeMs);
+            }
+            catch (Exception logEx)
+            {
+                // Don't let error tracking crash the application
+                _logger.LogError(logEx, "ErrorTracking: Failed to log error to tracking system");
+            }
+        }
+
+        private async Task<bool> TryLogErrorLocallyAsync(HttpContext context, Exception ex, long responseTimeMs)
+        {
+            try
+            {
                 InitializeReflection();
 
                 if (_errorTrackingServiceType == null || _logErrorMethod == null)
                 {
-                    _logger.LogWarning("ErrorTracking: Service type or method not found via reflection. Type: {Type}, Method: {Method}",
-                        _errorTrackingServiceType?.Name ?? "null", _logErrorMethod?.Name ?? "null");
-                    return;
+                    return false;
                 }
 
                 var errorTrackingService = context.RequestServices.GetService(_errorTrackingServiceType);
                 if (errorTrackingService == null)
                 {
-                    _logger.LogWarning("ErrorTracking: IErrorTrackingService not registered in DI container");
-                    return;
+                    return false;
                 }
 
                 // Determine error source
@@ -152,7 +174,7 @@ namespace Services.Tracking
                     }
                 }
 
-                _logger.LogInformation("ErrorTracking: Logging error {ExceptionType} with status {StatusCode}",
+                _logger.LogInformation("ErrorTracking: Logging error {ExceptionType} with status {StatusCode} locally",
                     ex.GetType().Name, context.Response.StatusCode);
 
                 // Call: Task<Guid> LogError(Exception exception, HttpContext httpContext, ErrorSource source, long? responseTimeMs = null, Guid? sessionId = null)
@@ -168,11 +190,85 @@ namespace Services.Tracking
                     await task;
                     _logger.LogInformation("ErrorTracking: Error logged successfully");
                 }
+
+                return true;
             }
-            catch (Exception logEx)
+            catch
             {
-                // Don't let error tracking crash the application
-                _logger.LogError(logEx, "ErrorTracking: Failed to log error to tracking system");
+                return false;
+            }
+        }
+
+        private async Task TryLogErrorToIdpAsync(HttpContext context, Exception ex, long responseTimeMs)
+        {
+            try
+            {
+                var idpUrl = _configuration["IDPUrl"];
+                if (string.IsNullOrEmpty(idpUrl))
+                {
+                    _logger.LogWarning("ErrorTracking: IDPUrl not configured, cannot send error to IDP");
+                    return;
+                }
+
+                var httpClientFactory = context.RequestServices.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory;
+                if (httpClientFactory == null)
+                {
+                    _logger.LogWarning("ErrorTracking: IHttpClientFactory not registered");
+                    return;
+                }
+
+                var client = httpClientFactory.CreateClient();
+
+                // Get analytics session ID if available
+                Guid? sessionId = null;
+                if (context.Request.Cookies.TryGetValue("analyticsSessionId", out var sessionIdStr))
+                {
+                    if (Guid.TryParse(sessionIdStr, out var parsedSessionId))
+                    {
+                        sessionId = parsedSessionId;
+                    }
+                }
+
+                // Determine error source (API = 1)
+                var source = IsIdpRequest(context) ? 2 : 1;
+
+                // Build error data for IDP endpoint
+                var errorData = new
+                {
+                    message = ex.Message,
+                    errorType = ex.GetType().Name,
+                    stackTrace = ex.StackTrace,
+                    url = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}{context.Request.QueryString}",
+                    statusCode = context.Response.StatusCode,
+                    source = source,
+                    responseTimeMs = responseTimeMs,
+                    sessionId = sessionId,
+                    userAgent = context.Request.Headers["User-Agent"].ToString(),
+                    ipAddress = context.Connection.RemoteIpAddress?.ToString(),
+                    endpoint = context.Request.Path.ToString(),
+                    method = context.Request.Method
+                };
+
+                var json = JsonConvert.SerializeObject(errorData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _logger.LogInformation("ErrorTracking: Sending error {ExceptionType} to IDP at {IdpUrl}",
+                    ex.GetType().Name, idpUrl);
+
+                var response = await client.PostAsync($"{idpUrl}/api/ErrorTrackingHub/LogErrorFromApi", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("ErrorTracking: Error sent to IDP successfully");
+                }
+                else
+                {
+                    _logger.LogWarning("ErrorTracking: Failed to send error to IDP, status: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception httpEx)
+            {
+                _logger.LogError(httpEx, "ErrorTracking: Failed to send error to IDP via HTTP");
             }
         }
 
@@ -192,13 +288,13 @@ namespace Services.Tracking
 
                 try
                 {
-                    // Find the ErrorTracking assembly
+                    // Find the AuthScape.IDP assembly (ErrorTracking is now part of IDP)
                     var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                    var errorTrackingAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AuthScape.ErrorTracking");
+                    var idpAssembly = assemblies.FirstOrDefault(a => a.GetName().Name == "AuthScape.IDP");
 
-                    if (errorTrackingAssembly != null)
+                    if (idpAssembly != null)
                     {
-                        _errorTrackingServiceType = errorTrackingAssembly.GetType("AuthScape.ErrorTracking.Services.IErrorTrackingService");
+                        _errorTrackingServiceType = idpAssembly.GetType("AuthScape.IDP.Services.ErrorTracking.IErrorTrackingService");
                         _logErrorMethod = _errorTrackingServiceType?.GetMethod("LogError");
                     }
 
@@ -220,17 +316,8 @@ namespace Services.Tracking
 
         private static object GetErrorSource(HttpContext context)
         {
-            var path = context.Request.Path.ToString().ToLower();
-            var host = context.Request.Host.ToString().ToLower();
-
             // API = 1, IDP = 2
-            int sourceValue = 1;
-
-            if (path.StartsWith("/identity/") || path.StartsWith("/account/") ||
-                host.Contains("idp.") || host.Contains("identity."))
-            {
-                sourceValue = 2; // IDP
-            }
+            int sourceValue = IsIdpRequest(context) ? 2 : 1;
 
             if (_errorSourceType != null)
             {
@@ -238,6 +325,15 @@ namespace Services.Tracking
             }
 
             return sourceValue;
+        }
+
+        private static bool IsIdpRequest(HttpContext context)
+        {
+            var path = context.Request.Path.ToString().ToLower();
+            var host = context.Request.Host.ToString().ToLower();
+
+            return path.StartsWith("/identity/") || path.StartsWith("/account/") ||
+                   host.Contains("idp.") || host.Contains("identity.");
         }
     }
 }

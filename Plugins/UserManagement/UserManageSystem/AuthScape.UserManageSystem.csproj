@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.2.416</Version>
+    <Version>1.2.520</Version>
     <PackageId>AuthScape.UserManageSystem</PackageId>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
@@ -16,15 +16,20 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="33.1.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="CoreBackpack" Version="1.0.42" />
+    <PackageReference Include="OpenIddict.Validation" Version="7.2.0" />
+    <PackageReference Include="OpenIddict.Validation.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Models\Models.csproj" />
     <ProjectReference Include="..\..\..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\..\..\Services\Services.csproj" />
-    <ProjectReference Include="..\..\AuthScape.CRM\AuthScape.CRM.csproj" />
+    <ProjectReference Include="..\..\..\AuthScape.Models\AuthScape.Models.csproj" />
+    <ProjectReference Include="..\..\..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\..\AuthScape.UserManagementSystem.Models\AuthScape.UserManageSystem.Models.csproj" />
   </ItemGroup>
 

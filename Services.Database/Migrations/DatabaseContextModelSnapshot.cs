@@ -17,7 +17,7 @@ namespace Services.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -301,367 +301,6 @@ namespace Services.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AnalyticsSessions");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmConnection", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AccessToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ApiKey")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ClientId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ClientSecret")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long?>("CompanyId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("EnvironmentUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastSyncAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("LastSyncError")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Provider")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SyncDirection")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SyncIntervalMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("TokenExpiry")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset?>("Updated")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("WebhookSecret")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("IsEnabled");
-
-                    b.HasIndex("Provider");
-
-                    b.ToTable("CrmConnections");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmEntityMapping", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("AuthScapeEntityType")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<long>("CrmConnectionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmEntityDisplayName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CrmEntityName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CrmFilterExpression")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CrmModifiedDateField")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CrmPrimaryKeyField")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("SyncDirection")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrmConnectionId");
-
-                    b.HasIndex("CrmConnectionId", "CrmEntityName")
-                        .IsUnique();
-
-                    b.ToTable("CrmEntityMappings");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmExternalId", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("AuthScapeEntityId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("AuthScapeEntityType")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("Created")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<long>("CrmConnectionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmEntityId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CrmEntityName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("LastSyncDirection")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("LastSyncHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<DateTimeOffset?>("LastSyncedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrmConnectionId", "AuthScapeEntityType", "AuthScapeEntityId")
-                        .IsUnique();
-
-                    b.HasIndex("CrmConnectionId", "CrmEntityName", "CrmEntityId")
-                        .IsUnique();
-
-                    b.ToTable("CrmExternalIds");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmFieldMapping", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AuthScapeField")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<long>("CrmEntityMappingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmField")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("SyncDirection")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransformationConfig")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TransformationType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrmEntityMappingId");
-
-                    b.HasIndex("CrmEntityMappingId", "AuthScapeField", "CrmField")
-                        .IsUnique();
-
-                    b.ToTable("CrmFieldMappings");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmRelationshipMapping", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AuthScapeField")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("AutoCreateRelated")
-                        .HasColumnType("bit");
-
-                    b.Property<long>("CrmEntityMappingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmLookupField")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CrmRelatedEntityName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("RelatedAuthScapeEntityType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SyncDirection")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("SyncNullValues")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrmEntityMappingId");
-
-                    b.ToTable("CrmRelationshipMappings");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmSyncLog", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("Action")
-                        .HasColumnType("int");
-
-                    b.Property<long?>("AuthScapeEntityId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("AuthScapeEntityType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ChangedFields")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("CrmConnectionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmEntityId")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<long?>("CrmEntityMappingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CrmEntityName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Direction")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<long?>("DurationMs")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ErrorDetails")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RecordsProcessed")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("SyncedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CrmConnectionId");
-
-                    b.HasIndex("CrmEntityMappingId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("SyncedAt");
-
-                    b.HasIndex("CrmConnectionId", "SyncedAt");
-
-                    b.ToTable("CrmSyncLogs");
                 });
 
             modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
@@ -3812,6 +3451,367 @@ namespace Services.Database.Migrations
                     b.ToTable("TicketTypes");
                 });
 
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmConnection", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApiKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientSecret")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("EnvironmentUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastSyncAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastSyncError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SyncDirection")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SyncIntervalMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("TokenExpiry")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("Updated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("WebhookSecret")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("Provider");
+
+                    b.ToTable("CrmConnections");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AuthScapeEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("CrmConnectionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmEntityDisplayName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CrmEntityName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CrmFilterExpression")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CrmModifiedDateField")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CrmPrimaryKeyField")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SyncDirection")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrmConnectionId");
+
+                    b.HasIndex("CrmConnectionId", "CrmEntityName")
+                        .IsUnique();
+
+                    b.ToTable("CrmEntityMappings");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmExternalId", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("AuthScapeEntityId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("AuthScapeEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("CrmConnectionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmEntityId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CrmEntityName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("LastSyncDirection")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("LastSyncHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("LastSyncedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrmConnectionId", "AuthScapeEntityType", "AuthScapeEntityId")
+                        .IsUnique();
+
+                    b.HasIndex("CrmConnectionId", "CrmEntityName", "CrmEntityId")
+                        .IsUnique();
+
+                    b.ToTable("CrmExternalIds");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmFieldMapping", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AuthScapeField")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("CrmEntityMappingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmField")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SyncDirection")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransformationConfig")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransformationType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrmEntityMappingId");
+
+                    b.HasIndex("CrmEntityMappingId", "AuthScapeField", "CrmField")
+                        .IsUnique();
+
+                    b.ToTable("CrmFieldMappings");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmRelationshipMapping", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AuthScapeField")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("AutoCreateRelated")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("CrmEntityMappingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmLookupField")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CrmRelatedEntityName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RelatedAuthScapeEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SyncDirection")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SyncNullValues")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrmEntityMappingId");
+
+                    b.ToTable("CrmRelationshipMappings");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmSyncLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("AuthScapeEntityId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("AuthScapeEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangedFields")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("CrmConnectionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmEntityId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long?>("CrmEntityMappingId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CrmEntityName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ErrorDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecordsProcessed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CrmConnectionId");
+
+                    b.HasIndex("CrmEntityMappingId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SyncedAt");
+
+                    b.HasIndex("CrmConnectionId", "SyncedAt");
+
+                    b.ToTable("CrmSyncLogs");
+                });
+
             modelBuilder.Entity("AuthScape.UserManageSystem.Models.CompanyDomain", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4537,76 +4537,6 @@ namespace Services.Database.Migrations
                     b.Navigation("Session");
                 });
 
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmConnection", b =>
-                {
-                    b.HasOne("AuthScape.Models.Users.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmEntityMapping", b =>
-                {
-                    b.HasOne("AuthScape.CRM.Models.CrmConnection", "CrmConnection")
-                        .WithMany("EntityMappings")
-                        .HasForeignKey("CrmConnectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrmConnection");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmExternalId", b =>
-                {
-                    b.HasOne("AuthScape.CRM.Models.CrmConnection", "CrmConnection")
-                        .WithMany("ExternalIds")
-                        .HasForeignKey("CrmConnectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrmConnection");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmFieldMapping", b =>
-                {
-                    b.HasOne("AuthScape.CRM.Models.CrmEntityMapping", "CrmEntityMapping")
-                        .WithMany("FieldMappings")
-                        .HasForeignKey("CrmEntityMappingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrmEntityMapping");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmRelationshipMapping", b =>
-                {
-                    b.HasOne("AuthScape.CRM.Models.CrmEntityMapping", "CrmEntityMapping")
-                        .WithMany("RelationshipMappings")
-                        .HasForeignKey("CrmEntityMappingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CrmEntityMapping");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmSyncLog", b =>
-                {
-                    b.HasOne("AuthScape.CRM.Models.CrmConnection", "CrmConnection")
-                        .WithMany("SyncLogs")
-                        .HasForeignKey("CrmConnectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AuthScape.CRM.Models.CrmEntityMapping", "CrmEntityMapping")
-                        .WithMany()
-                        .HasForeignKey("CrmEntityMappingId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("CrmConnection");
-
-                    b.Navigation("CrmEntityMapping");
-                });
-
             modelBuilder.Entity("AuthScape.ContentManagement.Models.Page", b =>
                 {
                     b.HasOne("AuthScape.ContentManagement.Models.PageRoot", "PageRoot")
@@ -4733,28 +4663,7 @@ namespace Services.Database.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("AuthScape.Models.Users.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("AuthScape.Models.Users.Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("AuthScape.Models.Users.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.Navigation("Category");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("Location");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AuthScape.Models.Notifications.NotificationPreference", b =>
@@ -4765,15 +4674,7 @@ namespace Services.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AuthScape.Models.Users.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Category");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AuthScape.Models.PaymentGateway.Plans.SubscriptionPlanRole", b =>
@@ -5070,6 +4971,76 @@ namespace Services.Database.Migrations
                     b.Navigation("Ticket");
                 });
 
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmConnection", b =>
+                {
+                    b.HasOne("AuthScape.Models.Users.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", b =>
+                {
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmConnection", "CrmConnection")
+                        .WithMany("EntityMappings")
+                        .HasForeignKey("CrmConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CrmConnection");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmExternalId", b =>
+                {
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmConnection", "CrmConnection")
+                        .WithMany("ExternalIds")
+                        .HasForeignKey("CrmConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CrmConnection");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmFieldMapping", b =>
+                {
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", "CrmEntityMapping")
+                        .WithMany("FieldMappings")
+                        .HasForeignKey("CrmEntityMappingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CrmEntityMapping");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmRelationshipMapping", b =>
+                {
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", "CrmEntityMapping")
+                        .WithMany("RelationshipMappings")
+                        .HasForeignKey("CrmEntityMappingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CrmEntityMapping");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmSyncLog", b =>
+                {
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmConnection", "CrmConnection")
+                        .WithMany("SyncLogs")
+                        .HasForeignKey("CrmConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", "CrmEntityMapping")
+                        .WithMany()
+                        .HasForeignKey("CrmEntityMappingId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CrmConnection");
+
+                    b.Navigation("CrmEntityMapping");
+                });
+
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CompanyCustomField", b =>
                 {
                     b.HasOne("AuthScape.UserManagementSystem.Models.CustomField", "CustomField")
@@ -5246,22 +5217,6 @@ namespace Services.Database.Migrations
                     b.Navigation("PageViews");
                 });
 
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmConnection", b =>
-                {
-                    b.Navigation("EntityMappings");
-
-                    b.Navigation("ExternalIds");
-
-                    b.Navigation("SyncLogs");
-                });
-
-            modelBuilder.Entity("AuthScape.CRM.Models.CrmEntityMapping", b =>
-                {
-                    b.Navigation("FieldMappings");
-
-                    b.Navigation("RelationshipMappings");
-                });
-
             modelBuilder.Entity("AuthScape.ContentManagement.Models.PageRoot", b =>
                 {
                     b.Navigation("Pages");
@@ -5405,6 +5360,22 @@ namespace Services.Database.Migrations
             modelBuilder.Entity("AuthScape.TicketSystem.Modals.TicketType", b =>
                 {
                     b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmConnection", b =>
+                {
+                    b.Navigation("EntityMappings");
+
+                    b.Navigation("ExternalIds");
+
+                    b.Navigation("SyncLogs");
+                });
+
+            modelBuilder.Entity("AuthScape.UserManageSystem.Models.CRM.CrmEntityMapping", b =>
+                {
+                    b.Navigation("FieldMappings");
+
+                    b.Navigation("RelationshipMappings");
                 });
 
             modelBuilder.Entity("AuthScape.UserManagementSystem.Models.CustomField", b =>

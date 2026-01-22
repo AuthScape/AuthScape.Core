@@ -22,24 +22,24 @@
   <ItemGroup>
     <PackageReference Include="CoreBackpack" Version="1.0.42" />
     <PackageReference Include="Fido2" Version="4.0.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.79.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.81.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
     <PackageReference Include="OpenIddict" Version="7.2.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Stripe.net" Version="50.1.0" />
+    <PackageReference Include="Stripe.net" Version="50.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,12 +47,11 @@
     <ProjectReference Include="..\AuthScape.IDP\AuthScape.IDP.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.ErrorTracking\AuthScape.ErrorTracking.csproj" />
     <ProjectReference Include="..\Plugins\SendGrid\SendGridService\AuthScape.SendGrid.csproj" />
+    <ProjectReference Include="..\Plugins\UserManagement\UserManageSystem\AuthScape.UserManageSystem.csproj" />
     <ProjectReference Include="..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.StripePayment.Controller\AuthScape.StripePayment.Controller.csproj" />
     <ProjectReference Include="..\Plugins\Authscape.Backpack\Authscape.Backpack.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.CRM\AuthScape.CRM.csproj" />
   </ItemGroup>
 
   <ItemGroup>

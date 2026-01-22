@@ -9,7 +9,7 @@ using AuthScape.Controllers;
 using AuthScape.Core.Hubs;
 using AuthScape.Document.Mapping.Services;
 using AuthScape.DocumentProcessing.Services;
-using AuthScape.ErrorTracking.Services;
+// ErrorTracking is handled by IDP - API sends errors to IDP via HTTP
 using AuthScape.Flows.Services;
 using AuthScape.Kanban.Services;
 using AuthScape.Logging.Services;
@@ -29,8 +29,8 @@ using AuthScape.Spreadsheet.Models.Hubs;
 using AuthScape.StripePayment.Services;
 using AuthScape.TicketSystem.Services;
 using AuthScape.UserManageSystem.Services;
-using AuthScape.CRM.Hubs;
-using AuthScape.CRM.Services;
+using AuthScape.UserManageSystem.CRM.Hubs;
+using AuthScape.UserManageSystem.CRM.Services;
 using Authsome;
 using CoreBackpack.Azure;
 using CoreBackpack.Services;
@@ -151,10 +151,8 @@ namespace API
 
                 services.AddScoped<IAnalyticsService, AnalyticsService>();
 
-                services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
-                services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
-
-                // Add HttpClientFactory for error tracking notifications to IDP
+                // ErrorTracking is handled by IDP - API sends errors to IDP via ErrorTrackingMiddleware
+                // HttpClientFactory is used for sending errors to IDP
                 services.AddHttpClient();
 
                 services.AddScoped<IKanbanService, KanbanService>();

@@ -1,5 +1,5 @@
-﻿using AuthScape.CRM.Interfaces;
-using AuthScape.CRM.Models.Enums;
+﻿using AuthScape.UserManageSystem.CRM.Interfaces;
+using AuthScape.UserManageSystem.Models.CRM.Enums;
 using AuthScape.Models.Exceptions;
 using AuthScape.Models.Users;
 using AuthScape.Services;

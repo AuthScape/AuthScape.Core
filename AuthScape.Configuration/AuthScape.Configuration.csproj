@@ -8,22 +8,27 @@
     <Company>ZuechB</Company>
     <Product>AuthScape.Configuration</Product>
     <Description>Centralized configuration management for AuthScape with support for multiple providers</Description>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.Configuration</PackageId>
+    <Title>AuthScape.Configuration</Title>
+    <Version>1.2.520</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Azure Key Vault -->
     <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-    <PackageReference Include="Azure.Identity" Version="1.14.2" />
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
     <!-- AWS Secrets Manager -->
-    <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.400.49" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.4.5" />
     <!-- Configuration -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>

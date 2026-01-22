@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.2.416</Version>
+    <Version>1.2.520</Version>
     <Product>AuthScape.Controller</Product>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
@@ -21,14 +21,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
     <PackageReference Include="OpenIddict" Version="7.2.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.11.10" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.12" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
@@ -36,6 +36,6 @@
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.CRM\AuthScape.CRM.csproj" />
+    <ProjectReference Include="..\Plugins\UserManagement\UserManageSystem\AuthScape.UserManageSystem.csproj" />
   </ItemGroup>
 </Project>

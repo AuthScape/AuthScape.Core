@@ -152,8 +152,7 @@ namespace AuthScape.IDP
 
 
             services.AddCors();
-            services.AddControllersWithViews()
-                .AddApplicationPart(typeof(AuthScape.CRM.Controllers.CrmConnectionController).Assembly);
+            services.AddControllersWithViews();
 
             //services.AddTransient<ISendGridService, SendGridService>();
             //services.AddTransient<ITwilioService, TwilioService>();
@@ -233,7 +232,7 @@ namespace AuthScape.IDP
                 options.MapControllers();
                 options.MapDefaultControllerRoute();
                 options.MapRazorPages();
-                options.MapHub<AuthScape.ErrorTracking.Hubs.ErrorTrackingHub>("/errortracking");
+                options.MapHub<AuthScape.IDP.Hubs.ErrorTrackingHub>("/errortracking");
             });
         }
     }

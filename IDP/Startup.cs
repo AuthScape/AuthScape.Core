@@ -1,7 +1,5 @@
-using AuthScape.CRM.Extensions;
-using AuthScape.ErrorTracking.Hubs;
-using AuthScape.ErrorTracking.Services;
 using AuthScape.IDP;
+using AuthScape.IDP.Services.ErrorTracking;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.Services;
@@ -26,6 +24,7 @@ using Services;
 using Services.Context;
 using Services.Database;
 using System;
+using AuthScape.UserManageSystem.CRM.Extensions;
 
 namespace IDP
 {
