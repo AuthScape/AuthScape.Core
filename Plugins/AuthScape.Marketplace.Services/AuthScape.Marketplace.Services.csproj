@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Marketplace.Services</PackageId>
     <Title>AuthScape.Marketplace.Services</Title>
-    <Version>1.2.520</Version>
+    <Version>1.2.522</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Marketplace.Services</Product>

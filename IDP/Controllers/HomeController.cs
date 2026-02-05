@@ -226,7 +226,7 @@ namespace IDP.Controllers
             var assertionOptions = new AssertionOptions
             {
                 Challenge = challenge,
-                RpId = "localhost", // Match your Fido2 configuration
+                RpId = new Uri(appSettings.IDPUrl).Host,
                 AllowCredentials = new List<PublicKeyCredentialDescriptor>
         {
             new PublicKeyCredentialDescriptor(credential.CredentialId)

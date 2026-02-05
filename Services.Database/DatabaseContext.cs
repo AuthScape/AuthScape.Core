@@ -32,10 +32,11 @@ using Models.Users;
 using OpenIddict.EntityFrameworkCore.Models;
 using Services.Database;
 using AuthScape.Services.Database;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace Services.Context
 {
-    public class DatabaseContext : IdentityDbContext<AppUser, Role, long>
+    public class DatabaseContext : IdentityDbContext<AppUser, Role, long>, IDataProtectionKeyContext
     {
         /// <summary>
         /// Creates a DatabaseContext with auto-detected provider based on connection string format.
@@ -99,6 +100,8 @@ namespace Services.Context
 
         public DbSet<UserLocations> UserLocations { get; set; }
 
+
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
         public DbSet<Page> Pages { get; set; }
         public DbSet<PageType> PageTypes { get; set; }
         public DbSet<PageRoot> PageRoots { get; set; }
