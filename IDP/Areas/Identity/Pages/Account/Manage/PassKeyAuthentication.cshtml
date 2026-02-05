@@ -387,7 +387,7 @@
                 // In your register() function
                 const publicKey = {
                     ...options,
-                    rpId: "localhost", // Must match ServerDomain
+                    rpId: window.location.hostname,
                     challenge: base64urlToArrayBuffer(options.challenge),
                     user: {
                         ...options.user,

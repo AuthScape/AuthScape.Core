@@ -1,4 +1,5 @@
 ﻿using AuthScape.Configuration.Extensions;
+using AuthScape.Document.Models;
 using AuthScape.IDP.Services;
 using AuthScape.Models.Users;
 using AuthScape.Services;
@@ -6,6 +7,7 @@ using IDP.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -53,6 +55,10 @@ namespace AuthScape.IDP
                 options.ClaimsIdentity.UserIdClaimType = Claims.Subject;
                 options.ClaimsIdentity.RoleClaimType = Claims.Role;
             });
+
+            services.AddDataProtection()
+               .PersistKeysToDbContext<DatabaseContext>()
+               .SetApplicationName(System.Reflection.Assembly.GetEntryAssembly().GetName().Name);
 
             services.AddOpenIddict()
 
@@ -131,6 +137,9 @@ namespace AuthScape.IDP
                 });
 
 
+            
+
+
             authBuilder(services.AddAuthentication());
 
 
@@ -142,11 +151,12 @@ namespace AuthScape.IDP
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
 
+            var idpUri = new Uri(_appsettings.IDPUrl);
             services.AddFido2(options =>
             {
-                options.ServerDomain = "localhost";
+                options.ServerDomain = idpUri.Host;
                 options.ServerName = "Your App";
-                options.Origins = new HashSet<string> { "https://localhost:44303" };
+                options.Origins = new HashSet<string> { idpUri.GetLeftPart(UriPartial.Authority) };
                 options.TimestampDriftTolerance = 300000; // 5 minutes
             });
 
