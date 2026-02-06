@@ -45,6 +45,12 @@ public interface ICrmProvider
     /// </summary>
     Task<IEnumerable<CrmFieldSchema>> GetEntityFieldsAsync(CrmConnection connection, string entityName);
 
+    /// <summary>
+    /// Gets lookup fields on an entity, optionally filtered by target entity.
+    /// Used to auto-discover the correct lookup field name for relationship mappings.
+    /// </summary>
+    Task<List<CrmLookupFieldInfo>> GetLookupFieldsAsync(CrmConnection connection, string entityName, string? targetEntityName = null);
+
     #endregion
 
     #region CRUD Operations

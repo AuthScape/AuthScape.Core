@@ -143,6 +143,16 @@ public class CrmRecord
 }
 
 /// <summary>
+/// Represents metadata about a lookup field and its target entities
+/// </summary>
+public class CrmLookupFieldInfo
+{
+    public string LogicalName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public List<string> Targets { get; set; } = new();
+}
+
+/// <summary>
 /// Represents a webhook event from a CRM
 /// </summary>
 public class CrmWebhookEvent

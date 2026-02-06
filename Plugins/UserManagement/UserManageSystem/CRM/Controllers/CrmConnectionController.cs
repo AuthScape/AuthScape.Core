@@ -621,6 +621,52 @@ public class CrmConnectionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Gets lookup fields on a CRM entity, optionally filtered by target entity.
+    /// Example: GET ?connectionId=1&entityName=contact&targetEntityName=account
+    /// Returns all lookup fields on 'contact' that point to 'account'.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<List<CrmLookupFieldInfo>>> GetCrmLookupFields(long connectionId, string entityName, string? targetEntityName = null)
+    {
+        try
+        {
+            var connection = await _syncService.GetConnectionAsync(connectionId);
+            if (connection == null)
+                return NotFound(new { error = "Connection not found" });
+
+            var provider = _providerFactory.GetProvider(connection);
+            if (provider is not Providers.DynamicsProvider dynamicsProvider)
+                return BadRequest(new { error = "This endpoint only supports Dynamics 365 connections" });
+
+            // Ensure valid token
+            var needsToken = string.IsNullOrEmpty(connection.AccessToken);
+            var tokenExpired = connection.TokenExpiry.HasValue && connection.TokenExpiry.Value <= DateTimeOffset.UtcNow.AddMinutes(5);
+            if (needsToken || tokenExpired)
+            {
+                var tokenResult = await dynamicsProvider.AcquireTokenWithClientCredentialsAsync(connection);
+                if (tokenResult.Success)
+                {
+                    connection.AccessToken = tokenResult.AccessToken;
+                    connection.TokenExpiry = tokenResult.ExpiresAt;
+                    await _syncService.UpdateConnectionAsync(connection);
+                }
+                else
+                {
+                    return BadRequest(new { error = $"Failed to acquire token: {tokenResult.Error}" });
+                }
+            }
+
+            var lookupFields = await dynamicsProvider.GetLookupFieldsAsync(connection, entityName, targetEntityName);
+            return Ok(lookupFields);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting lookup fields for {EntityName}", entityName);
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
     #region Private Helpers
 
     private void UpdateSyncProgress(long connectionId, int progress, string message, int currentStep, int totalSteps)
