@@ -33,6 +33,8 @@ public abstract class BaseCrmProvider : ICrmProvider
     public abstract Task<CrmAuthResult> ExchangeCodeForTokenAsync(string code, string redirectUri);
     public abstract Task<IEnumerable<CrmEntitySchema>> GetAvailableEntitiesAsync(CrmConnection connection);
     public abstract Task<IEnumerable<CrmFieldSchema>> GetEntityFieldsAsync(CrmConnection connection, string entityName);
+    public virtual Task<List<CrmLookupFieldInfo>> GetLookupFieldsAsync(CrmConnection connection, string entityName, string? targetEntityName = null)
+        => Task.FromResult(new List<CrmLookupFieldInfo>());
     public abstract Task<CrmRecord?> GetRecordAsync(CrmConnection connection, string entityName, string recordId);
     public abstract Task<IEnumerable<CrmRecord>> GetRecordsAsync(CrmConnection connection, string entityName, DateTimeOffset? modifiedSince = null, string? filter = null, int? top = null);
     public abstract Task<string> CreateRecordAsync(CrmConnection connection, string entityName, Dictionary<string, object?> fields);

@@ -530,8 +530,19 @@ public class CrmSyncService : ICrmSyncService
 
                     foreach (var relMapping in relationshipMappings)
                     {
+                        // Auto-resolve the correct lookup field from CRM metadata
+                        var lookupField = await ResolveLookupFieldAsync(
+                            provider, connection, mapping.CrmEntityName, relMapping);
+
+                        if (string.IsNullOrEmpty(lookupField))
+                        {
+                            _logger.LogWarning("Could not resolve lookup field for relationship {AuthScapeField} → {CrmRelatedEntity} on {CrmEntity}",
+                                relMapping.AuthScapeField, relMapping.CrmRelatedEntityName, mapping.CrmEntityName);
+                            continue;
+                        }
+
                         _logger.LogDebug("Processing relationship mapping: AuthScapeField={AuthScapeField}, RelatedEntityType={RelatedEntityType}, CrmLookupField={CrmLookupField}, CrmRelatedEntityName={CrmRelatedEntityName}",
-                            relMapping.AuthScapeField, relMapping.RelatedAuthScapeEntityType, relMapping.CrmLookupField, relMapping.CrmRelatedEntityName);
+                            relMapping.AuthScapeField, relMapping.RelatedAuthScapeEntityType, lookupField, relMapping.CrmRelatedEntityName);
 
                         // Get the related entity's CRM ID
                         var relatedCrmId = await ResolveRelationshipValueAsync(
@@ -546,14 +557,14 @@ public class CrmSyncService : ICrmSyncService
                         if (relatedCrmId != null)
                         {
                             // Use @odata.bind format for Dynamics lookup fields
-                            relationshipFields[$"{relMapping.CrmLookupField}@odata.bind"] = relatedCrmId;
+                            relationshipFields[$"{lookupField}@odata.bind"] = relatedCrmId;
                             _logger.LogDebug("Added relationship field: {Field}={Value}",
-                                $"{relMapping.CrmLookupField}@odata.bind", relatedCrmId);
+                                $"{lookupField}@odata.bind", relatedCrmId);
                         }
                         else if (relMapping.SyncNullValues)
                         {
-                            // Clear the lookup field
-                            relationshipFields[relMapping.CrmLookupField] = null;
+                            // Clear the lookup field using @odata.bind null annotation
+                            relationshipFields[$"{lookupField}@odata.bind"] = null;
                         }
                     }
 
@@ -2451,16 +2462,20 @@ public class CrmSyncService : ICrmSyncService
             if (mapping.SyncDirection == CrmSyncDirection.Inbound)
                 continue; // Skip inbound-only fields
 
+            var crmFieldName = mapping.CrmField?.Trim();
+            if (string.IsNullOrEmpty(crmFieldName))
+                continue;
+
             // Skip known Dynamics lookup fields - these must use relationship mappings with @odata.bind
-            if (dynamicsLookupFields.Contains(mapping.CrmField))
+            if (dynamicsLookupFields.Contains(crmFieldName))
             {
-                _logger.LogDebug("Skipping lookup field '{CrmField}' in direct mapping - use relationship mapping instead", mapping.CrmField);
+                _logger.LogDebug("Skipping lookup field '{CrmField}' in direct mapping - use relationship mapping instead", crmFieldName);
                 continue;
             }
 
             if (authScapeData.TryGetValue(mapping.AuthScapeField, out var value))
             {
-                crmFields[mapping.CrmField] = value;
+                crmFields[crmFieldName] = value;
             }
         }
 
@@ -2486,7 +2501,9 @@ public class CrmSyncService : ICrmSyncService
     }
 
     /// <summary>
-    /// Resolves relationship fields for outbound sync by looking up CRM external IDs
+    /// Resolves relationship fields for outbound sync by looking up CRM external IDs.
+    /// Automatically discovers the correct CRM lookup field from metadata when the configured
+    /// field is a primary key or invalid.
     /// For example: User.CompanyId=5 → Contact.parentcustomerid="{CRM Account GUID}"
     /// </summary>
     private async Task ResolveOutboundRelationshipsAsync(
@@ -2504,17 +2521,30 @@ public class CrmSyncService : ICrmSyncService
         if (relationshipMappings == null || !relationshipMappings.Any())
             return;
 
+        var provider = _providerFactory.GetProvider(connection);
+
         foreach (var relMapping in relationshipMappings)
         {
             try
             {
+                // Auto-resolve the correct lookup field from CRM metadata
+                var lookupField = await ResolveLookupFieldAsync(
+                    provider, connection, mapping.CrmEntityName, relMapping);
+
+                if (string.IsNullOrEmpty(lookupField))
+                {
+                    _logger.LogWarning("Could not resolve lookup field for relationship {AuthScapeField} → {CrmRelatedEntity} on {CrmEntity}",
+                        relMapping.AuthScapeField, relMapping.CrmRelatedEntityName, mapping.CrmEntityName);
+                    continue;
+                }
+
                 // Get the AuthScape relationship ID (e.g., CompanyId value)
                 if (!entityData.TryGetValue(relMapping.AuthScapeField, out var relatedIdValue) || relatedIdValue == null)
                 {
                     // Relationship is null in AuthScape
                     if (relMapping.SyncNullValues)
                     {
-                        crmFields[relMapping.CrmLookupField] = null;
+                        crmFields[$"{lookupField}@odata.bind"] = null;
                     }
                     continue;
                 }
@@ -2541,19 +2571,19 @@ public class CrmSyncService : ICrmSyncService
                     // For Dynamics lookup fields, we use the @odata.bind format
                     // e.g., "parentcustomerid@odata.bind": "/accounts(guid)"
                     var entitySetName = GetEntitySetName(relMapping.CrmRelatedEntityName);
-                    crmFields[$"{relMapping.CrmLookupField}@odata.bind"] = $"/{entitySetName}({relatedCrmId})";
+                    crmFields[$"{lookupField}@odata.bind"] = $"/{entitySetName}({relatedCrmId})";
 
                     _logger.LogDebug("Resolved outbound relationship: {AuthScapeField}={EntityId} → {CrmField}={CrmId}",
-                        relMapping.AuthScapeField, relatedEntityId, relMapping.CrmLookupField, relatedCrmId);
+                        relMapping.AuthScapeField, relatedEntityId, lookupField, relatedCrmId);
                 }
                 else
                 {
                     _logger.LogDebug("No CRM external ID found for {EntityType} {EntityId} - relationship {CrmField} will be null",
-                        relMapping.RelatedAuthScapeEntityType, relatedEntityId, relMapping.CrmLookupField);
+                        relMapping.RelatedAuthScapeEntityType, relatedEntityId, lookupField);
 
                     if (relMapping.SyncNullValues)
                     {
-                        crmFields[relMapping.CrmLookupField] = null;
+                        crmFields[$"{lookupField}@odata.bind"] = null;
                     }
                 }
             }
@@ -2562,6 +2592,75 @@ public class CrmSyncService : ICrmSyncService
                 _logger.LogWarning(ex, "Error resolving outbound relationship for {AuthScapeField} → {CrmField}",
                     relMapping.AuthScapeField, relMapping.CrmLookupField);
             }
+        }
+    }
+
+    // Cache for resolved lookup fields: key = "entityName:targetEntityName", value = resolved lookup field name
+    private readonly Dictionary<string, string?> _lookupFieldCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Resolves the correct CRM navigation property name for a relationship mapping.
+    /// Always queries the CRM metadata to find the correct OData navigation property,
+    /// because Dynamics polymorphic lookups (Customer, Owner) require the navigation
+    /// property name (e.g., "parentcustomerid_account") rather than the attribute name
+    /// (e.g., "parentcustomerid") in @odata.bind payloads.
+    /// </summary>
+    private async Task<string?> ResolveLookupFieldAsync(
+        ICrmProvider provider,
+        CrmConnection connection,
+        string sourceEntityName,
+        CrmRelationshipMapping relMapping)
+    {
+        // Always resolve from metadata to get the correct navigation property name
+        var cacheKey = $"{sourceEntityName}:{relMapping.CrmRelatedEntityName}";
+        if (_lookupFieldCache.TryGetValue(cacheKey, out var cached))
+            return cached;
+
+        _logger.LogInformation("Auto-discovering lookup field on '{SourceEntity}' that targets '{TargetEntity}'",
+            sourceEntityName, relMapping.CrmRelatedEntityName);
+
+        try
+        {
+            var lookupFields = await provider.GetLookupFieldsAsync(connection, sourceEntityName, relMapping.CrmRelatedEntityName);
+
+            if (lookupFields.Count == 1)
+            {
+                var resolved = lookupFields[0].LogicalName;
+                _lookupFieldCache[cacheKey] = resolved;
+                _logger.LogInformation("Auto-resolved lookup field: '{SourceEntity}' → '{TargetEntity}' uses '{LookupField}'",
+                    sourceEntityName, relMapping.CrmRelatedEntityName, resolved);
+                return resolved;
+            }
+            else if (lookupFields.Count > 1)
+            {
+                // Multiple lookup fields target the same entity
+                // Prefer the one matching the configured CrmLookupField if it exists in the results
+                var configuredField = relMapping.CrmLookupField?.Trim();
+                var matchingConfigured = !string.IsNullOrEmpty(configuredField)
+                    ? lookupFields.FirstOrDefault(f => f.LogicalName.StartsWith(configuredField, StringComparison.OrdinalIgnoreCase))
+                    : null;
+
+                var resolved = matchingConfigured?.LogicalName
+                            ?? lookupFields[0].LogicalName;
+                _lookupFieldCache[cacheKey] = resolved;
+                _logger.LogInformation("Multiple lookup fields found on '{SourceEntity}' targeting '{TargetEntity}': [{Fields}]. Using '{LookupField}'",
+                    sourceEntityName, relMapping.CrmRelatedEntityName,
+                    string.Join(", ", lookupFields.Select(f => f.LogicalName)), resolved);
+                return resolved;
+            }
+            else
+            {
+                _logger.LogWarning("No lookup field found on '{SourceEntity}' that targets '{TargetEntity}'",
+                    sourceEntityName, relMapping.CrmRelatedEntityName);
+                _lookupFieldCache[cacheKey] = null;
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error auto-discovering lookup field on '{SourceEntity}' targeting '{TargetEntity}'",
+                sourceEntityName, relMapping.CrmRelatedEntityName);
+            return null;
         }
     }
 
