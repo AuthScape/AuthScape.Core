@@ -35,7 +35,6 @@
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Analytics\AuthScape.Analytics\AuthScape.Analytics.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.AzureCloudService\AuthScape.AzureCloudService.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.ChatGPT\AuthScape.OpenAI.csproj" />
     <!-- ErrorTracking is handled by IDP only - API sends errors to IDP via HTTP -->
     <ProjectReference Include="..\Plugins\AuthScape.Document.Mapping\AuthScape.Document.Mapping.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.DocumentProcessing\AuthScape.Document.csproj" />

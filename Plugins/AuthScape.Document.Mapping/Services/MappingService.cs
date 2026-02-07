@@ -1,7 +1,6 @@
 ﻿using AuthScape.Document.Mapping.Models;
 using AuthScape.Document.Mapping.Models.Attributes;
 using AuthScape.Models.Exceptions;
-using AuthScape.OpenAI;
 using AuthScape.Services;
 using AuthScape.Spreadsheet;
 using AuthScape.Spreadsheet.Models;
@@ -62,16 +61,14 @@ namespace AuthScape.Document.Mapping.Services
     {
         readonly IFileMappingService fileMappingService;
         readonly DatabaseContext databaseContext;
-        readonly IOpenAIService openAIService;
         readonly IFormRecognizerService formRecognizerService;
         readonly IBlobStorage blobStorage;
         readonly AppSettings appSettings;
         readonly ISpreadsheetService spreadsheetService;
         readonly IUserManagementService userManagementService;
-        public MappingService(DatabaseContext databaseContext, IUserManagementService userManagementService, IOpenAIService openAIService, ISpreadsheetService spreadsheetService, IFormRecognizerService formRecognizerService, IFileMappingService fileMappingService, IBlobStorage blobStorage, IOptions<AppSettings> appSettings)
+        public MappingService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISpreadsheetService spreadsheetService, IFormRecognizerService formRecognizerService, IFileMappingService fileMappingService, IBlobStorage blobStorage, IOptions<AppSettings> appSettings)
         {
             this.databaseContext = databaseContext;
-            this.openAIService = openAIService;
             this.formRecognizerService = formRecognizerService;
             this.blobStorage = blobStorage;
             this.appSettings = appSettings.Value;

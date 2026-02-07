@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <Version>1.2.522</Version>
+    <Version>1.2.526</Version>
     <Company>ZuechB</Company>
     <Product>AuthScape</Product>
     <Authors>ZuechB</Authors>
