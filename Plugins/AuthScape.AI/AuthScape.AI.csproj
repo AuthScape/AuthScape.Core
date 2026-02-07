@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>AuthScape.AI</PackageId>
+    <IsPackable>true</IsPackable>
+    <NoWarn>NU5104;SKEXP0001;SKEXP0010;SKEXP0070</NoWarn>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>AuthScape.AI</Title>
+    <Version>1.2.526</Version>
+    <Authors>ZuechB</Authors>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.AI</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Semantic Kernel -->
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.70.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.70.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.70.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.70.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.70.0-preview" />
+    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
+
+    <!-- Microsoft.Extensions.AI (for IChatClient bridge) -->
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.2.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.2.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.2.0-preview.1.26063.2" />
+
+    <!-- Native SDKs (Anthropic + Groq/OpenAI-compat) -->
+    <PackageReference Include="OpenAI" Version="2.8.0" />
+    <PackageReference Include="Anthropic" Version="12.3.0" />
+
+    <!-- Microsoft Extensions -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
+  </ItemGroup>
+
+</Project>

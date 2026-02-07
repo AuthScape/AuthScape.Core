@@ -16,7 +16,6 @@ using AuthScape.Logging.Services;
 using AuthScape.Marketplace.Services;
 using AuthScape.Models.Sitemap;
 using AuthScape.Models.Users;
-using AuthScape.OpenAI;
 using AuthScape.PrivateLabel.Services;
 using AuthScape.ReadMail;
 using AuthScape.SendGrid;
@@ -111,7 +110,6 @@ namespace API
 
                 services.AddScoped<IContentManagementService, ContentManagementService>();
 
-                services.AddScoped<IOpenAIService, OpenAIService>();
                 services.AddScoped<IDocumentService, DocumentService>();
 
                 services.AddScoped<IBlobStorage, BlobStorage>();
