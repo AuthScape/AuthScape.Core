@@ -1108,12 +1108,12 @@ namespace AuthScape.UserManageSystem.Services
 
             if (!String.IsNullOrWhiteSpace(param.Name))
             {
-                locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
+                locationQuery = locationQuery.Where(l => l.Title.ToLower().Contains(param.Name.ToLower()));
             }
 
             if (param.CompanyId != null)
             {
-                locationQuery.Where(l => l.CompanyId == param.CompanyId);
+                locationQuery = locationQuery.Where(l => l.CompanyId == param.CompanyId);
             }
 
             return await locationQuery.ToListAsync();
@@ -1309,6 +1309,7 @@ namespace AuthScape.UserManageSystem.Services
                 responseItems.Add(new UpdatedResponseItem("IsDeactivated", param.IsDeactivated.ToString()));
 
                 await databaseContext.Companies.AddAsync(company);
+                await databaseContext.SaveChangesAsync();
             }
             else
             {
@@ -1335,7 +1336,9 @@ namespace AuthScape.UserManageSystem.Services
 
 
             // Identify locations that need to be added
-            var locationsToAdd = param.Locations.Where(p => !company.Locations.Any(c => c.Id == p.Id)).ToList();
+            var existingLocations = company.Locations ?? new List<Location>();
+            var paramLocations = param.Locations ?? new List<LocationCompanyParam>();
+            var locationsToAdd = paramLocations.Where(p => !existingLocations.Any(c => c.Id == p.Id)).ToList();
             foreach (var locationToAdd in locationsToAdd)
             {
                 var location = await databaseContext.Locations
@@ -1344,19 +1347,19 @@ namespace AuthScape.UserManageSystem.Services
 
                 if (location != null)
                 {
-                    location.CompanyId = param.Id;
+                    location.CompanyId = company.Id;
                     await databaseContext.SaveChangesAsync();
                 }
             }
 
 
             // Identify locations that need to be removed
-            var locationsToRemove = company.Locations.Where(c => !param.Locations.Any(p => p.Id == c.Id)).ToList();
+            var locationsToRemove = existingLocations.Where(c => !paramLocations.Any(p => p.Id == c.Id)).ToList();
             foreach (var locationToRemove in locationsToRemove)
             {
 
                 var location = await databaseContext.Locations
-                    .Where(z => z.CompanyId == param.Id && z.Id == locationToRemove.Id)
+                    .Where(z => z.CompanyId == company.Id && z.Id == locationToRemove.Id)
                     .FirstOrDefaultAsync();
 
                 if (location != null)
@@ -1371,10 +1374,10 @@ namespace AuthScape.UserManageSystem.Services
 
 
             // new custom field logic here....
-            foreach (var customField in param.CustomFields)
+            foreach (var customField in param.CustomFields ?? new List<CustomFieldResult>())
             {
                 var userCustomField = await databaseContext.CompanyCustomFields
-                    .Where(c => c.CustomFieldId == customField.CustomFieldId && c.CompanyId == param.Id)
+                    .Where(c => c.CustomFieldId == customField.CustomFieldId && c.CompanyId == company.Id)
                     .FirstOrDefaultAsync();
 
                 if (userCustomField != null)
@@ -1390,7 +1393,7 @@ namespace AuthScape.UserManageSystem.Services
                     await databaseContext.CompanyCustomFields.AddAsync(new CompanyCustomField()
                     {
                         CustomFieldId = customField.CustomFieldId,
-                        CompanyId = param.Id,
+                        CompanyId = company.Id,
                         Value = customField.Value
                     });
 
@@ -1399,7 +1402,7 @@ namespace AuthScape.UserManageSystem.Services
             }
             await databaseContext.SaveChangesAsync();
 
-            databaseContext.CompanyDomains.RemoveRange(databaseContext.CompanyDomains.Where(z => z.CompanyId == param.Id));
+            databaseContext.CompanyDomains.RemoveRange(databaseContext.CompanyDomains.Where(z => z.CompanyId == company.Id));
             await databaseContext.SaveChangesAsync();
 
             if (param.Domains != null)
@@ -1408,7 +1411,7 @@ namespace AuthScape.UserManageSystem.Services
                 {
                     await databaseContext.CompanyDomains.AddAsync(new CompanyDomain()
                     {
-                        CompanyId = param.Id,
+                        CompanyId = company.Id,
                         Domain = domain
                     });
                 }

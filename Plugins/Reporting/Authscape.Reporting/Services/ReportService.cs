@@ -1386,6 +1386,30 @@ namespace Authscape.Reporting.Services
                 widgetData.Content = list;
                 widgetData.ReportType = ReportType.WaterfallChartReport;
             }
+            else if (content.GetType() == typeof(TextReportContent))
+            {
+                var textContent = (TextReportContent)content;
+
+                widgetData.Columns = new List<string> { "Text" };
+                widgetData.Content = new List<object> { textContent.Text };
+                widgetData.ReportType = ReportType.TextReport;
+
+                if (!string.IsNullOrEmpty(textContent.Title))
+                {
+                    widgetData.Options = new Dictionary<string, object>
+                    {
+                        { "title", textContent.Title }
+                    };
+                }
+            }
+            else if (content.GetType() == typeof(TableContent))
+            {
+                var tableContent = (TableContent)content;
+
+                widgetData.Columns = tableContent.Columns?.Cast<object>().ToList() ?? new List<object>();
+                widgetData.Content = GetValues(tableContent.Content);
+                widgetData.ReportType = ReportType.TableReport;
+            }
         }
 
         private List<string> GetColumnNames(IEnumerable<object> Objs)
