@@ -244,6 +244,12 @@ public interface ICrmSyncService
     /// </summary>
     Task<CrmSyncDiagnostics> GetSyncDiagnosticsAsync(long connectionId);
 
+    /// <summary>
+    /// Detects duplicate records between AuthScape and CRM without modifying any data.
+    /// Scans both sides for unlinked records that match by identifier and for duplicates within each system.
+    /// </summary>
+    Task<CrmDuplicateDetectionResult> DetectDuplicatesAsync(long connectionId);
+
     #endregion
 }
 
@@ -275,6 +281,7 @@ public class CrmSyncResult
     public string? SyncId { get; set; }
     public CrmSyncStats Stats { get; set; } = new();
     public List<string> Errors { get; set; } = new();
+    public List<DuplicateRecord> Duplicates { get; set; } = new();
     public long DurationMs { get; set; }
 }
 
@@ -293,6 +300,57 @@ public class CrmSyncStats
     public int CreatedCount { get; set; }
     public int UpdatedCount { get; set; }
     public int DeletedCount { get; set; }
+    public int DuplicatesDetectedCount { get; set; }
+    public int LinkedByMatchCount { get; set; }
     public DateTimeOffset? LastSyncAt { get; set; }
     public DateTimeOffset? LastSuccessfulSyncAt { get; set; }
+}
+
+/// <summary>
+/// A duplicate record detected during sync or duplicate detection
+/// </summary>
+public class DuplicateRecord
+{
+    /// <summary>
+    /// The entity type: "User", "Location", or "Company"
+    /// </summary>
+    public string EntityType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The identifier that matched (email address, name/title)
+    /// </summary>
+    public string Identifier { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Which side has the duplicates: "AuthScape", "CRM", or "Cross-System" (unlinked match)
+    /// </summary>
+    public string Side { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The IDs of the duplicate records (AuthScape IDs or CRM GUIDs)
+    /// </summary>
+    public List<string> RecordIds { get; set; } = new();
+}
+
+/// <summary>
+/// Result of a standalone duplicate detection scan (read-only, no modifications)
+/// </summary>
+public class CrmDuplicateDetectionResult
+{
+    public bool HasDuplicates { get; set; }
+    public List<DuplicateRecord> DuplicatesInCrm { get; set; } = new();
+    public List<DuplicateRecord> DuplicatesInAuthScape { get; set; } = new();
+    public List<UnlinkedMatch> UnlinkedMatches { get; set; } = new();
+    public string? Summary { get; set; }
+}
+
+/// <summary>
+/// A record that exists on both sides but is not linked via CrmExternalId
+/// </summary>
+public class UnlinkedMatch
+{
+    public string EntityType { get; set; } = string.Empty;
+    public string Identifier { get; set; } = string.Empty;
+    public long AuthScapeEntityId { get; set; }
+    public string CrmEntityId { get; set; } = string.Empty;
 }

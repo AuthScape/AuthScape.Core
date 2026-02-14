@@ -1,5 +1,6 @@
 ﻿using AuthScape.ContentManagement.Models;
 using AuthScape.ContentManagement.Services;
+using AuthScape.Services;
 using CoreBackpack.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,11 @@ namespace AuthScape.DocumentReader.Controllers
     public class ContentManagementController : ControllerBase
     {
         readonly IContentManagementService _contentManagementService;
-        public ContentManagementController(IContentManagementService contentManagementService)
+        readonly IUserManagementService userManagementService;
+        public ContentManagementController(IContentManagementService contentManagementService, IUserManagementService userManagementService)
         {
             _contentManagementService = contentManagementService;
+            this.userManagementService = userManagementService;
         }
 
         [HttpPost]

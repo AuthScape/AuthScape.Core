@@ -144,7 +144,7 @@ namespace mvcTest.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            var query = HttpUtility.ParseQueryString(returnUrl);
+            var query = string.IsNullOrEmpty(returnUrl) ? HttpUtility.ParseQueryString("") : HttpUtility.ParseQueryString(returnUrl);
             var redirectUri = query.Get("redirect_uri");
 
             if (redirectUri != null)

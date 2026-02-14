@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>AuthScape.AI</Title>
-    <Version>1.2.526</Version>
+    <Version>1.2.528</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.AI</Product>

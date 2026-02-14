@@ -1435,6 +1435,145 @@ public class CrmSyncService : ICrmSyncService
         return diagnostics;
     }
 
+    public async Task<CrmDuplicateDetectionResult> DetectDuplicatesAsync(long connectionId)
+    {
+        var result = new CrmDuplicateDetectionResult();
+
+        try
+        {
+            var connection = await GetConnectionAsync(connectionId);
+            if (connection == null || !connection.IsEnabled)
+            {
+                result.Summary = "Connection not found or disabled";
+                return result;
+            }
+
+            var provider = _providerFactory.GetProvider(connection);
+            var mappings = await GetEntityMappingsAsync(connectionId);
+
+            foreach (var mapping in mappings.Where(m => m.IsEnabled))
+            {
+                _logger.LogInformation("Detecting duplicates for {EntityType} ({CrmEntity})",
+                    mapping.AuthScapeEntityType, mapping.CrmEntityName);
+
+                // Get all existing external IDs for this mapping
+                var existingExternalIds = await _context.CrmExternalIds
+                    .Where(e => e.CrmConnectionId == connectionId &&
+                               e.AuthScapeEntityType == mapping.AuthScapeEntityType &&
+                               e.CrmEntityName == mapping.CrmEntityName)
+                    .ToListAsync();
+
+                var linkedAuthScapeIds = existingExternalIds.Select(e => e.AuthScapeEntityId).ToHashSet();
+                var linkedCrmIds = existingExternalIds.Select(e => e.CrmEntityId).ToHashSet();
+
+                // Get all CRM records
+                var crmRecords = (await provider.GetRecordsAsync(connection, mapping.CrmEntityName, filter: mapping.CrmFilterExpression)).ToList();
+
+                // Check for duplicates within CRM by identifier
+                var crmByIdentifier = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var crmRecord in crmRecords)
+                {
+                    var identifier = GetCrmRecordIdentifier(mapping.AuthScapeEntityType, crmRecord);
+                    if (!string.IsNullOrEmpty(identifier))
+                    {
+                        if (!crmByIdentifier.ContainsKey(identifier))
+                            crmByIdentifier[identifier] = new List<string>();
+                        crmByIdentifier[identifier].Add(crmRecord.Id);
+                    }
+                }
+
+                foreach (var kvp in crmByIdentifier.Where(k => k.Value.Count > 1))
+                {
+                    result.DuplicatesInCrm.Add(new DuplicateRecord
+                    {
+                        EntityType = mapping.AuthScapeEntityType.ToString(),
+                        Identifier = kvp.Key,
+                        Side = "CRM",
+                        RecordIds = kvp.Value
+                    });
+                }
+
+                // Check for duplicates within AuthScape by identifier
+                var allEntities = await GetUnlinkedAuthScapeEntitiesAsync(mapping.AuthScapeEntityType, new HashSet<long>());
+                var authScapeByIdentifier = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var (entityId, entityData) in allEntities)
+                {
+                    var identifier = GetAuthScapeEntityIdentifier(mapping.AuthScapeEntityType, entityData);
+                    if (!string.IsNullOrEmpty(identifier))
+                    {
+                        if (!authScapeByIdentifier.ContainsKey(identifier))
+                            authScapeByIdentifier[identifier] = new List<string>();
+                        authScapeByIdentifier[identifier].Add(entityId.ToString());
+                    }
+                }
+
+                foreach (var kvp in authScapeByIdentifier.Where(k => k.Value.Count > 1))
+                {
+                    result.DuplicatesInAuthScape.Add(new DuplicateRecord
+                    {
+                        EntityType = mapping.AuthScapeEntityType.ToString(),
+                        Identifier = kvp.Key,
+                        Side = "AuthScape",
+                        RecordIds = kvp.Value
+                    });
+                }
+
+                // Find unlinked matches (records that exist on both sides but aren't linked)
+                var unlinkedCrmByIdentifier = new Dictionary<string, List<CrmRecord>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var crmRecord in crmRecords.Where(r => !linkedCrmIds.Contains(r.Id)))
+                {
+                    var identifier = GetCrmRecordIdentifier(mapping.AuthScapeEntityType, crmRecord);
+                    if (!string.IsNullOrEmpty(identifier))
+                    {
+                        if (!unlinkedCrmByIdentifier.ContainsKey(identifier))
+                            unlinkedCrmByIdentifier[identifier] = new List<CrmRecord>();
+                        unlinkedCrmByIdentifier[identifier].Add(crmRecord);
+                    }
+                }
+
+                var unlinkedEntities = await GetUnlinkedAuthScapeEntitiesAsync(mapping.AuthScapeEntityType, linkedAuthScapeIds);
+                foreach (var (entityId, entityData) in unlinkedEntities)
+                {
+                    var identifier = GetAuthScapeEntityIdentifier(mapping.AuthScapeEntityType, entityData);
+                    if (!string.IsNullOrEmpty(identifier) && unlinkedCrmByIdentifier.TryGetValue(identifier, out var matchingCrmRecords))
+                    {
+                        foreach (var crmRecord in matchingCrmRecords)
+                        {
+                            result.UnlinkedMatches.Add(new UnlinkedMatch
+                            {
+                                EntityType = mapping.AuthScapeEntityType.ToString(),
+                                Identifier = identifier,
+                                AuthScapeEntityId = entityId,
+                                CrmEntityId = crmRecord.Id
+                            });
+                        }
+                    }
+                }
+            }
+
+            result.HasDuplicates = result.DuplicatesInCrm.Any() || result.DuplicatesInAuthScape.Any();
+
+            var parts = new List<string>();
+            if (result.DuplicatesInCrm.Any())
+                parts.Add($"{result.DuplicatesInCrm.Count} duplicate group(s) in CRM");
+            if (result.DuplicatesInAuthScape.Any())
+                parts.Add($"{result.DuplicatesInAuthScape.Count} duplicate group(s) in AuthScape");
+            if (result.UnlinkedMatches.Any())
+                parts.Add($"{result.UnlinkedMatches.Count} unlinked match(es) that would be auto-linked on next sync");
+
+            result.Summary = parts.Any()
+                ? $"Found: {string.Join(", ", parts)}"
+                : "No duplicates detected. All records are properly linked.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error detecting duplicates for connection {ConnectionId}", connectionId);
+            result.Summary = $"Error: {ex.Message}";
+        }
+
+        return result;
+    }
+
     #endregion
 
     #region Private Helper Methods
@@ -1498,6 +1637,16 @@ public class CrmSyncService : ICrmSyncService
         try
         {
             var provider = _providerFactory.GetProvider(connection);
+
+            // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
+            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
+                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            {
+                var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
+                result.Stats.LinkedByMatchCount += matchResult.Matched;
+                result.Stats.DuplicatesDetectedCount += matchResult.Duplicates.Count;
+                result.Duplicates.AddRange(matchResult.Duplicates);
+            }
 
             // Sync outbound if configured
             if (mapping.SyncDirection == CrmSyncDirection.Outbound ||
@@ -1567,6 +1716,16 @@ public class CrmSyncService : ICrmSyncService
         {
             var provider = _providerFactory.GetProvider(connection);
 
+            // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
+            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
+                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            {
+                var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
+                result.Stats.LinkedByMatchCount += matchResult.Matched;
+                result.Stats.DuplicatesDetectedCount += matchResult.Duplicates.Count;
+                result.Duplicates.AddRange(matchResult.Duplicates);
+            }
+
             // Sync outbound if configured
             if (mapping.SyncDirection == CrmSyncDirection.Outbound ||
                 mapping.SyncDirection == CrmSyncDirection.Bidirectional)
@@ -1610,6 +1769,18 @@ public class CrmSyncService : ICrmSyncService
         try
         {
             var provider = _providerFactory.GetProvider(connection);
+
+            // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
+            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
+                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            {
+                progressCallback?.Invoke($"{entityName} (Pre-match)", 0, 1);
+                var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
+                result.Stats.LinkedByMatchCount += matchResult.Matched;
+                result.Stats.DuplicatesDetectedCount += matchResult.Duplicates.Count;
+                result.Duplicates.AddRange(matchResult.Duplicates);
+                progressCallback?.Invoke($"{entityName} (Pre-match)", 1, 1);
+            }
 
             // Sync outbound if configured
             if (mapping.SyncDirection == CrmSyncDirection.Outbound ||
@@ -1815,6 +1986,25 @@ public class CrmSyncService : ICrmSyncService
             // Map fields to CRM format
             var crmFields = MapAuthScapeToCrm(entityData, mapping.FieldMappings.Where(f => f.IsEnabled));
 
+            // Auto-convert IsActive/IsDeactivated to Dynamics statecode (0=Active, 1=Inactive)
+            // This ensures active/inactive state syncs outbound even without an explicit field mapping
+            if (!crmFields.ContainsKey("statecode"))
+            {
+                if (mapping.AuthScapeEntityType == AuthScapeEntityType.User &&
+                    entityData.TryGetValue("IsActive", out var isActiveVal) && isActiveVal is bool isActive)
+                {
+                    crmFields["statecode"] = isActive ? 0 : 1;
+                    crmFields["statuscode"] = isActive ? 1 : 2; // Active=1, Inactive=2 (default status reasons)
+                }
+                else if ((mapping.AuthScapeEntityType == AuthScapeEntityType.Location ||
+                          mapping.AuthScapeEntityType == AuthScapeEntityType.Company) &&
+                         entityData.TryGetValue("IsDeactivated", out var isDeactivatedVal) && isDeactivatedVal is bool isDeactivated)
+                {
+                    crmFields["statecode"] = isDeactivated ? 1 : 0;
+                    crmFields["statuscode"] = isDeactivated ? 2 : 1;
+                }
+            }
+
             // Resolve relationship fields (e.g., CompanyId → parentcustomerid lookup)
             await ResolveOutboundRelationshipsAsync(connection, mapping, entityData, crmFields);
 
@@ -1920,31 +2110,31 @@ public class CrmSyncService : ICrmSyncService
         switch (mapping.AuthScapeEntityType)
         {
             case AuthScapeEntityType.User:
-                // Match by email address in CRM
-                var email = entityData.GetValueOrDefault("Email")?.ToString();
+                // Match by email address in CRM (case-insensitive)
+                var email = entityData.GetValueOrDefault("Email")?.ToString()?.Trim();
                 if (!string.IsNullOrEmpty(email))
                 {
-                    // Dynamics uses emailaddress1 for contacts
-                    filterExpression = $"emailaddress1 eq '{email}'";
+                    // Dynamics uses emailaddress1 for contacts - use tolower() for case-insensitive match
+                    filterExpression = $"tolower(emailaddress1) eq '{email.ToLowerInvariant().Replace("'", "''")}'";
                 }
                 break;
 
             case AuthScapeEntityType.Company:
-                // Match by company name in CRM
-                var companyTitle = entityData.GetValueOrDefault("Title")?.ToString();
+                // Match by company name in CRM (case-insensitive)
+                var companyTitle = entityData.GetValueOrDefault("Title")?.ToString()?.Trim();
                 if (!string.IsNullOrEmpty(companyTitle))
                 {
-                    // Dynamics uses 'name' for accounts
-                    filterExpression = $"name eq '{companyTitle.Replace("'", "''")}'";
+                    // Dynamics uses 'name' for accounts - use tolower() for case-insensitive match
+                    filterExpression = $"tolower(name) eq '{companyTitle.ToLowerInvariant().Replace("'", "''")}'";
                 }
                 break;
 
             case AuthScapeEntityType.Location:
-                // Match by location name in CRM
-                var locationTitle = entityData.GetValueOrDefault("Title")?.ToString();
+                // Match by location name in CRM (case-insensitive)
+                var locationTitle = entityData.GetValueOrDefault("Title")?.ToString()?.Trim();
                 if (!string.IsNullOrEmpty(locationTitle))
                 {
-                    filterExpression = $"name eq '{locationTitle.Replace("'", "''")}'";
+                    filterExpression = $"tolower(name) eq '{locationTitle.ToLowerInvariant().Replace("'", "''")}'";
                 }
                 break;
         }
@@ -2123,6 +2313,23 @@ public class CrmSyncService : ICrmSyncService
                         authScapeFields["ZipCode"] = zipStr;
                     }
                 }
+
+                // Auto-populate IsDeactivated from statecode (Dynamics: 0=Active, 1=Inactive)
+                if (!authScapeFields.ContainsKey("IsDeactivated") &&
+                    crmRecord.Fields.TryGetValue("statecode", out var locationStateCode))
+                {
+                    bool isDeactivated = false; // Default to active
+                    if (locationStateCode != null)
+                    {
+                        var stateCodeStr = locationStateCode.ToString();
+                        if (int.TryParse(stateCodeStr, out var stateCodeInt))
+                        {
+                            isDeactivated = stateCodeInt != 0; // 0 = Active (not deactivated), 1 = Inactive (deactivated)
+                        }
+                    }
+                    authScapeFields["IsDeactivated"] = isDeactivated;
+                    _logger.LogDebug("Set IsDeactivated={IsDeactivated} from CRM statecode for location record {CrmRecordId}", isDeactivated, crmRecordId);
+                }
             }
 
             // For companies, auto-populate common fields from CRM account if not already mapped
@@ -2151,6 +2358,23 @@ public class CrmSyncService : ICrmSyncService
                     {
                         authScapeFields["Description"] = descStr;
                     }
+                }
+
+                // Auto-populate IsDeactivated from statecode (Dynamics: 0=Active, 1=Inactive)
+                if (!authScapeFields.ContainsKey("IsDeactivated") &&
+                    crmRecord.Fields.TryGetValue("statecode", out var companyStateCode))
+                {
+                    bool isDeactivated = false; // Default to active
+                    if (companyStateCode != null)
+                    {
+                        var stateCodeStr = companyStateCode.ToString();
+                        if (int.TryParse(stateCodeStr, out var stateCodeInt))
+                        {
+                            isDeactivated = stateCodeInt != 0; // 0 = Active (not deactivated), 1 = Inactive (deactivated)
+                        }
+                    }
+                    authScapeFields["IsDeactivated"] = isDeactivated;
+                    _logger.LogDebug("Set IsDeactivated={IsDeactivated} from CRM statecode for company record {CrmRecordId}", isDeactivated, crmRecordId);
                 }
             }
 
@@ -2605,6 +2829,13 @@ public class CrmSyncService : ICrmSyncService
     /// property name (e.g., "parentcustomerid_account") rather than the attribute name
     /// (e.g., "parentcustomerid") in @odata.bind payloads.
     /// </summary>
+    // Primary key field names that are never valid as navigation/lookup properties on other entities
+    private static readonly HashSet<string> _invalidLookupFieldNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "accountid", "contactid", "leadid", "opportunityid", "incidentid",
+        "systemuserid", "teamid", "businessunitid", "organizationid"
+    };
+
     private async Task<string?> ResolveLookupFieldAsync(
         ICrmProvider provider,
         CrmConnection connection,
@@ -2622,6 +2853,12 @@ public class CrmSyncService : ICrmSyncService
         try
         {
             var lookupFields = await provider.GetLookupFieldsAsync(connection, sourceEntityName, relMapping.CrmRelatedEntityName);
+
+            // Filter out any results that are primary key field names — these are never valid
+            // as navigation properties (e.g., accountid is the PK of account, not a lookup on contact)
+            lookupFields = lookupFields
+                .Where(f => !_invalidLookupFieldNames.Contains(f.LogicalName))
+                .ToList();
 
             if (lookupFields.Count == 1)
             {
@@ -2953,6 +3190,15 @@ public class CrmSyncService : ICrmSyncService
         if (fields.TryGetValue("Logo", out var logo)) company.Logo = logo?.ToString();
         if (fields.TryGetValue("Description", out var desc)) company.Description = desc?.ToString();
 
+        // Handle IsDeactivated
+        if (fields.TryGetValue("IsDeactivated", out var isDeactivated) && isDeactivated != null)
+        {
+            if (isDeactivated is bool isDeactivatedBool)
+                company.IsDeactivated = isDeactivatedBool;
+            else if (bool.TryParse(isDeactivated.ToString(), out var parsed))
+                company.IsDeactivated = parsed;
+        }
+
         await _context.SaveChangesAsync();
     }
 
@@ -2966,6 +3212,15 @@ public class CrmSyncService : ICrmSyncService
         if (fields.TryGetValue("City", out var city)) location.City = city?.ToString();
         if (fields.TryGetValue("State", out var state)) location.State = state?.ToString();
         if (fields.TryGetValue("ZipCode", out var zip)) location.ZipCode = zip?.ToString();
+
+        // Handle IsDeactivated
+        if (fields.TryGetValue("IsDeactivated", out var isDeactivated) && isDeactivated != null)
+        {
+            if (isDeactivated is bool isDeactivatedBool)
+                location.IsDeactivated = isDeactivatedBool;
+            else if (bool.TryParse(isDeactivated.ToString(), out var parsed))
+                location.IsDeactivated = parsed;
+        }
 
         // Handle relationship fields (CompanyId)
         if (fields.TryGetValue("CompanyId", out var companyId))
@@ -3093,6 +3348,249 @@ public class CrmSyncService : ICrmSyncService
         _context.Locations.Add(location);
         await _context.SaveChangesAsync();
         return location.Id;
+    }
+
+    /// <summary>
+    /// Pre-sync matching phase: Links unlinked records between AuthScape and CRM by identifier
+    /// before the normal outbound/inbound sync runs. This prevents duplicate creation in bidirectional sync.
+    /// </summary>
+    private async Task<(int Matched, List<DuplicateRecord> Duplicates)> MatchUnlinkedRecordsAsync(
+        CrmConnection connection,
+        CrmEntityMapping mapping,
+        ICrmProvider provider)
+    {
+        var matched = 0;
+        var duplicates = new List<DuplicateRecord>();
+
+        try
+        {
+            _logger.LogInformation("Starting pre-sync matching phase for {EntityType} ({CrmEntity})",
+                mapping.AuthScapeEntityType, mapping.CrmEntityName);
+
+            // Get all existing external IDs for this mapping
+            var existingExternalIds = await _context.CrmExternalIds
+                .Where(e => e.CrmConnectionId == connection.Id &&
+                           e.AuthScapeEntityType == mapping.AuthScapeEntityType &&
+                           e.CrmEntityName == mapping.CrmEntityName)
+                .ToListAsync();
+
+            var linkedAuthScapeIds = existingExternalIds.Select(e => e.AuthScapeEntityId).ToHashSet();
+            var linkedCrmIds = existingExternalIds.Select(e => e.CrmEntityId).ToHashSet();
+
+            // Get all CRM records
+            var crmRecords = (await provider.GetRecordsAsync(connection, mapping.CrmEntityName, filter: mapping.CrmFilterExpression)).ToList();
+
+            // Filter to only unlinked CRM records
+            var unlinkedCrmRecords = crmRecords.Where(r => !linkedCrmIds.Contains(r.Id)).ToList();
+
+            if (!unlinkedCrmRecords.Any())
+            {
+                _logger.LogInformation("Pre-sync matching: No unlinked CRM records found for {CrmEntity}", mapping.CrmEntityName);
+                return (matched, duplicates);
+            }
+
+            // Build a lookup of CRM records by identifier (case-insensitive)
+            var crmRecordsByIdentifier = new Dictionary<string, List<CrmRecord>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var crmRecord in unlinkedCrmRecords)
+            {
+                var identifier = GetCrmRecordIdentifier(mapping.AuthScapeEntityType, crmRecord);
+                if (!string.IsNullOrEmpty(identifier))
+                {
+                    if (!crmRecordsByIdentifier.ContainsKey(identifier))
+                        crmRecordsByIdentifier[identifier] = new List<CrmRecord>();
+                    crmRecordsByIdentifier[identifier].Add(crmRecord);
+                }
+            }
+
+            // Detect duplicates within CRM (multiple records with same identifier)
+            foreach (var kvp in crmRecordsByIdentifier.Where(k => k.Value.Count > 1))
+            {
+                duplicates.Add(new DuplicateRecord
+                {
+                    EntityType = mapping.AuthScapeEntityType.ToString(),
+                    Identifier = kvp.Key,
+                    Side = "CRM",
+                    RecordIds = kvp.Value.Select(r => r.Id).ToList()
+                });
+            }
+
+            // Get unlinked AuthScape entities
+            var unlinkedEntities = await GetUnlinkedAuthScapeEntitiesAsync(mapping.AuthScapeEntityType, linkedAuthScapeIds);
+
+            // Build a lookup of AuthScape entities by identifier
+            var authScapeByIdentifier = new Dictionary<string, List<(long Id, Dictionary<string, object?> Data)>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (entityId, entityData) in unlinkedEntities)
+            {
+                var identifier = GetAuthScapeEntityIdentifier(mapping.AuthScapeEntityType, entityData);
+                if (!string.IsNullOrEmpty(identifier))
+                {
+                    if (!authScapeByIdentifier.ContainsKey(identifier))
+                        authScapeByIdentifier[identifier] = new List<(long, Dictionary<string, object?>)>();
+                    authScapeByIdentifier[identifier].Add((entityId, entityData));
+                }
+            }
+
+            // Detect duplicates within AuthScape (multiple entities with same identifier)
+            foreach (var kvp in authScapeByIdentifier.Where(k => k.Value.Count > 1))
+            {
+                duplicates.Add(new DuplicateRecord
+                {
+                    EntityType = mapping.AuthScapeEntityType.ToString(),
+                    Identifier = kvp.Key,
+                    Side = "AuthScape",
+                    RecordIds = kvp.Value.Select(e => e.Id.ToString()).ToList()
+                });
+            }
+
+            // Match unlinked AuthScape entities to unlinked CRM records
+            foreach (var kvp in authScapeByIdentifier)
+            {
+                if (!crmRecordsByIdentifier.TryGetValue(kvp.Key, out var matchingCrmRecords))
+                    continue;
+
+                // Take the first AuthScape entity and first CRM record for the match
+                var authScapeEntity = kvp.Value.First();
+                var crmRecord = matchingCrmRecords.First();
+
+                // Verify this AuthScape entity doesn't already have a mapping (could have been created by a previous iteration)
+                var alreadyMapped = await _context.CrmExternalIds
+                    .AnyAsync(e => e.CrmConnectionId == connection.Id &&
+                                  e.AuthScapeEntityType == mapping.AuthScapeEntityType &&
+                                  e.AuthScapeEntityId == authScapeEntity.Id);
+
+                if (alreadyMapped)
+                    continue;
+
+                // Also verify the CRM record isn't already mapped
+                var crmAlreadyMapped = await _context.CrmExternalIds
+                    .AnyAsync(e => e.CrmConnectionId == connection.Id &&
+                                  e.CrmEntityName == mapping.CrmEntityName &&
+                                  e.CrmEntityId == crmRecord.Id);
+
+                if (crmAlreadyMapped)
+                    continue;
+
+                // Create the mapping
+                var newExternalId = new CrmExternalId
+                {
+                    CrmConnectionId = connection.Id,
+                    AuthScapeEntityType = mapping.AuthScapeEntityType,
+                    AuthScapeEntityId = authScapeEntity.Id,
+                    CrmEntityName = mapping.CrmEntityName,
+                    CrmEntityId = crmRecord.Id,
+                    LastSyncedAt = DateTimeOffset.UtcNow,
+                    LastSyncDirection = "PreMatch",
+                    Created = DateTimeOffset.UtcNow
+                };
+
+                _context.CrmExternalIds.Add(newExternalId);
+                matched++;
+
+                _logger.LogInformation("Pre-sync matched {EntityType} {EntityId} to CRM {CrmEntity} {CrmId} by identifier '{Identifier}'",
+                    mapping.AuthScapeEntityType, authScapeEntity.Id, mapping.CrmEntityName, crmRecord.Id, kvp.Key);
+            }
+
+            if (matched > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            _logger.LogInformation("Pre-sync matching completed: {Matched} records linked, {Duplicates} duplicates detected",
+                matched, duplicates.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during pre-sync matching phase for {EntityType}", mapping.AuthScapeEntityType);
+        }
+
+        return (matched, duplicates);
+    }
+
+    /// <summary>
+    /// Gets the natural identifier from a CRM record (email for contacts, name for accounts)
+    /// </summary>
+    private static string? GetCrmRecordIdentifier(AuthScapeEntityType entityType, CrmRecord crmRecord)
+    {
+        return entityType switch
+        {
+            AuthScapeEntityType.User =>
+                crmRecord.Fields.GetValueOrDefault("emailaddress1")?.ToString()?.Trim(),
+            AuthScapeEntityType.Company =>
+                crmRecord.Fields.GetValueOrDefault("name")?.ToString()?.Trim(),
+            AuthScapeEntityType.Location =>
+                crmRecord.Fields.GetValueOrDefault("name")?.ToString()?.Trim(),
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Gets the natural identifier from an AuthScape entity (email for users, title for companies/locations)
+    /// </summary>
+    private static string? GetAuthScapeEntityIdentifier(AuthScapeEntityType entityType, Dictionary<string, object?> entityData)
+    {
+        return entityType switch
+        {
+            AuthScapeEntityType.User =>
+                entityData.GetValueOrDefault("Email")?.ToString()?.Trim(),
+            AuthScapeEntityType.Company =>
+                entityData.GetValueOrDefault("Title")?.ToString()?.Trim(),
+            AuthScapeEntityType.Location =>
+                entityData.GetValueOrDefault("Title")?.ToString()?.Trim(),
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Gets all AuthScape entities of a given type that are NOT in the linked set
+    /// </summary>
+    private async Task<List<(long Id, Dictionary<string, object?> Data)>> GetUnlinkedAuthScapeEntitiesAsync(
+        AuthScapeEntityType entityType,
+        HashSet<long> linkedIds)
+    {
+        var results = new List<(long Id, Dictionary<string, object?> Data)>();
+
+        switch (entityType)
+        {
+            case AuthScapeEntityType.User:
+                var users = await _context.Users
+                    .Where(u => !linkedIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.Email, u.FirstName, u.LastName })
+                    .ToListAsync();
+                foreach (var u in users)
+                {
+                    results.Add((u.Id, new Dictionary<string, object?>
+                    {
+                        ["Email"] = u.Email,
+                        ["FirstName"] = u.FirstName,
+                        ["LastName"] = u.LastName
+                    }));
+                }
+                break;
+
+            case AuthScapeEntityType.Company:
+                var companies = await _context.Companies
+                    .Where(c => !linkedIds.Contains(c.Id))
+                    .Select(c => new { c.Id, c.Title })
+                    .ToListAsync();
+                foreach (var c in companies)
+                {
+                    results.Add((c.Id, new Dictionary<string, object?> { ["Title"] = c.Title }));
+                }
+                break;
+
+            case AuthScapeEntityType.Location:
+                var locations = await _context.Locations
+                    .Where(l => !linkedIds.Contains(l.Id))
+                    .Select(l => new { l.Id, l.Title })
+                    .ToListAsync();
+                foreach (var l in locations)
+                {
+                    results.Add((l.Id, new Dictionary<string, object?> { ["Title"] = l.Title }));
+                }
+                break;
+        }
+
+        return results;
     }
 
     private async Task LogSync(long connectionId, long? mappingId, AuthScapeEntityType? entityType, long? entityId,

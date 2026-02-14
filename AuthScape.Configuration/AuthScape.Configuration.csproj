@@ -11,7 +11,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Configuration</PackageId>
     <Title>AuthScape.Configuration</Title>
-    <Version>1.2.526</Version>
+    <Version>1.2.528</Version>
   </PropertyGroup>
 
   <ItemGroup>
