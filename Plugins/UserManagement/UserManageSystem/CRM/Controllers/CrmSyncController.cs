@@ -236,6 +236,45 @@ public class CrmSyncController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Detects duplicate records between AuthScape and CRM without modifying any data.
+    /// Returns duplicates within each system and unlinked matches that would be auto-linked on next sync.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<CrmDuplicateDetectionResultDto>> DetectCrmDuplicates(long connectionId)
+    {
+        _logger.LogInformation("Running duplicate detection for connection {ConnectionId}", connectionId);
+
+        var result = await _syncService.DetectDuplicatesAsync(connectionId);
+
+        return Ok(new CrmDuplicateDetectionResultDto
+        {
+            HasDuplicates = result.HasDuplicates,
+            DuplicatesInCrm = result.DuplicatesInCrm.Select(d => new DuplicateRecordDto
+            {
+                EntityType = d.EntityType,
+                Identifier = d.Identifier,
+                Side = d.Side,
+                RecordIds = d.RecordIds
+            }).ToList(),
+            DuplicatesInAuthScape = result.DuplicatesInAuthScape.Select(d => new DuplicateRecordDto
+            {
+                EntityType = d.EntityType,
+                Identifier = d.Identifier,
+                Side = d.Side,
+                RecordIds = d.RecordIds
+            }).ToList(),
+            UnlinkedMatches = result.UnlinkedMatches.Select(m => new UnlinkedMatchDto
+            {
+                EntityType = m.EntityType,
+                Identifier = m.Identifier,
+                AuthScapeEntityId = m.AuthScapeEntityId,
+                CrmEntityId = m.CrmEntityId
+            }).ToList(),
+            Summary = result.Summary
+        });
+    }
+
     #region Private Helpers
 
     private static SyncResultDto MapToDto(CrmSyncResult result)
@@ -256,8 +295,17 @@ public class CrmSyncController : ControllerBase
                 OutboundCount = result.Stats.OutboundCount,
                 CreateCount = result.Stats.CreatedCount,
                 UpdateCount = result.Stats.UpdatedCount,
-                DeleteCount = result.Stats.DeletedCount
+                DeleteCount = result.Stats.DeletedCount,
+                DuplicatesDetectedCount = result.Stats.DuplicatesDetectedCount,
+                LinkedByMatchCount = result.Stats.LinkedByMatchCount
             },
+            Duplicates = result.Duplicates.Select(d => new DuplicateRecordDto
+            {
+                EntityType = d.EntityType,
+                Identifier = d.Identifier,
+                Side = d.Side,
+                RecordIds = d.RecordIds
+            }).ToList(),
             Errors = result.Errors
         };
     }
@@ -274,6 +322,7 @@ public class SyncResultDto
     public string? SyncId { get; set; }
     public SyncStatsDto Stats { get; set; } = new();
     public List<string> Errors { get; set; } = new();
+    public List<DuplicateRecordDto> Duplicates { get; set; } = new();
 }
 
 public class SyncStatsDto
@@ -288,6 +337,8 @@ public class SyncStatsDto
     public int CreateCount { get; set; }
     public int UpdateCount { get; set; }
     public int DeleteCount { get; set; }
+    public int DuplicatesDetectedCount { get; set; }
+    public int LinkedByMatchCount { get; set; }
     public DateTimeOffset? LastSyncAt { get; set; }
 }
 
@@ -333,6 +384,31 @@ public class CrmSyncDiagnosticsDto
     public List<string> SampleAccountMappings { get; set; } = new();
     public string? ConnectionStatus { get; set; }
     public string? Recommendation { get; set; }
+}
+
+public class DuplicateRecordDto
+{
+    public string EntityType { get; set; } = string.Empty;
+    public string Identifier { get; set; } = string.Empty;
+    public string Side { get; set; } = string.Empty;
+    public List<string> RecordIds { get; set; } = new();
+}
+
+public class UnlinkedMatchDto
+{
+    public string EntityType { get; set; } = string.Empty;
+    public string Identifier { get; set; } = string.Empty;
+    public long AuthScapeEntityId { get; set; }
+    public string CrmEntityId { get; set; } = string.Empty;
+}
+
+public class CrmDuplicateDetectionResultDto
+{
+    public bool HasDuplicates { get; set; }
+    public List<DuplicateRecordDto> DuplicatesInCrm { get; set; } = new();
+    public List<DuplicateRecordDto> DuplicatesInAuthScape { get; set; } = new();
+    public List<UnlinkedMatchDto> UnlinkedMatches { get; set; } = new();
+    public string? Summary { get; set; }
 }
 
 #endregion
