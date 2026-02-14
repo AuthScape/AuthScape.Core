@@ -8,5 +8,6 @@ public enum AIProvider
     Google,
     Mistral,
     Groq,
+    ClaudeCli,
     Custom
 }

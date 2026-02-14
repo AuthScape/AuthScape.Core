@@ -33,6 +33,7 @@
     <ProjectReference Include="..\AuthScape.Controllers\AuthScape.Controllers.csproj" />
     <ProjectReference Include="..\AuthScape.ReadMail\AuthScape.ReadMail.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.AI\AuthScape.AI.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Analytics\AuthScape.Analytics\AuthScape.Analytics.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.AzureCloudService\AuthScape.AzureCloudService.csproj" />
     <!-- ErrorTracking is handled by IDP only - API sends errors to IDP via HTTP -->

@@ -13,5 +13,6 @@ public class AIServiceOptions
     public GoogleOptions? Google { get; set; }
     public MistralOptions? Mistral { get; set; }
     public OpenAICompatibleOptions? Groq { get; set; }
+    public ClaudeCliOptions? ClaudeCli { get; set; }
     public Dictionary<string, OpenAICompatibleOptions>? CustomProviders { get; set; }
 }

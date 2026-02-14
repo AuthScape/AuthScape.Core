@@ -25,7 +25,7 @@ namespace AuthScape.TicketSystem.Controllers
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateTicket(CreateTicketParam param)
         {
-            var ticketId = await ticketService.CreateTicket(param.TicketTypeId, param.TicketStatusId, param.Description, param.Message);
+            var ticketId = await ticketService.CreateTicket(param.TicketTypeId, param.TicketStatusId, param.Description, param.Message, param.PriorityLevel);
             return Ok(ticketId);
         }
 
@@ -213,6 +213,7 @@ namespace AuthScape.TicketSystem.Controllers
         public int TicketStatusId { get; set; }
         public string? Description { get; set; }
         public string Message { get; set; }
+        public int PriorityLevel { get; set; } = 2;
     }
 
     public class CreatePublicTicketParam

@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAIProvider, GoogleProvider>();
         services.AddSingleton<IAIProvider, MistralProvider>();
         services.AddSingleton<IAIProvider, OpenAICompatibleProvider>();
+        services.AddSingleton<IAIProvider, ClaudeCliProvider>();
 
         services.AddSingleton<IAIToolRegistry>(sp =>
         {

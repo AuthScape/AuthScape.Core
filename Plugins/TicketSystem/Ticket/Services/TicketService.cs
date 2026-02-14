@@ -22,7 +22,7 @@ namespace AuthScape.TicketSystem.Services
     public interface ITicketService
     {
         Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments);
-        Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message);
+        Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message, int priorityLevel = 2);
         Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? message,   string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
         Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null);
@@ -345,7 +345,7 @@ namespace AuthScape.TicketSystem.Services
                 PriorityLevel = ticket.PriorityLevel,
                 TicketStatuses = ticketStatus,
                 CustomTabPayload = ticket.CustomTabPayload,
-                Name = ticket.TicketType.Name,
+                Name = ticket.Title,
                 Description = ticket.Description,
                 AssignedFirstName = ticket.FirstName,
                 AssignedLastName = ticket.LastName,
@@ -371,7 +371,7 @@ namespace AuthScape.TicketSystem.Services
             };
         }
 
-        public async Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message)
+        public async Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message, int priorityLevel = 2)
         {
             var signedInUser = await userManagementService.GetSignedInUser();
 
@@ -383,14 +383,14 @@ namespace AuthScape.TicketSystem.Services
             var newTicket = new Ticket()
             {
                 Email = signedInUser.Email,
-                Title = signedInUser.FirstName,
+                Title = message,
                 FirstName = signedInUser.FirstName,
                 LastName = signedInUser.LastName,
                 TicketTypeId = ticketTypeId,
                 TicketStatusId = ticketStatusId,
                 CreatedById = signedInUser.Id,
                 Description = description,
-                PriorityLevel = PriorityLevel.Medium,
+                PriorityLevel = (PriorityLevel)priorityLevel,
                 Created = SystemTime.Now,
                 LastUpdated = SystemTime.Now,
             };
