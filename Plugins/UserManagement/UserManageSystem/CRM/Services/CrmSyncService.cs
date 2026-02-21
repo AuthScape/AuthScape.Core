@@ -1639,8 +1639,7 @@ public class CrmSyncService : ICrmSyncService
             var provider = _providerFactory.GetProvider(connection);
 
             // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
-            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
-                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            // Run for ALL sync directions to ensure existing records are linked before any sync
             {
                 var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
                 result.Stats.LinkedByMatchCount += matchResult.Matched;
@@ -1717,8 +1716,7 @@ public class CrmSyncService : ICrmSyncService
             var provider = _providerFactory.GetProvider(connection);
 
             // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
-            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
-                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            // Run for ALL sync directions to ensure existing records are linked before any sync
             {
                 var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
                 result.Stats.LinkedByMatchCount += matchResult.Matched;
@@ -1771,8 +1769,7 @@ public class CrmSyncService : ICrmSyncService
             var provider = _providerFactory.GetProvider(connection);
 
             // Phase 0: Pre-sync matching - link unlinked records by identifier to prevent duplicate creation
-            if (mapping.SyncDirection == CrmSyncDirection.Bidirectional ||
-                mapping.SyncDirection == CrmSyncDirection.Outbound)
+            // Run for ALL sync directions to ensure existing records are linked before any sync
             {
                 progressCallback?.Invoke($"{entityName} (Pre-match)", 0, 1);
                 var matchResult = await MatchUnlinkedRecordsAsync(connection, mapping, provider);
@@ -2032,6 +2029,23 @@ public class CrmSyncService : ICrmSyncService
 
                 if (existingCrmRecord != null)
                 {
+                    // Check if this CRM record is already mapped to a different AuthScape entity (duplicate email scenario)
+                    var crmAlreadyMapped = await _context.CrmExternalIds
+                        .FirstOrDefaultAsync(e => e.CrmConnectionId == connection.Id &&
+                                                  e.CrmEntityName == mapping.CrmEntityName &&
+                                                  e.CrmEntityId == existingCrmRecord.Id);
+
+                    if (crmAlreadyMapped != null)
+                    {
+                        _logger.LogWarning("CRM {CrmEntity} {CrmId} is already mapped to AuthScape {EntityType} {MappedEntityId} - skipping duplicate AuthScape entity {EntityId} (same identifier)",
+                            mapping.CrmEntityName, existingCrmRecord.Id, mapping.AuthScapeEntityType, crmAlreadyMapped.AuthScapeEntityId, entityId);
+                        result.Stats.SkippedCount++;
+                        await LogSync(connection.Id, mapping.Id, mapping.AuthScapeEntityType, entityId,
+                            mapping.CrmEntityName, existingCrmRecord.Id, "Outbound", CrmSyncAction.Update,
+                            CrmSyncStatus.Skipped, sw.ElapsedMilliseconds, "Duplicate identifier - CRM record already mapped to another entity");
+                        return result;
+                    }
+
                     // Found existing CRM record by identifier - update it and create mapping
                     await provider.UpdateRecordAsync(connection, mapping.CrmEntityName, existingCrmRecord.Id, crmFields);
 
@@ -2452,25 +2466,45 @@ public class CrmSyncService : ICrmSyncService
                 else
                 {
                     // No existing entity found - create new AuthScape record
+                    // Note: CreateAuthScapeEntityAsync may return an existing entity ID if a duplicate email is found
                     var authScapeEntityId = await CreateAuthScapeEntityAsync(mapping.AuthScapeEntityType, authScapeFields);
 
-                    // Store external ID mapping
-                    var newExternalId = new CrmExternalId
-                    {
-                        CrmConnectionId = connection.Id,
-                        AuthScapeEntityType = mapping.AuthScapeEntityType,
-                        AuthScapeEntityId = authScapeEntityId,
-                        CrmEntityName = mapping.CrmEntityName,
-                        CrmEntityId = crmRecordId,
-                        LastSyncedAt = DateTimeOffset.UtcNow,
-                        LastSyncDirection = "Inbound"
-                    };
-                    _context.CrmExternalIds.Add(newExternalId);
+                    // Check if this AuthScape entity already has an external ID mapping (can happen when
+                    // CreateAuthScapeEntityAsync returns an existing entity due to duplicate email detection)
+                    var existingMapping = await _context.CrmExternalIds
+                        .FirstOrDefaultAsync(e => e.CrmConnectionId == connection.Id &&
+                                                  e.AuthScapeEntityType == mapping.AuthScapeEntityType &&
+                                                  e.AuthScapeEntityId == authScapeEntityId);
 
-                    result.Stats.CreatedCount++;
-                    await LogSync(connection.Id, mapping.Id, mapping.AuthScapeEntityType, authScapeEntityId,
-                        mapping.CrmEntityName, crmRecordId, "Inbound", CrmSyncAction.Create,
-                        CrmSyncStatus.Success, sw.ElapsedMilliseconds);
+                    if (existingMapping != null)
+                    {
+                        _logger.LogWarning("AuthScape {EntityType} {EntityId} already mapped to CRM {CrmEntity} {ExistingCrmId} - skipping duplicate CRM record {NewCrmId}",
+                            mapping.AuthScapeEntityType, authScapeEntityId, mapping.CrmEntityName, existingMapping.CrmEntityId, crmRecordId);
+                        result.Stats.SkippedCount++;
+                        await LogSync(connection.Id, mapping.Id, mapping.AuthScapeEntityType, authScapeEntityId,
+                            mapping.CrmEntityName, crmRecordId, "Inbound", CrmSyncAction.Create,
+                            CrmSyncStatus.Skipped, sw.ElapsedMilliseconds, "Duplicate identifier - AuthScape entity already mapped to another CRM record");
+                    }
+                    else
+                    {
+                        // Store external ID mapping
+                        var newExternalId = new CrmExternalId
+                        {
+                            CrmConnectionId = connection.Id,
+                            AuthScapeEntityType = mapping.AuthScapeEntityType,
+                            AuthScapeEntityId = authScapeEntityId,
+                            CrmEntityName = mapping.CrmEntityName,
+                            CrmEntityId = crmRecordId,
+                            LastSyncedAt = DateTimeOffset.UtcNow,
+                            LastSyncDirection = "Inbound"
+                        };
+                        _context.CrmExternalIds.Add(newExternalId);
+
+                        result.Stats.CreatedCount++;
+                        await LogSync(connection.Id, mapping.Id, mapping.AuthScapeEntityType, authScapeEntityId,
+                            mapping.CrmEntityName, crmRecordId, "Inbound", CrmSyncAction.Create,
+                            CrmSyncStatus.Success, sw.ElapsedMilliseconds);
+                    }
                 }
             }
 

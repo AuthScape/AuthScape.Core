@@ -388,6 +388,46 @@ namespace AuthScape.UserManageSystem.Controllers
         {
             return Ok(await userManagementSystemService.UploadCustomFieldImage(param));
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRoles()
+        {
+            return Ok(await userManagementSystemService.GetAllRoles());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddRole(AddRoleParam param)
+        {
+            await userManagementSystemService.AddRole(param.Role);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteRole(long id)
+        {
+            await userManagementSystemService.DeleteRole(id);
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPermissions()
+        {
+            return Ok(await userManagementSystemService.GetPermissions());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddPermission(AddPermissionParam param)
+        {
+            await userManagementSystemService.AddPermission(param.Name);
+            return Ok();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeletePermission(Guid id)
+        {
+            await userManagementSystemService.DeletePermission(id);
+            return Ok();
+        }
     }
 
 

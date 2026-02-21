@@ -7,7 +7,7 @@
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.IDP</Product>
-    <Version>1.2.528</Version>
+    <Version>1.2.536</Version>
     <PackageId>AuthScape.IDP</PackageId>
     <Description>Available soon</Description>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -27,16 +27,16 @@
     <PackageReference Include="Fido2.AspNet" Version="4.0.0" />
     <PackageReference Include="Fido2.Models" Version="4.0.0" />
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
     <PackageReference Include="OpenIddict" Version="7.2.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Stripe.net" Version="50.2.0" />
+    <PackageReference Include="Stripe.net" Version="50.3.0" />
     <PackageReference Include="UAParser" Version="3.1.47" />
   </ItemGroup>
 

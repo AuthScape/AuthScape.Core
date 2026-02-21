@@ -60,6 +60,9 @@ namespace AuthScape.Controllers
             services.AddScoped<ISlugService, SlugService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
 
+            // Add SignalR (required by CRM sync progress service and other hubs)
+            services.AddSignalR();
+
             // Add CRM integration services
             services.AddAuthScapeCrm();
 

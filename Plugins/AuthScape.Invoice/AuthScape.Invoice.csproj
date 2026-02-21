@@ -10,14 +10,14 @@
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Invoice</Product>
-    <Version>1.2.528</Version>
+    <Version>1.2.536</Version>
     <OutputType>Library</OutputType>
 	<IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
   </ItemGroup>
 
   <ItemGroup>
