@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.2.528</Version>
+    <Version>1.2.536</Version>
     <PackageId>AuthScape.Spreadsheet</PackageId>
     <Title>AuthScape.Spreadsheet</Title>
     <Authors>ZuechB</Authors>
@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
   </ItemGroup>
 
   <ItemGroup>

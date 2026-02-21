@@ -65,6 +65,9 @@ namespace AuthScape.UserManageSystem.Services
 
         Task UploadLogo(UserManagementCompanyLogo logo);
         Task<string?> UploadCustomFieldImage(UserManagementCustomFieldImage param);
+
+        Task DeleteRole(long id);
+        Task DeletePermission(Guid id);
     }
 
     public class UserManagementSystemService : IUserManagementSystemService
@@ -141,6 +144,16 @@ namespace AuthScape.UserManageSystem.Services
                 ConcurrencyStamp = Guid.NewGuid().ToString(),
             });
             await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteRole(long id)
+        {
+            var role = await databaseContext.Roles.Where(r => r.Id == id).FirstOrDefaultAsync();
+            if (role != null)
+            {
+                databaseContext.Roles.Remove(role);
+                await databaseContext.SaveChangesAsync();
+            }
         }
 
         public async Task ArchiveUser(long id)
@@ -500,6 +513,16 @@ namespace AuthScape.UserManageSystem.Services
             return await databaseContext.Permissions.ToListAsync();
         }
 
+        public async Task DeletePermission(Guid id)
+        {
+            var permission = await databaseContext.Permissions.Where(p => p.Id == id).FirstOrDefaultAsync();
+            if (permission != null)
+            {
+                databaseContext.Permissions.Remove(permission);
+                await databaseContext.SaveChangesAsync();
+            }
+        }
+
         public async Task<MemoryStream?> GetDownloadTemplate(CustomFieldPlatformType platformType)
         {
             var arrayCustomFields = await databaseContext.CustomFields
@@ -785,47 +808,43 @@ namespace AuthScape.UserManageSystem.Services
 
 
                 databaseContext.UserRoles.RemoveRange(databaseContext.UserRoles.Where(d => d.UserId == usr.Id));
-                await databaseContext.SaveChangesAsync();
 
                 // roles
-                if (user.Roles != null)
+                if (user.Roles != null && user.Roles.Count > 0)
                 {
+                    var roleNames = user.Roles.Select(r => r.ToLower()).ToList();
+                    var roleLookup = await databaseContext.Roles
+                        .AsNoTracking()
+                        .Where(r => roleNames.Contains(r.Name.ToLower()))
+                        .ToDictionaryAsync(r => r.Name.ToLower(), r => r.Id);
+
                     foreach (var role in user.Roles)
                     {
-                        var roleItem = await databaseContext.Roles.AsNoTracking().Where(r => r.Name.ToLower() == role.ToLower()).FirstOrDefaultAsync();
-
-                        var usrRole = await databaseContext.UserRoles
-                            .Where(r => r.UserId == usr.Id &&
-                                r.RoleId == roleItem.Id
-                                ).FirstOrDefaultAsync();
-
-                        if (usrRole == null)
+                        if (roleLookup.TryGetValue(role.ToLower(), out var roleId))
                         {
-                            var newUserRole = new IdentityUserRole<long>();
-                            newUserRole.UserId = usr.Id;
-                            newUserRole.RoleId = roleItem.Id;
-
-                            await databaseContext.UserRoles.AddAsync(newUserRole);
+                            await databaseContext.UserRoles.AddAsync(new IdentityUserRole<long>
+                            {
+                                UserId = usr.Id,
+                                RoleId = roleId
+                            });
                         }
                     }
-                }
-                else
-                {
-                    // no roles assigned to the user
-                    var usrRoles = databaseContext.UserRoles.Where(r => r.UserId == usr.Id);
-                    databaseContext.UserRoles.RemoveRange(usrRoles);
                 }
 
 
                 // permissions
                 if (user.Permissions != null)
                 {
-                    List<string> permissionSelections = new List<string>();
-                    foreach (var permission in user.Permissions)
-                    {
-                        var claimItem = await databaseContext.Permissions.AsNoTracking().Where(r => r.Name.ToLower() == permission.ToLower()).FirstOrDefaultAsync();
-                        permissionSelections.Add(claimItem.Id.ToString());
-                    }
+                    var permNames = user.Permissions.Select(p => p.ToLower()).ToList();
+                    var permLookup = await databaseContext.Permissions
+                        .AsNoTracking()
+                        .Where(p => permNames.Contains(p.Name.ToLower()))
+                        .ToDictionaryAsync(p => p.Name.ToLower(), p => p.Id);
+
+                    List<string> permissionSelections = user.Permissions
+                        .Where(p => permLookup.ContainsKey(p.ToLower()))
+                        .Select(p => permLookup[p.ToLower()].ToString())
+                        .ToList();
 
                     var usrClaim = await databaseContext.UserClaims.Where(u => u.UserId == usr.Id && u.ClaimType == "permissions").FirstOrDefaultAsync();
                     if (usrClaim == null)
@@ -855,20 +874,18 @@ namespace AuthScape.UserManageSystem.Services
 
 
                 // new custom field logic here....
+                var customFieldIds = user.CustomFields.Select(cf => cf.CustomFieldId).ToList();
+                var existingCustomFields = await databaseContext.UserCustomFields
+                    .Where(c => c.UserId == usr.Id && customFieldIds.Contains(c.CustomFieldId))
+                    .ToDictionaryAsync(c => c.CustomFieldId);
+
                 foreach (var customField in user.CustomFields)
                 {
-                    var userCustomField = await databaseContext.UserCustomFields
-                        .Where(c => c.CustomFieldId == customField.CustomFieldId && c.UserId == usr.Id)
-                        .FirstOrDefaultAsync();
-
-                    if (userCustomField != null)
+                    if (existingCustomFields.TryGetValue(customField.CustomFieldId, out var userCustomField))
                     {
-
                         if (customField.Value != userCustomField.Value)
                         {
                             userCustomField.Value = customField.Value;
-
-
                             responseItems.Add(new UpdatedResponseItem(customField.Name, customField.Value));
                         }
                     }

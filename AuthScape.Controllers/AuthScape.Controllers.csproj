@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.2.528</Version>
+    <Version>1.2.536</Version>
     <Product>AuthScape.Controller</Product>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
@@ -22,13 +22,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
     <PackageReference Include="OpenIddict" Version="7.2.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.12.12" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.42" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
