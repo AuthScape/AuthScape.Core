@@ -1,5 +1,6 @@
 using AuthScape.IDP;
 using AuthScape.IDP.Services.ErrorTracking;
+using AuthScape.TicketSystem.Services;
 using AuthScape.Models.Users;
 using AuthScape.SendGrid;
 using AuthScape.Services;
@@ -85,6 +86,7 @@ namespace IDP
                 services.AddScoped<IBlobStorage, BlobStorage>();
                 services.AddScoped<IImageService, ImageService>();
 
+                services.AddScoped<ITicketService, TicketService>();
                 services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
                 services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
 

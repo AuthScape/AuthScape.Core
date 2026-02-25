@@ -22,7 +22,7 @@ namespace AuthScape.SendGrid
             this.databaseContext = databaseContext;
         }
 
-        protected async Task<List<SendGridResponse>> SendMail(IEnumerable<AppUser> users, string templateId, Models.BaseEmail substitutions = null, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false, bool sendIndividualEmail = false)
+        protected async Task<List<SendGridResponse>> SendMail(IEnumerable<AppUser> users, string templateId, Models.BaseEmail substitutions = null, string? ipPoolName = null, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false, bool sendIndividualEmail = false)
         {
             var responses = new List<SendGridResponse>();
 
@@ -97,11 +97,11 @@ namespace AuthScape.SendGrid
 
                 if (sendIndividualEmail)
                 {
-                    responses.Add(await SendToSendGrid(email, enableTracking: enableTracking));
+                    responses.Add(await SendToSendGrid(email, ipPoolName: ipPoolName, enableTracking: enableTracking));
                 }
                 else
                 {
-                    responses.Add(await SendToSendGrid(email, enableTracking: enableTracking));
+                    responses.Add(await SendToSendGrid(email, ipPoolName: ipPoolName, enableTracking: enableTracking));
                     //emails.Add(email);
                 }
             }
@@ -114,7 +114,7 @@ namespace AuthScape.SendGrid
             return responses;
         }
 
-        private async Task<SendGridResponse> SendToSendGrid(Models.Email email, List<EmailHeader> headers = null, bool enableTracking = false)
+        private async Task<SendGridResponse> SendToSendGrid(Models.Email email, List<EmailHeader> headers = null, string? ipPoolName = null, bool enableTracking = false)
         {
             var client = new SendGridClient(email.ApiKey);
 
@@ -126,6 +126,11 @@ namespace AuthScape.SendGrid
                                                             email.TemplateId,
                                                             email.Substitutions
                                                         );
+
+            if (!string.IsNullOrWhiteSpace(ipPoolName))
+            {
+                msg.SetIpPoolName(ipPoolName);
+            }
 
             if (email.Subject != null)
             {
@@ -213,9 +218,7 @@ namespace AuthScape.SendGrid
             };
         }
 
-
-
-        protected async Task<SendGridResponse> SendRawHTMLEmail(IEnumerable<AppUser> users, string htmlContent, string? subject = null, bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null)
+        protected async Task<SendGridResponse> SendRawHTMLEmail(IEnumerable<AppUser> users, string htmlContent, string? subject = null, bool enableTracking = false, string? ipPoolName = null, List<AttachmentFile>? attachmentFiles = null)
         {
             var client = new SendGridClient(appSettings.SendGrid.APIKey);
 
@@ -251,6 +254,10 @@ namespace AuthScape.SendGrid
             msg.PlainTextContent = plainTextContent;
             msg.HtmlContent = htmlContent;
 
+            if (!String.IsNullOrWhiteSpace(ipPoolName))
+            {
+                msg.SetIpPoolName(ipPoolName);
+            }
 
             var personalizations = new List<Personalization>();
 
