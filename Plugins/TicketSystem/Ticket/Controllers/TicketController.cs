@@ -97,6 +97,54 @@ namespace AuthScape.TicketSystem.Controllers
             return Ok(await ticketService.GetTicketTypes());
         }
 
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> CreateTicketStatus(CreateTicketStatusParam param)
+        {
+            await ticketService.CreateTicketStatus(param.Name);
+            return Ok();
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> CreateTicketType(CreateTicketTypeParam param)
+        {
+            await ticketService.CreateTicketType(param.Name);
+            return Ok();
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateTicketStatusConfig(UpdateTicketStatusConfigParam param)
+        {
+            await ticketService.UpdateTicketStatusConfig(param.Id, param.Name, param.CompletedStep, param.ArchiveStep);
+            return Ok();
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateTicketTypeConfig(UpdateTicketTypeConfigParam param)
+        {
+            await ticketService.UpdateTicketTypeConfig(param.Id, param.Name);
+            return Ok();
+        }
+
+        [HttpDelete]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> DeleteTicketStatus(int id)
+        {
+            await ticketService.DeleteTicketStatus(id);
+            return Ok();
+        }
+
+        [HttpDelete]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> DeleteTicketType(int id)
+        {
+            await ticketService.DeleteTicketType(id);
+            return Ok();
+        }
+
         [HttpPut]
         public async Task<IActionResult> UpdateParticipants(AddParticipantsViewModel addParticipantsViewModel)
         {
@@ -256,5 +304,29 @@ namespace AuthScape.TicketSystem.Controllers
     {
         public long TicketId { get; set; }
         public IFormFile File { get; set; }
+    }
+
+    public class CreateTicketStatusParam
+    {
+        public string Name { get; set; }
+    }
+
+    public class CreateTicketTypeParam
+    {
+        public string Name { get; set; }
+    }
+
+    public class UpdateTicketStatusConfigParam
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public bool CompletedStep { get; set; }
+        public bool ArchiveStep { get; set; }
+    }
+
+    public class UpdateTicketTypeConfigParam
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

@@ -7,7 +7,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Marketplace.Models</PackageId>
     <Title>AuthScape.Marketplace.Models</Title>
-    <Version>1.2.536</Version>
+    <Version>1.2.546</Version>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
     <Product>AuthScape.Marketplace.Models</Product>

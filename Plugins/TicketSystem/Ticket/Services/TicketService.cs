@@ -30,6 +30,10 @@ namespace AuthScape.TicketSystem.Services
         Task CreateTicketType(string name);
         Task<List<TicketStatus>> GetTicketStatuses();
         Task<List<TicketType>> GetTicketTypes();
+        Task UpdateTicketStatusConfig(int id, string name, bool completedStep, bool archiveStep);
+        Task DeleteTicketStatus(int id);
+        Task UpdateTicketTypeConfig(int id, string name);
+        Task DeleteTicketType(int id);
         Task<TicketViewModel> GetTicket(long ticketId);
         Task CreateTicketMessage(long ticketId, string name, string message, long? createdByUserId = null, bool isNote = false);
         Task ArchiveTicket(long id);
@@ -238,10 +242,6 @@ namespace AuthScape.TicketSystem.Services
             {
                 tickets = tickets.Where(z => z.PrivateLabelCompanyId == user.CompanyId);
             }
-            else
-            {
-                tickets = tickets.Where(z => z.PrivateLabelCompanyId == null);
-            }
 
             if (ticketStatusId != null)
             {
@@ -393,6 +393,8 @@ namespace AuthScape.TicketSystem.Services
                 PriorityLevel = (PriorityLevel)priorityLevel,
                 Created = SystemTime.Now,
                 LastUpdated = SystemTime.Now,
+                CompanyId = signedInUser.CompanyId,
+                PrivateLabelCompanyId = signedInUser.CompanyId,
             };
 
             await databaseContext.Tickets.AddAsync(newTicket);
@@ -523,6 +525,40 @@ namespace AuthScape.TicketSystem.Services
         public async Task<List<TicketType>> GetTicketTypes()
         {
             return await databaseContext.TicketTypes.AsNoTracking().ToListAsync();
+        }
+
+        public async Task UpdateTicketStatusConfig(int id, string name, bool completedStep, bool archiveStep)
+        {
+            var status = await databaseContext.TicketStatuses.Where(s => s.Id == id).FirstOrDefaultAsync();
+            if (status == null) throw new BadRequestException("Ticket Status " + id + " not found");
+            status.Name = name;
+            status.CompletedStep = completedStep;
+            status.ArchiveStep = archiveStep;
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteTicketStatus(int id)
+        {
+            var status = await databaseContext.TicketStatuses.Where(s => s.Id == id).FirstOrDefaultAsync();
+            if (status == null) throw new BadRequestException("Ticket Status " + id + " not found");
+            databaseContext.TicketStatuses.Remove(status);
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateTicketTypeConfig(int id, string name)
+        {
+            var ticketType = await databaseContext.TicketTypes.Where(t => t.Id == id).FirstOrDefaultAsync();
+            if (ticketType == null) throw new BadRequestException("Ticket Type " + id + " not found");
+            ticketType.Name = name;
+            await databaseContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteTicketType(int id)
+        {
+            var ticketType = await databaseContext.TicketTypes.Where(t => t.Id == id).FirstOrDefaultAsync();
+            if (ticketType == null) throw new BadRequestException("Ticket Type " + id + " not found");
+            databaseContext.TicketTypes.Remove(ticketType);
+            await databaseContext.SaveChangesAsync();
         }
 
         public async Task ArchiveTicket(long id)

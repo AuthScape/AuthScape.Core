@@ -228,6 +228,20 @@
                     </a>
                 </li>
 
+                <li class="admin-nav-section-title mt-3">Tickets</li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/TicketTypes" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/TicketTypes">
+                        <i class="fa fa-tags"></i>Ticket Types
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/IdentityServer/TicketStatuses" ? "active" : "")"
+                       asp-area="Admin" asp-page="/IdentityServer/TicketStatuses">
+                        <i class="fa fa-list-check"></i>Ticket Statuses
+                    </a>
+                </li>
+
                 <li class="admin-nav-section-title mt-3">System</li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/System/ErrorLogs" ? "active" : "")"

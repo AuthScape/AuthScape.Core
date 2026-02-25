@@ -78,10 +78,16 @@ namespace AuthScape.Marketplace.Services
             containerLocation += "/" + searchParams.PlatformId;
 
             var versionInformation = await GetVersionFile(containerLocation);
+
+            // Version 0 means no index has been generated yet
+            if (versionInformation <= 0)
+            {
+                return new SearchResult2();
+            }
+
             containerLocation += "/" + versionInformation.ToString();
 
 
-            // fix this to support versioning
             string cachePath = Path.Combine(
                 Environment.GetEnvironmentVariable("HOME") ?? string.Empty,
                 "cache", "LuceneCache", (searchParams.OemCompanyId?.ToString() ?? "0"), searchParams.PlatformId.ToString(), versionInformation.ToString()
@@ -92,15 +98,25 @@ namespace AuthScape.Marketplace.Services
                 System.IO.Directory.CreateDirectory(cachePath);
 
             // Pre-load all category metadata ONCE to avoid N+1 queries
-            var categoryMetadata = await databaseContext.ProductCardCategories
+            var categoryMetadata = (await databaseContext.ProductCardCategories
                 .AsNoTracking()
                 .Where(c => c.PlatformId == searchParams.PlatformId
                          && c.CompanyId == searchParams.OemCompanyId)
-                .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+                .ToListAsync())
+                .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
 
-            using (var cacheDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
-            using (var azureDirectory = new AzureDirectory(searchParams.StorageConnectionString, containerLocation, cacheDirectory))
-            using (var reader = DirectoryReader.Open(azureDirectory))
+            // Download index from blob storage to local cache (skips if already cached for this version)
+            await EnsureLuceneIndexDownloaded(searchParams.StorageConnectionString, containerLocation, cachePath);
+
+            using (var localDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
+            {
+                if (!DirectoryReader.IndexExists(localDirectory))
+                {
+                    return new SearchResult2();
+                }
+
+            using (var reader = DirectoryReader.Open(localDirectory))
             {
                 var searcher = new IndexSearcher(reader);
                 var analyzer = new StandardAnalyzer(Lucene.Net.Util.LuceneVersion.LUCENE_48);
@@ -344,6 +360,7 @@ namespace AuthScape.Marketplace.Services
                     Total = totalCount,
                     TrackingId = impressionTracking.Id
                 };
+            }
             }
         }
 
@@ -633,12 +650,11 @@ namespace AuthScape.Marketplace.Services
                 "cache", "LuceneCache", (request.OemCompanyId?.ToString() ?? "0"), request.PlatformId.ToString(), versionInformation.ToString()
             );
 
-            if (!System.IO.Directory.Exists(cachePath))
-                System.IO.Directory.CreateDirectory(cachePath);
+            // Download index from blob storage to local cache (skips if already cached for this version)
+            await EnsureLuceneIndexDownloaded(appSettings.LuceneSearch.StorageConnectionString, containerLocation, cachePath);
 
-            using (var cacheDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
-            using (var azureDirectory = new AzureDirectory(appSettings.LuceneSearch.StorageConnectionString, containerLocation, cacheDirectory))
-            using (var reader = DirectoryReader.Open(azureDirectory))
+            using (var localDirectory = new SimpleFSDirectory(new DirectoryInfo(cachePath)))
+            using (var reader = DirectoryReader.Open(localDirectory))
             {
                 var searcher = new IndexSearcher(reader);
 
@@ -873,6 +889,93 @@ namespace AuthScape.Marketplace.Services
                 PopularFilters = popularFilters,
                 DailyTrends = dailyTrends
             };
+        }
+
+        /// <summary>
+        /// Downloads all Lucene index blobs from Azure Blob Storage to a local directory.
+        /// Skips download if a .download_complete marker exists (version-based immutability).
+        /// </summary>
+        private async Task EnsureLuceneIndexDownloaded(string storageConnectionString, string containerLocation, string localPath)
+        {
+            var completeMarker = Path.Combine(localPath, ".download_complete");
+
+            // If already fully downloaded for this version, skip
+            if (File.Exists(completeMarker))
+            {
+                return;
+            }
+
+            // Clean up any partial download from a previous failed attempt
+            if (System.IO.Directory.Exists(localPath))
+            {
+                foreach (var file in System.IO.Directory.GetFiles(localPath))
+                    File.Delete(file);
+            }
+
+            System.IO.Directory.CreateDirectory(localPath);
+
+            // Split containerLocation into real Azure container name + blob prefix
+            // e.g. "modelindex-dev/0/1/3" -> container="modelindex-dev", prefix="0/1/3/"
+            var firstSlash = containerLocation.IndexOf('/');
+            string containerName;
+            string blobPrefix;
+
+            if (firstSlash < 0)
+            {
+                containerName = containerLocation;
+                blobPrefix = "";
+            }
+            else
+            {
+                containerName = containerLocation.Substring(0, firstSlash);
+                blobPrefix = containerLocation.Substring(firstSlash + 1);
+                if (!blobPrefix.EndsWith("/"))
+                    blobPrefix += "/";
+            }
+
+            var blobServiceClient = new BlobServiceClient(storageConnectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+            var downloadedFiles = new List<string>();
+            try
+            {
+                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: string.IsNullOrEmpty(blobPrefix) ? null : blobPrefix))
+                {
+                    var blobFileName = blobItem.Name;
+                    if (!string.IsNullOrEmpty(blobPrefix) && blobFileName.StartsWith(blobPrefix))
+                    {
+                        blobFileName = blobFileName.Substring(blobPrefix.Length);
+                    }
+
+                    // Skip subfolder blobs or empty names
+                    if (string.IsNullOrWhiteSpace(blobFileName) || blobFileName.Contains("/"))
+                        continue;
+
+                    var localFilePath = Path.Combine(localPath, blobFileName);
+                    BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
+
+                    using (var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write))
+                    {
+                        await blobClient.DownloadToAsync(fileStream);
+                    }
+                    downloadedFiles.Add(localFilePath);
+                }
+            }
+            catch
+            {
+                // Clean up partially downloaded files to avoid corrupted index
+                foreach (var file in downloadedFiles)
+                {
+                    try { File.Delete(file); } catch { }
+                }
+                throw;
+            }
+
+            // Mark download as complete
+            if (downloadedFiles.Count > 0)
+            {
+                File.WriteAllText(completeMarker, "");
+            }
         }
 
         // gets the file version from blob storage

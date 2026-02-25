@@ -17,16 +17,16 @@ namespace AuthScape.SendGrid
 {
     public interface ISendGridService
     {
-        Task<List<SendGridResponse>> Send(AppUser user, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false);
-        Task<List<SendGridResponse>> Send(List<AppUser> users, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false);
+        Task<List<SendGridResponse>> Send(AppUser user, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string? ipPoolName = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false);
+        Task<List<SendGridResponse>> Send(List<AppUser> users, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string? ipPoolName = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false);
 
         Task AddMultipleRecipientsToList(UpdateContactParam updateContactParam);
         Task<AllFieldsDefinitions> GetAllDefinedCustomFieldsAndReservedFields();
-        Task<SendGridResponse> SendHtmlEmail(AppUser user, string? subject = null, string htmlContent = "", bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null);
+        Task<SendGridResponse> SendHtmlEmail(AppUser user, string? subject = null, string htmlContent = "", string? ipPoolName = null, bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null);
         Task<string?> GetContactIdByEmailAsync(string email);
         Task RemoveContactAsync(string contactId);
         Task<List<IncomingAnalyticsResponse>> IncomingAnalytics();
-        Task<SendGridResponse> SendHtmlEmail(List<AppUser> users, string? subject = null, string htmlContent = "", bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null);
+        Task<SendGridResponse> SendHtmlEmail(List<AppUser> users, string? subject = null, string htmlContent = "", string? ipPoolName = null, bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null);
     }
 
     public class SendGridService : MailBaseService, ISendGridService
@@ -42,14 +42,14 @@ namespace AuthScape.SendGrid
             this.databaseContext = databaseContext;
         }
 
-        public async Task<List<SendGridResponse>> Send(AppUser user, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false)
+        public async Task<List<SendGridResponse>> Send(AppUser user, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string? ipPoolName = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false)
         {
-            return await SendMail(new List<AppUser>() { user }, templateId, substitutions, subject: subject, fromEmail: fromEmail, fromName: fromName, allowIfNotActive: allowIfNotActive, headers, enableTracking);
+            return await SendMail(new List<AppUser>() { user }, templateId, substitutions: substitutions, ipPoolName: ipPoolName, subject: subject, fromEmail: fromEmail, fromName: fromName, allowIfNotActive: allowIfNotActive, headers, enableTracking);
         }
 
-        public async Task<List<SendGridResponse>> Send(List<AppUser> users, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false)
+        public async Task<List<SendGridResponse>> Send(List<AppUser> users, string templateId, BaseEmail substitutions, string? subject = null, string fromEmail = null, string? ipPoolName = null, string fromName = null, bool allowIfNotActive = false, List<EmailHeader> headers = null, bool enableTracking = false)
         {
-            return await SendMail(users, templateId, substitutions, subject: subject, fromEmail: fromEmail, fromName: fromName, allowIfNotActive: allowIfNotActive, headers, enableTracking);
+            return await SendMail(users, templateId, substitutions: substitutions, ipPoolName: ipPoolName, subject: subject, fromEmail: fromEmail, fromName: fromName, allowIfNotActive: allowIfNotActive, headers, enableTracking);
         }
 
         public async Task AddMultipleRecipientsToList(UpdateContactParam updateContactParam)
@@ -90,14 +90,14 @@ namespace AuthScape.SendGrid
             }
         }
 
-        public async Task<SendGridResponse> SendHtmlEmail(AppUser user, string? subject = null, string htmlContent = "", bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null)
+        public async Task<SendGridResponse> SendHtmlEmail(AppUser user, string? subject = null, string htmlContent = "", string? ipPoolName = null, bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null)
         {
-            return await SendRawHTMLEmail(new List<AppUser>() { user }, htmlContent, subject, enableTracking, attachmentFiles);
+            return await SendRawHTMLEmail(new List<AppUser>() { user }, htmlContent, subject, enableTracking, ipPoolName: ipPoolName, attachmentFiles: attachmentFiles);
         }
 
-        public async Task<SendGridResponse> SendHtmlEmail(List<AppUser> users, string? subject = null, string htmlContent = "", bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null)
+        public async Task<SendGridResponse> SendHtmlEmail(List<AppUser> users, string? subject = null, string htmlContent = "", string? ipPoolName = null, bool enableTracking = false, List<AttachmentFile>? attachmentFiles = null)
         {
-            return await SendRawHTMLEmail(users, htmlContent, subject, enableTracking, attachmentFiles);
+            return await SendRawHTMLEmail(users, htmlContent, subject, enableTracking, ipPoolName: ipPoolName, attachmentFiles: attachmentFiles);
         }
 
         private string StripHTML(string input)
