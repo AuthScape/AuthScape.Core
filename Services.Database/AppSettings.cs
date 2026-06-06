@@ -1,6 +1,4 @@
 ﻿using AuthScape.Models;
-using AuthScape.Models.PaymentGateway.Stripe;
-using Models.AppSettings;
 using System.ComponentModel.DataAnnotations;
 
 namespace Services.Database
@@ -40,16 +38,6 @@ namespace Services.Database
         /// </summary>
         [Required(ErrorMessage = "DatabaseContext connection string is required")]
         public string DatabaseContext { get; set; }
-
-        /// <summary>
-        /// Stripe payment gateway configuration.
-        /// </summary>
-        public StripeAppSetting Stripe { get; set; }
-
-        /// <summary>
-        /// SendGrid email service configuration.
-        /// </summary>
-        public SendGridAppSettings SendGrid { get; set; }
 
         /// <summary>
         /// Azure Blob Storage configuration for file uploads.
@@ -128,9 +116,33 @@ namespace Services.Database
         public Spreadsheet Spreadsheet { get; set; }
 
         /// <summary>
-        /// Subscription feature flags.
+        /// Keycloak admin API integration settings.
+        /// When Enabled is false, the admin panel never queries Keycloak and the provider dropdown
+        /// hides the "Keycloak" option. OpenIddict admin behavior is unaffected either way.
         /// </summary>
-        public SubscriptionFeatures Subscriptions { get; set; }
+        public KeycloakSettings Keycloak { get; set; }
+    }
+
+    /// <summary>
+    /// Configuration for managing a Keycloak instance via its Admin REST API from the AuthScape admin portal.
+    /// This is independent of Keycloak federation (which is configured per-row in the ThirdPartyAuthentications table).
+    /// </summary>
+    public class KeycloakSettings
+    {
+        /// <summary>Master switch. When false, the Keycloak admin endpoints short-circuit with 404 and the provider dropdown hides Keycloak.</summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>Base URL of the Keycloak server, e.g. https://kc.example.com (no trailing /admin or /realms).</summary>
+        public string AdminBaseUrl { get; set; }
+
+        /// <summary>Realm whose users/clients/scopes are managed via this integration.</summary>
+        public string Realm { get; set; } = "authscape";
+
+        /// <summary>Client ID of the service-account client used for Admin API calls. Must have `manage-users` and `manage-clients` realm-management roles.</summary>
+        public string AdminClientId { get; set; }
+
+        /// <summary>Client secret of the service-account client.</summary>
+        public string AdminClientSecret { get; set; }
     }
 
     public class OpenAI

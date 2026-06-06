@@ -150,8 +150,8 @@
                                 <input type="hidden" name="enabled" class="enabled-input" value="@(!provider.IsEnabled)" />
                                 <label class="toggle-switch">
                                     <input type="checkbox"
-                                           @(provider.IsEnabled ? "checked" : "")
-                                           onchange="toggleProvider(this)">
+                                           class="sso-toggle-input"
+                                           @(provider.IsEnabled ? "checked" : "")>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span class="toggle-label">@(provider.IsEnabled ? "Enabled" : "Disabled")</span>
@@ -176,8 +176,9 @@
                         @if (provider.IsConfigured)
                         {
                             <button type="button"
-                                    class="btn-action btn-delete"
-                                    onclick="confirmDelete('@provider.DisplayName', @((int)provider.ProviderType))">
+                                    class="btn-action btn-delete sso-delete-btn"
+                                    data-sso-name="@provider.DisplayName"
+                                    data-sso-type="@((int)provider.ProviderType)">
                                 <i class="fa fa-trash"></i>
                             </button>
                         }
@@ -799,28 +800,5 @@
 </style>
 
 @section Scripts {
-    <script>
-        function toggleProvider(checkbox) {
-            var form = checkbox.closest('form');
-            var hiddenInput = form.querySelector('.enabled-input');
-            hiddenInput.value = checkbox.checked ? 'true' : 'false';
-            form.submit();
-        }
-
-        function confirmDelete(providerName, providerType) {
-            document.getElementById('providerNameToDelete').textContent = providerName;
-            document.getElementById('providerTypeToDelete').value = providerType;
-            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show();
-        }
-
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            var alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    </script>
+    <script src="~/js/sso-providers.js" asp-append-version="true"></script>
 }

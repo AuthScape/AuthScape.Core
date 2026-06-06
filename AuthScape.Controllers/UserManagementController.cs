@@ -1,14 +1,13 @@
-﻿using AuthScape.Services;
-using Microsoft.AspNetCore.Authorization;
+﻿using AuthScape.Controllers;
+using AuthScape.Services;
 using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Validation.AspNetCore;
 using System.Threading.Tasks;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    [AuthScapeAuthorize]
     public class UserManagementController : ControllerBase
     {
         readonly IUserManagementService userManagementService;

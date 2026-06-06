@@ -210,6 +210,16 @@
                                            placeholder="@field.Placeholder"
                                            required="@field.Required">
                                 }
+                                else if (field.Name == "Authority")
+                                {
+                                    <input type="url"
+                                           class="field-input field-monospace"
+                                           id="@field.Name"
+                                           name="Input.@field.Name"
+                                           value="@Model.Input.Authority"
+                                           placeholder="@field.Placeholder"
+                                           required="@field.Required">
+                                }
                                 else
                                 {
                                     <input type="text"

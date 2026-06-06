@@ -43,48 +43,7 @@ public class AppSettingsValidator : IValidateOptions<AppSettings>
             ValidateOptionalUrl(options.Storage.BaseUri, "AppSettings:Storage:BaseUri", failures);
         }
 
-        // Stripe validation (if configured)
-        if (options.Stripe != null)
-        {
-            if (!string.IsNullOrWhiteSpace(options.Stripe.SecretKey))
-            {
-                if (!options.Stripe.SecretKey.StartsWith("sk_test_") &&
-                    !options.Stripe.SecretKey.StartsWith("sk_live_") &&
-                    !options.Stripe.SecretKey.StartsWith("rk_"))
-                {
-                    failures.Add("AppSettings:Stripe:SecretKey - Invalid Stripe secret key format. Should start with 'sk_test_', 'sk_live_', or 'rk_'.");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.Stripe.PublishableKey))
-            {
-                if (!options.Stripe.PublishableKey.StartsWith("pk_test_") &&
-                    !options.Stripe.PublishableKey.StartsWith("pk_live_"))
-                {
-                    failures.Add("AppSettings:Stripe:PublishableKey - Invalid Stripe publishable key format. Should start with 'pk_test_' or 'pk_live_'.");
-                }
-            }
-        }
-
-        // SendGrid validation (if configured)
-        if (options.SendGrid != null)
-        {
-            if (!string.IsNullOrWhiteSpace(options.SendGrid.APIKey))
-            {
-                if (!options.SendGrid.APIKey.StartsWith("SG."))
-                {
-                    failures.Add("AppSettings:SendGrid:APIKey - Invalid SendGrid API key format. Should start with 'SG.'.");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.SendGrid.FromEmail))
-            {
-                if (!IsValidEmail(options.SendGrid.FromEmail))
-                {
-                    failures.Add("AppSettings:SendGrid:FromEmail - Invalid email address format.");
-                }
-            }
-        }
+        // Stripe and SendGrid validation removed with the Billing and Email modules.
 
         // Token lifespan validation
         if (options.DataProtectionTokenProviderOptions_TokenLifespanByDays.HasValue)

@@ -1,8 +1,5 @@
-﻿using AuthScape.Models.PaymentGateway;
-using AuthScape.UserManageSystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Models.Authentication;
-using Models.Users;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.Models.Users
@@ -27,22 +24,16 @@ namespace AuthScape.Models.Users
         public string? Country { get; set; }
         public string? TimeZoneId { get; set; }
 
-
-        public ICollection<Wallet> Cards { get; set; }
-        public ICollection<StoreCredit> StoreCredits { get; set; }
-        public ICollection<StoreCredit> GiftedCredit { get; set; } // credits that you gifted to another user
-
-        public ICollection<UserLocations> UserLocations { get; set; }
+        // External identity (Keycloak / OAuth / SAML federation). Null for users that signed up
+        // through the local IDP.
+        public string? ExternalProvider { get; set; }
+        public string? ExternalSub { get; set; }
 
         public virtual ICollection<Fido2Credential> Credentials { get; set; }
-
 
         [NotMapped]
         public string? Permissions { get; set; }
         [NotMapped]
         public string? Roles { get; set; }
-        [NotMapped]
-        public List<CustomFieldResult> CustomFields { get; set; }
-
     }
 }

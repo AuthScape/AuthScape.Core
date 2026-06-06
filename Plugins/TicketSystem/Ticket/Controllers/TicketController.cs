@@ -54,7 +54,7 @@ namespace AuthScape.TicketSystem.Controllers
         [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetTickets(GetTicketRequestParam param)
         {
-            var tickets = await ticketService.GetTickets(param.offset, param.length, param.ticketStatusId, param.ticketTypeId, param.PrivateLabelCompanyId);
+            var tickets = await ticketService.GetTickets(param.offset, param.length, param.ticketStatusId, param.ticketTypeId, param.PrivateLabelCompanyId, param.ShowAllPrivateLabels);
             return Ok(new ReactDataTable
             {
                 draw = 0,
@@ -298,6 +298,7 @@ namespace AuthScape.TicketSystem.Controllers
         public int length { get; set; } = 20;
         public int? ticketStatusId { get; set; } = null;
         public int? ticketTypeId { get; set; } = null;
+        public bool ShowAllPrivateLabels { get; set; } = false;
     }
 
     public class AddAttachmentParam

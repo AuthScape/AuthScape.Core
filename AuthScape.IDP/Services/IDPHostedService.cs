@@ -1,4 +1,5 @@
 ﻿using AuthScape.Models.Users;
+using AuthScape.Services.Database;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,7 @@ namespace IDP.Services
             using var scope = _serviceProvider.CreateScope();
 
             var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-            await context.Database.EnsureCreatedAsync(cancellationToken);
+            await DatabaseProviderExtensions.EnsureDatabaseAsync(context, cancellationToken);
 
             await CreateApplicationsAsync();
             await CreateScopesAsync();
@@ -81,31 +82,25 @@ namespace IDP.Services
                     await manager.CreateAsync(descriptor);
                 }
 
+                if (await manager.FindByClientIdAsync("rust_server") == null)
+                {
+                    var descriptor = new OpenIddictApplicationDescriptor
+                    {
+                        ClientId = "rust_server",
+                        ClientSecret = "A1F3E2D4-8B7C-4A9E-B6D5-3C2E1F0A9B8D",
+                        Permissions =
+                        {
+                            Permissions.Endpoints.Introspection
+                        }
+                    };
+
+                    await manager.CreateAsync(descriptor);
+                }
+
                 // Note: no client registration is created for resource_server_2
                 // as it uses local token validation instead of introspection.
 
-                // Seed page types (only if none exist)
-                if (!await context.PageTypes.AnyAsync(cancellationToken))
-                {
-                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
-                    {
-                        Title = "Link",
-                        IsLink = true
-                    }, cancellationToken);
-
-                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
-                    {
-                        Title = "Page",
-                    }, cancellationToken);
-
-                    await context.PageTypes.AddAsync(new AuthScape.ContentManagement.Models.PageType()
-                    {
-                        Title = "Home Page",
-                        IsHomepage = true
-                    }, cancellationToken);
-
-                    await context.SaveChangesAsync(cancellationToken);
-                }
+                // PageTypes seeding moved to the ContentManagement module — not part of the auth core.
             }
 
             async Task CreateScopesAsync()
@@ -119,7 +114,8 @@ namespace IDP.Services
                         Name = "api1",
                         Resources =
                         {
-                            "resource_server_1"
+                            "resource_server_1",
+                            "rust_server"
                         }
                     };
 

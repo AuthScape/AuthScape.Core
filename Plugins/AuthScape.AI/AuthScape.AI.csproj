@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>AuthScape.AI</Title>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.AI</Product>
@@ -16,29 +16,29 @@
 
   <ItemGroup>
     <!-- Semantic Kernel -->
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.71.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.70.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.70.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.70.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.70.0-preview" />
-    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="9.7.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" />
+    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" />
 
     <!-- Microsoft.Extensions.AI (for IChatClient bridge) -->
-    <PackageReference Include="Microsoft.Extensions.AI" Version="10.3.0" />
-    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.3.0" />
-    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.3.0" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
 
     <!-- Native SDKs (Anthropic + Groq/OpenAI-compat) -->
-    <PackageReference Include="OpenAI" Version="2.8.0" />
-    <PackageReference Include="Anthropic" Version="12.7.0" />
+    <PackageReference Include="OpenAI" />
+    <PackageReference Include="Anthropic" />
 
     <!-- Microsoft Extensions -->
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 
 </Project>

@@ -110,6 +110,7 @@ namespace IDP.Services.IdentityServer
             if (!string.IsNullOrEmpty(dto.PrivateKey)) additionalSettings["PrivateKey"] = dto.PrivateKey;
             if (!string.IsNullOrEmpty(dto.Region)) additionalSettings["Region"] = dto.Region;
             if (!string.IsNullOrEmpty(dto.EnterpriseDomain)) additionalSettings["EnterpriseDomain"] = dto.EnterpriseDomain;
+            if (!string.IsNullOrEmpty(dto.Authority)) additionalSettings["Authority"] = dto.Authority;
 
             if (existing == null)
             {
@@ -488,6 +489,19 @@ namespace IDP.Services.IdentityServer
                     {
                         new() { Name = "ClientId", Label = "Client ID", Type = "text", Required = true, Placeholder = "Enter MailChimp Client ID", HelpText = "Found in MailChimp App settings" },
                         new() { Name = "ClientSecret", Label = "Client Secret", Type = "password", Required = true, Placeholder = "Enter Client Secret", HelpText = "Found in MailChimp App settings" }
+                    }
+                ),
+                ThirdPartyAuthenticationType.Keycloak => (
+                    "Keycloak",
+                    "Allow users to sign in with their Keycloak account (generic OIDC)",
+                    "fa-key",
+                    "#4D4D4D",
+                    new List<SSOProviderField>
+                    {
+                        new() { Name = "Authority", Label = "Realm Issuer URL", Type = "text", Required = true, Placeholder = "https://kc.example.com/realms/authscape", HelpText = "The full URL of your Keycloak realm (the issuer that .well-known/openid-configuration is served from)" },
+                        new() { Name = "ClientId", Label = "Client ID", Type = "text", Required = true, Placeholder = "Enter Keycloak Client ID", HelpText = "Found in Keycloak realm > Clients" },
+                        new() { Name = "ClientSecret", Label = "Client Secret", Type = "password", Required = true, Placeholder = "Enter Client Secret", HelpText = "Found in Keycloak realm > Clients > Credentials" },
+                        new() { Name = "Scopes", Label = "Scopes", Type = "text", Required = false, Placeholder = "openid,profile,email", HelpText = "Comma-separated list of scopes" }
                     }
                 ),
                 ThirdPartyAuthenticationType.Twitch => (

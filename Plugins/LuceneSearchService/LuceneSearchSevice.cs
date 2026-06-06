@@ -154,7 +154,7 @@ namespace AuthScape.LuceneSearch
             var downloadedFiles = new List<string>();
             try
             {
-                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: string.IsNullOrEmpty(blobPrefix) ? null : blobPrefix))
+                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.None, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: string.IsNullOrEmpty(blobPrefix) ? null : blobPrefix, cancellationToken: default))
                 {
                     var blobFileName = blobItem.Name;
                     if (!string.IsNullOrEmpty(blobPrefix) && blobFileName.StartsWith(blobPrefix))

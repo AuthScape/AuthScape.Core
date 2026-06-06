@@ -20,7 +20,6 @@ namespace AuthScape.IDP.Controllers
         readonly UserManager<AppUser> _userManager;
         readonly DatabaseContext _applicationDbContext;
         readonly IHttpContextAccessor _httpContextAccessor;
-        readonly IMailService mailService;
         readonly AppSettings appSettings;
         readonly IUserManagementService userManagementService;
         readonly IInviteService inviteService;
@@ -30,7 +29,6 @@ namespace AuthScape.IDP.Controllers
             UserManager<AppUser> userManager,
             DatabaseContext _applicationDbContext,
             IHttpContextAccessor _httpContextAccessor,
-            IMailService mailService,
             IInviteService inviteService,
             IOptions<AppSettings> appSettings,
             IUserManagementService userManagementService,
@@ -39,7 +37,6 @@ namespace AuthScape.IDP.Controllers
             _userManager = userManager;
             this._applicationDbContext = _applicationDbContext;
             this._httpContextAccessor = _httpContextAccessor;
-            this.mailService = mailService;
             this.appSettings = appSettings.Value;
             this.userManagementService = userManagementService;
             this.inviteService = inviteService;
@@ -106,10 +103,10 @@ namespace AuthScape.IDP.Controllers
                                 string host = _httpContextAccessor.HttpContext.Request.Scheme + "://" +
                                     _httpContextAccessor.HttpContext.Request.Host.Value;
 
-                                await mailService.InviteUser(
-                                        dbUser,
-                                        host + "/Invite/Signup?id=" + dbUser.Id + "&WebsiteUrlRedirect=" + requested.Host + "&resetToken=" + resetToken
-                                );
+                                // Email delivery removed with the Email module — the invite URL is returned
+                                // to the caller via the response. Re-enable when an email plugin is wired.
+                                var inviteUrl = host + "/Invite/Signup?id=" + dbUser.Id + "&WebsiteUrlRedirect=" + requested.Host + "&resetToken=" + resetToken;
+                                _ = inviteUrl;
                             }
                         }
                     }
@@ -161,16 +158,8 @@ namespace AuthScape.IDP.Controllers
                     inviteViewModel.AlreadyWithinSystem = true;
                 }
 
-                // pull the private label minified code
-                var dnsRecord = await _applicationDbContext.DnsRecords.Where(d => d.Domain.ToLower() == inviteViewModel.WebsiteUrlRedirect.ToLower()).FirstOrDefaultAsync();
-                if (dnsRecord != null)
-                {
-                    inviteViewModel.MinifiedCSS = dnsRecord.MinifiedCSSFile;
-                }
-                else
-                {
-                    inviteViewModel.MinifiedCSS = null;
-                }
+                // Private-label CSS lookup lived in the dropped PrivateLabel module.
+                inviteViewModel.MinifiedCSS = null;
 
                 await inviteService.OnInvitePageLoading(inviteViewModel, dbUser);
 

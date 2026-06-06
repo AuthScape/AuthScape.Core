@@ -55,6 +55,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
             public string PrivateKey { get; set; } // Apple
             public string Region { get; set; } // Battle.Net
             public string EnterpriseDomain { get; set; } // GitHub
+            public string Authority { get; set; } // Keycloak (realm issuer URL)
         }
 
         public async Task<IActionResult> OnGetAsync(int providerType)
@@ -90,6 +91,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                         settings.TryGetValue("PrivateKey", out var privateKey);
                         settings.TryGetValue("Region", out var region);
                         settings.TryGetValue("EnterpriseDomain", out var enterpriseDomain);
+                        settings.TryGetValue("Authority", out var authority);
 
                         Input.TenantId = tenantId;
                         Input.TeamId = teamId;
@@ -97,6 +99,7 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                         Input.PrivateKey = privateKey;
                         Input.Region = region;
                         Input.EnterpriseDomain = enterpriseDomain;
+                        Input.Authority = authority;
                     }
                 }
                 catch { }
@@ -121,6 +124,14 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                     ModelState.AddModelError("Input.PrivateKey", "Private Key is required for Apple");
             }
 
+            if (Input.ProviderType == ThirdPartyAuthenticationType.Keycloak)
+            {
+                if (string.IsNullOrWhiteSpace(Input.Authority))
+                    ModelState.AddModelError("Input.Authority", "Realm Issuer URL is required for Keycloak");
+                else if (!Uri.TryCreate(Input.Authority, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                    ModelState.AddModelError("Input.Authority", "Realm Issuer URL must be a valid http(s) URL");
+            }
+
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -140,7 +151,8 @@ namespace IDP.Areas.Admin.Pages.IdentityServer
                     KeyId = Input.KeyId,
                     PrivateKey = Input.PrivateKey,
                     Region = Input.Region,
-                    EnterpriseDomain = Input.EnterpriseDomain
+                    EnterpriseDomain = Input.EnterpriseDomain,
+                    Authority = Input.Authority
                 };
 
                 await ssoProviderService.SaveProviderConfigurationAsync(configDto);

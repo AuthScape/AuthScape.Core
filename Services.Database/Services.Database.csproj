@@ -5,21 +5,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fido2" Version="4.0.0" />
-    <PackageReference Include="Fido2.Models" Version="4.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+    <None Remove="Services.Database.csproj.lscache" />
+    <None Remove="tmpclaude-446e-cwd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fido2" />
+    <PackageReference Include="Fido2.Models" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Services.Database\AuthScape.Services.Database.csproj" />
     <ProjectReference Include="..\AuthScape.Models\AuthScape.Models.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.AccountLinking\AuthScape.AccountLinking.Models\AuthScape.AccountLinking.Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Ldap\AuthScape.Ldap.Models\AuthScape.Ldap.Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Saml2\AuthScape.Saml2.Models\AuthScape.Saml2.Models.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Scim\AuthScape.Scim.Models\AuthScape.Scim.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Analytics.Models\AuthScape.Analytics.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Invoice.Models\AuthScape.Invoice.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
@@ -28,6 +34,10 @@
     <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
     <ProjectReference Include="..\Plugins\NodeService\AuthScape.NodeService.Models\AuthScape.Flows.Models.csproj" />
     <ProjectReference Include="..\Plugins\Tickets\AuthScape.TicketSystem.Modals\AuthScape.TicketSystem.Modals.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

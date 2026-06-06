@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>AuthScape.Ldap</PackageId>
+    <Title>AuthScape.Ldap</Title>
+    <Version>1.2.560</Version>
+    <Authors>ZuechB</Authors>
+    <Company>ZuechB</Company>
+    <Product>AuthScape.Ldap</Product>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Novell.Directory.Ldap.NETStandard" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AuthScape.Ldap.Models\AuthScape.Ldap.Models.csproj" />
+    <ProjectReference Include="..\..\AuthScape.AccountLinking\AuthScape.AccountLinking\AuthScape.AccountLinking.csproj" />
+    <ProjectReference Include="..\..\..\Services.Database\Services.Database.csproj" />
+  </ItemGroup>
+
+</Project>

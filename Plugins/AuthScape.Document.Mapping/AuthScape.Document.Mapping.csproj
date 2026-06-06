@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>AuthScape.Document.Mapping</PackageId>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Document.Mapping</Product>
@@ -17,21 +17,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
-    <PackageReference Include="ClosedXML" Version="0.105.0" />
-    <PackageReference Include="CoreBackpack" Version="1.0.42" />
-    <PackageReference Include="CsvHelper" Version="33.1.0" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
-    <PackageReference Include="OpenAI" Version="2.8.0" />
+    <PackageReference Include="Azure.AI.FormRecognizer" />
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="CoreBackpack" />
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" />
+    <PackageReference Include="OpenAI" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Models\Models.csproj" />
     <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\..\Services\Services.csproj" />
+    <ProjectReference Include="..\..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
-    <ProjectReference Include="..\Spreadsheet\AuthScape.Spreadsheet\AuthScape.Spreadsheet.csproj" />
   </ItemGroup>
 
 </Project>

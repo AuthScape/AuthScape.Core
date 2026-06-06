@@ -1,7 +1,5 @@
 ﻿using AuthScape.Models.Exceptions;
-using AuthScape.Models.Mail;
 using AuthScape.Models.Users;
-using AuthScape.SendGrid;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
 using AuthScape.TicketSystem.Modals;
@@ -12,7 +10,6 @@ using CoreBackpack.Time;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Models.Email;
 using Services;
 using Services.Context;
 using Services.Database;
@@ -21,11 +18,10 @@ namespace AuthScape.TicketSystem.Services
 {
     public interface ITicketService
     {
-        Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments);
         Task<long> CreateTicket(int ticketTypeId, int ticketStatusId, string? description, string message, int priorityLevel = 2);
         Task<long> CreateTicketPublic(string email, string firstName, string lastName, int ticketTypeId, int ticketStatusId, string? description, string? message,   string? companyName, string? jobTitle, string? address, string? phoneNumber, IFormFile? file, long? PrivateLabelCompanyId = null);
         Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20);
-        Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null);
+        Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null, bool showAllPrivateLabels = false);
         Task CreateTicketStatus(string name);
         Task CreateTicketType(string name);
         Task<List<TicketStatus>> GetTicketStatuses();
@@ -53,83 +49,15 @@ namespace AuthScape.TicketSystem.Services
     {
         readonly DatabaseContext databaseContext;
         readonly IUserManagementService userManagementService;
-        readonly ISendGridService sendGridService;
-        // readonly INotificationService notificationService; // REMOVED: Legacy service with empty implementations
         readonly IBlobStorage blobStorage;
         readonly AppSettings appSettings;
 
-        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, ISendGridService sendGridService, IOptions<AppSettings> appSettings, IBlobStorage blobStorage)
+        public TicketService(DatabaseContext databaseContext, IUserManagementService userManagementService, IOptions<AppSettings> appSettings, IBlobStorage blobStorage)
         {
             this.databaseContext = databaseContext;
             this.userManagementService = userManagementService;
-            this.sendGridService = sendGridService;
             this.appSettings = appSettings.Value;
-            // this.notificationService = notificationService; // REMOVED
             this.blobStorage = blobStorage;
-        }
-
-        public async Task InboundEmail(string fromEmail, EMailAddress[] To, string text, Attachments[] attachments)
-        {
-            var ticketId = EmailParse.ParseEmailAddress(To, "ticket");
-            if (ticketId != null)
-            {
-                var fromUser = await databaseContext.Users.Where(u => u.UserName.ToLower() == fromEmail.ToLower()).FirstOrDefaultAsync();
-
-                // will attempt to parse the email text
-                text = ParseEmailText(text);
-
-                var ticket = await databaseContext.Tickets.Where(t => t.Id == ticketId).FirstOrDefaultAsync();
-                if (ticket != null)
-                {
-                    if (fromUser != null)
-                    {
-                        await databaseContext.TicketMessages.AddAsync(new TicketMessage()
-                        {
-                            Message = text,
-                            Name = (fromUser.FirstName + " " + fromUser.LastName),
-                            Created = SystemTime.Now,
-                            TicketId = ticket.Id,
-                            CreatedByUserId = fromUser.Id
-                        });
-
-                        // REMOVED: Legacy notification service call (empty implementation)
-                        // await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, fromUser.FirstName, fromUser.LastName);
-                    }
-                    else
-                    {
-                        await databaseContext.TicketMessages.AddAsync(new TicketMessage()
-                        {
-                            Message = text,
-                            Name = (ticket.FirstName + " " + ticket.LastName),
-                            Created = SystemTime.Now,
-                            TicketId = ticket.Id,
-                            CreatedByUserId = null
-                        });
-
-                        // REMOVED: Legacy notification service call (empty implementation)
-                        // await notificationService.NotifyTicketMessageCreated(ticketId.Value, fromEmail, text, ticket.FirstName, ticket.LastName);
-                    }
-
-                    ticket.LastUpdated = SystemTime.Now;
-                    await databaseContext.SaveChangesAsync();
-
-
-                    if (attachments != null)
-                    {
-                        foreach (var attachment in attachments)
-                        {
-                            await databaseContext.TicketAttachments.AddAsync(new TicketAttachment()
-                            {
-                                ContentType = attachment.ContentType,
-                                FileName = attachment.FileName,
-                                Name = attachment.Name,
-                                TicketId = ticket.Id,
-                                URL = "URL from the blob storage here..."
-                            });
-                        }
-                    }
-                }
-            }
         }
 
         public async Task<PagedList<TicketMessageQuery>> GetTicketMessages(long ticketId, bool isNote, int pageNumber = 1, int pageSize = 20)
@@ -147,6 +75,34 @@ namespace AuthScape.TicketSystem.Services
                     Message = t.Message,
                 })
                 .ToPagedResultAsync(pageNumber - 1, pageSize);
+        }
+
+        private static readonly Guid UKMarket = new Guid("B02A7C3D-E752-F011-8F7C-6045BDD3BD94");
+
+        private async Task<string> GetIpPoolForUser(AppUser user)
+        {
+            if (user.CompanyId != null)
+            {
+                //var region = await databaseContext.Companies
+                //    .Where(c => c.Id == user.CompanyId.Value)
+                //    .Select(c => c.SelectedRegion)
+                //    .FirstOrDefaultAsync();
+                //if (region == UKMarket) return "eu-transactional";
+            }
+            return "us-transactional";
+        }
+
+        private async Task<string> GetIpPoolForCompany(long? companyId)
+        {
+            if (companyId != null)
+            {
+                //var region = await databaseContext.Companies
+                //    .Where(c => c.Id == companyId.Value)
+                //    .Select(c => c.SelectedRegion)
+                //    .FirstOrDefaultAsync();
+                //if (region == UKMarket) return "eu-transactional";
+            }
+            return "us-transactional";
         }
 
         public async Task CreateTicketMessage(long ticketId, string name, string message, long? createdByUserId = null, bool isNote = false)
@@ -177,56 +133,17 @@ namespace AuthScape.TicketSystem.Services
                     if (participants != null)
                     {
 
-                        foreach (var participant in participants)
-                        {
-                            var usr = await databaseContext.Users.AsNoTracking().Where(u => u.Id == participant.UserId).FirstOrDefaultAsync();
-                            await sendGridService.Send(usr, appSettings.Ticketing.TemplateId, new SendGridTicket()
-                            {
-                                Title = "New message from " + appSettings.Ticketing.Name,
-                                Body = message
-
-                            }, subject: appSettings.Ticketing.Subject, ("ticket-" + ticketId + "@" + appSettings.Ticketing.Domain), appSettings.Ticketing.Name);
-                        }
+                        // Email notification removed — was: sendGridService.Send(...) for each participant.
+                        // Re-enable by wiring an email plugin and notifying participants here.
                     }
 
-
-                    if (ticket.CreatedById != null)
-                    {
-                        var user = await databaseContext.Users.Where(u => u.Id == ticket.CreatedById).FirstOrDefaultAsync();
-                        if (user != null)
-                        {
-                            await sendGridService.Send(user, appSettings.Ticketing.TemplateId, new SendGridTicket()
-                            {
-                                Title = "New message from " + appSettings.Ticketing.Name,
-                                Body = message
-
-                            }, subject: appSettings.Ticketing.Subject, ("ticket-" + ticketId + "@" + appSettings.Ticketing.Domain), appSettings.Ticketing.Name);
-                        }
-                    }
-                    else
-                    {
-                        await sendGridService.Send(new AppUser()
-                        {
-                            FirstName = ticket.FirstName,
-                            LastName = ticket.LastName,
-                            Email = ticket.Email,
-                            IsActive = true
-
-                        }, appSettings.Ticketing.TemplateId, new SendGridTicket()
-                        {
-                            Title = "New message from " + appSettings.Ticketing.Name,
-                            Body = message
-
-                        }, subject: appSettings.Ticketing.Subject, ("ticket-" + ticketId + "@" + appSettings.Ticketing.Domain), appSettings.Ticketing.Name);
-                    }
-
-
+                    // Email notification to ticket creator removed with the Email module.
                 }
             }
 
         }
 
-        public async Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null)
+        public async Task<PagedList<TicketView>> GetTickets(int pageNumber = 0, int pageSize = 20, int? ticketStatusId = null, int? ticketTypeId = null, long? privateLabelCompanyId = null, bool showAllPrivateLabels = false)
         {
             var user = await userManagementService.GetSignedInUser();
             var userLocale = !string.IsNullOrEmpty(user.locale) ? user.locale : "America/New_York";
@@ -238,9 +155,20 @@ namespace AuthScape.TicketSystem.Services
                 .Include(t => t.TicketMessages)
                 .AsNoTracking();
 
-            if (!user.Roles.Where(r => r.Name == "Admin").Any())
+            if (user.CompanyId != null)
             {
+                // Private label owner — always scoped to their private label only
                 tickets = tickets.Where(z => z.PrivateLabelCompanyId == user.CompanyId);
+            }
+            else
+            {
+                // Overall product owner (null CompanyId)
+                if (!showAllPrivateLabels)
+                {
+                    // Default: show only tickets with no private label (their own)
+                    tickets = tickets.Where(z => z.PrivateLabelCompanyId == null);
+                }
+                // When showAllPrivateLabels is true: no filter applied, see everything
             }
 
             if (ticketStatusId != null)

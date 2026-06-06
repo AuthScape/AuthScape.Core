@@ -1,6 +1,3 @@
-﻿using AuthScape.Models.PaymentGateway;
-using AuthScape.PrivateLabel.Models;
-using AuthScape.UserManageSystem.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthScape.Models.Users
@@ -15,12 +12,8 @@ namespace AuthScape.Models.Users
         public bool IsDeactivated { get; set; }
 
         public ICollection<AppUser> Users { get; set; }
-        public ICollection<StoreCredit> StoreCredits { get; set; }
         public ICollection<Location> Locations { get; set; }
-        public ICollection<DnsRecord> DnsRecords { get; set; }
 
-        [NotMapped]
-        public List<CustomFieldResult> CustomFields { get; set; }
         [NotMapped]
         public List<string> EmailDomains { get; set; }
     }

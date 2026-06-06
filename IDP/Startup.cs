@@ -1,15 +1,9 @@
 using AuthScape.IDP;
 using AuthScape.IDP.Services.ErrorTracking;
-using AuthScape.TicketSystem.Services;
 using AuthScape.Models.Users;
-using AuthScape.SendGrid;
 using AuthScape.Services;
 using AuthScape.Services.Azure.Storage;
-using AuthScape.Services.Mail.Configuration;
-using AuthScape.Services.Subscription;
-using AuthScape.Services.PromoCode;
 using AuthScape.Services.Invite;
-using AuthScape.StripePayment.Services;
 using CoreBackpack.Azure;
 using CoreBackpack.Services;
 using IDP.Services;
@@ -25,7 +19,6 @@ using Services;
 using Services.Context;
 using Services.Database;
 using System;
-using AuthScape.UserManageSystem.CRM.Extensions;
 
 namespace IDP
 {
@@ -62,58 +55,26 @@ namespace IDP
 
             }, (authBuilder) =>
             {
-                services.AddScoped<IUserService, UserService>();
-                services.AddScoped<ISendGridService, SendGridService>();
-
-                // Add universal email service
-                services.AddEmailService(Configuration);
-
-                services.AddScoped<IStripePayService, StripePayService>();
-                services.AddScoped<IStripeSubscriptionService, StripeSubscriptionService>();
-                services.AddScoped<IStripeInvoiceService, StripeInvoiceService>();
                 services.AddScoped<IInviteService, InviteService>();
-                services.AddScoped<IWalletResolver, WalletResolver>();
                 services.AddScoped<IIdentityServerService, IdentityServerService>();
                 services.AddScoped<ISSOProviderService, SSOProviderService>();
                 services.AddScoped<ISettingsService, SettingsService>();
                 services.AddScoped<IRoleService, AuthScape.Services.RoleService>();
                 services.AddScoped<IPermissionService, PermissionService>();
-                services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
-                services.AddScoped<IPromoCodeService, PromoCodeService>();
                 services.AddScoped<IInviteSettingsService, InviteSettingsService>();
-                services.AddScoped<IAchVerificationEmailService, AchVerificationEmailService>();
                 services.AddScoped<IAzureBlobStorage, AzureBlobStorage>();
                 services.AddScoped<IBlobStorage, BlobStorage>();
                 services.AddScoped<IImageService, ImageService>();
 
-                services.AddScoped<ITicketService, TicketService>();
                 services.AddScoped<IErrorTrackingService, ErrorTrackingService>();
                 services.AddScoped<IErrorGroupingService, ErrorGroupingService>();
 
                 // Add SignalR for real-time error tracking updates
                 services.AddSignalR();
 
-                // Add HttpClientFactory for MCP proxy calls
                 services.AddHttpClient();
 
-                // Add CRM integration services
-                services.AddAuthScapeCrm();
-
                 ThirdPartyAuthService.AddThirdPartyAutentication(services);
-
-
-                //authBuilder
-                //    .AddFacebook(facebookOptions =>
-                //    {
-                //        facebookOptions.AppId = "test";
-                //        facebookOptions.AppSecret = "test";
-                //    });
-                //    .AddGoogle((googleOOptions) =>
-                //    {
-                //        googleOOptions.ClientId = "";
-                //        googleOOptions.ClientSecret = "";
-                //    });
-
 
             }, "", "");
         }

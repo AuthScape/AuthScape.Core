@@ -447,7 +447,7 @@ namespace AuthScape.PrivateLabel.Services
             var signedInUser = await userManagementService.GetSignedInUser();
 
             // add the redirect URL
-            var application = await databaseContext.OpenIddictApplications
+            var application = await databaseContext.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication>()
                 .Where(o => o.Id == openIdApplicationId)
                 .FirstOrDefaultAsync();
 

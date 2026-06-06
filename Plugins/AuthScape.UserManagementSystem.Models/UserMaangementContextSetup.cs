@@ -6,12 +6,12 @@ namespace AuthScape.UserManageSystem.Models
 {
     public class UserMangementContextSetup
     {
-        public static void OnModelCreating(ModelBuilder builder)
+        public static void OnModelCreating(ModelBuilder builder, string newGuidSql)
         {
             builder.Entity<CustomField>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 entity.HasOne(e => e.CustomFieldTab)
                     .WithMany(m => m.CustomFieldTabs)
@@ -22,7 +22,7 @@ namespace AuthScape.UserManageSystem.Models
             builder.Entity<CustomFieldTab>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
 
@@ -59,13 +59,13 @@ namespace AuthScape.UserManageSystem.Models
             builder.Entity<Permission>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
             builder.Entity<CompanyDomain>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
         }
     }

@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Services.Context;
+using Services.Database;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -22,12 +24,14 @@ namespace mvcTest.Areas.Identity.Pages.Account
         private readonly SignInManager<AppUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
         readonly DatabaseContext databaseContext;
+        readonly AppSettings appSettings;
 
-        public LoginModel(SignInManager<AppUser> signInManager, ILogger<LoginModel> logger, DatabaseContext databaseContext) : base(databaseContext)
+        public LoginModel(SignInManager<AppUser> signInManager, ILogger<LoginModel> logger, DatabaseContext databaseContext, IOptions<AppSettings> appSettingsOptions) : base(databaseContext)
         {
             _signInManager = signInManager;
             _logger = logger;
             this.databaseContext = databaseContext;
+            this.appSettings = appSettingsOptions.Value;
         }
 
         /// <summary>
@@ -142,6 +146,20 @@ namespace mvcTest.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    // OIDC flows arrive with returnUrl = "/connect/authorize?..." (a local URL) —
+                    // honor those so the auth code exchange completes. Direct visits to /Identity/
+                    // Account/Login have no local returnUrl; in that case send the user to the
+                    // configured consumer app (AppSettings.LoginRedirectUrl, e.g. https://localhost:3000)
+                    // instead of stranding them on the IDP root.
+                    if (Url.IsLocalUrl(returnUrl) && returnUrl != "/")
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
+                    if (!string.IsNullOrWhiteSpace(appSettings.LoginRedirectUrl))
+                    {
+                        return Redirect(appSettings.LoginRedirectUrl);
+                    }
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

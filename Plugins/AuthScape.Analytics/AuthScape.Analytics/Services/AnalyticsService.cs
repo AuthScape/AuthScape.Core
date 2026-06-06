@@ -1,7 +1,6 @@
 ﻿using AuthScape.Analytics.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Services;
 using Services.Context;
 
 namespace AuthScape.Analytics.Services
@@ -33,12 +32,10 @@ namespace AuthScape.Analytics.Services
     public class AnalyticsService : IAnalyticsService
     {
         readonly DatabaseContext databaseContext;
-        readonly IUserService userService;
         readonly IHttpContextAccessor httpContextAccessor;
-        public AnalyticsService(DatabaseContext databaseContext, IUserService userService, IHttpContextAccessor httpContextAccessor)
+        public AnalyticsService(DatabaseContext databaseContext, IHttpContextAccessor httpContextAccessor)
         {
             this.databaseContext = databaseContext;
-            this.userService = userService;
             this.httpContextAccessor = httpContextAccessor;
         }
 

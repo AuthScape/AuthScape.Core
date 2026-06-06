@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
+    <None Remove="Reports.csproj.lscache" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" />
   </ItemGroup>
 
   <ItemGroup>

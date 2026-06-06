@@ -533,7 +533,7 @@ namespace AuthScape.StripePayment.Services
                     .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.CompanyId == signedInUser.CompanyId)
                     .Select(w => w.WalletPaymentMethods)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync() ?? new List<WalletPaymentMethod>();
             }
             else if (paymentMethodType == PaymentMethodType.User)
             {
@@ -541,7 +541,7 @@ namespace AuthScape.StripePayment.Services
                     .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.UserId == signedInUser.Id)
                     .Select(w => w.WalletPaymentMethods)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync() ?? new List<WalletPaymentMethod>();
             }
             else if (paymentMethodType == PaymentMethodType.Location)
             {
@@ -549,7 +549,7 @@ namespace AuthScape.StripePayment.Services
                     .Include(w => w.WalletPaymentMethods.Where(pm => pm.Archived == null))
                     .Where(w => w.LocationId == signedInUser.LocationId)
                     .Select(w => w.WalletPaymentMethods)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync() ?? new List<WalletPaymentMethod>();
             }
 
             return new List<WalletPaymentMethod>();

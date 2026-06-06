@@ -2,8 +2,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <Product>AuthScape.Controller</Product>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
@@ -21,14 +22,15 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
-    <PackageReference Include="OpenIddict" Version="7.2.0" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.12.42" />
+    <!-- Magick.NET-Q16-AnyCPU lives in AuthScape.Services where the image-conversion call sites are.
+         Don't add it back here — it would create an unused dependency for every consumer. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="OpenIddict" />
+    <PackageReference Include="OpenIddict.AspNetCore" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
@@ -36,6 +38,11 @@
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
-    <ProjectReference Include="..\Plugins\UserManagement\UserManageSystem\AuthScape.UserManageSystem.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.AccountLinking\AuthScape.AccountLinking\AuthScape.AccountLinking.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Ldap\AuthScape.Ldap\AuthScape.Ldap.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Saml2\AuthScape.Saml2\AuthScape.Saml2.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Scim\AuthScape.Scim\AuthScape.Scim.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Analytics\AuthScape.Analytics\AuthScape.Analytics.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Logging\AuthScape.Logging.csproj" />
   </ItemGroup>
 </Project>
