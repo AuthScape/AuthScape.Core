@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AuthScape.Services.Database;
@@ -194,5 +196,98 @@ public static class DatabaseProviderExtensions
         var builder = new DbContextOptionsBuilder();
         ConfigureProvider(builder, provider, connectionString);
         return builder.Options;
+    }
+
+    /// <summary>
+    /// Ensures the database and schema exist, built from the current EF model (not migrations) for
+    /// every provider. This makes the live model the single source of truth, so config-driven model
+    /// changes — e.g. the OpenIddict token-issuer tables that are only mapped on the OpenIddict path —
+    /// are reflected in the created schema. The database itself is created if missing.
+    /// </summary>
+    public static void EnsureDatabase(DbContext context)
+    {
+        var creator = context.GetService<IRelationalDatabaseCreator>();
+
+        // For PostgreSQL, explicitly create the database via the admin connection before creating
+        // tables -- the provider can't fall back to the admin database automatically.
+        if (context.Database.IsNpgsql())
+        {
+            EnsurePostgreSQLDatabaseExists(context.Database.GetConnectionString()!);
+        }
+        else if (!creator.Exists())
+        {
+            // SQL Server (connects to master) / SQLite (creates the file) create the database here.
+            creator.Create();
+        }
+
+        if (!creator.HasTables())
+        {
+            creator.CreateTables();
+        }
+    }
+
+    /// <summary>
+    /// Async version of EnsureDatabase.
+    /// </summary>
+    public static async Task EnsureDatabaseAsync(DbContext context, CancellationToken cancellationToken = default)
+    {
+        var creator = context.GetService<IRelationalDatabaseCreator>();
+
+        if (context.Database.IsNpgsql())
+        {
+            await EnsurePostgreSQLDatabaseExistsAsync(context.Database.GetConnectionString()!, cancellationToken);
+        }
+        else if (!await creator.ExistsAsync(cancellationToken))
+        {
+            await creator.CreateAsync(cancellationToken);
+        }
+
+        if (!await creator.HasTablesAsync(cancellationToken))
+        {
+            await creator.CreateTablesAsync(cancellationToken);
+        }
+    }
+
+    private static void EnsurePostgreSQLDatabaseExists(string connectionString)
+    {
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+        var databaseName = builder.Database!;
+
+        // Connect to the default 'postgres' database to check/create our target database
+        builder.Database = "postgres";
+        using var connection = new Npgsql.NpgsqlConnection(builder.ConnectionString);
+        connection.Open();
+
+        using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = "SELECT 1 FROM pg_database WHERE datname = @dbName";
+        checkCmd.Parameters.AddWithValue("dbName", databaseName);
+
+        if (checkCmd.ExecuteScalar() == null)
+        {
+            using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE \"{databaseName.Replace("\"", "\"\"")}\"";
+            createCmd.ExecuteNonQuery();
+        }
+    }
+
+    private static async Task EnsurePostgreSQLDatabaseExistsAsync(string connectionString, CancellationToken cancellationToken)
+    {
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+        var databaseName = builder.Database!;
+
+        builder.Database = "postgres";
+        await using var connection = new Npgsql.NpgsqlConnection(builder.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = "SELECT 1 FROM pg_database WHERE datname = @dbName";
+        checkCmd.Parameters.AddWithValue("dbName", databaseName);
+
+        if (await checkCmd.ExecuteScalarAsync(cancellationToken) == null)
+        {
+            await using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE \"{databaseName.Replace("\"", "\"\"")}\"";
+            await createCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 }

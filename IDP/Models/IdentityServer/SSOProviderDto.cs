@@ -52,5 +52,6 @@ namespace IDP.Models.IdentityServer
         public string PrivateKey { get; set; } // Apple
         public string Region { get; set; } // Battle.Net
         public string EnterpriseDomain { get; set; } // GitHub
+        public string Authority { get; set; } // Keycloak (realm issuer URL, e.g. https://kc.example.com/realms/authscape)
     }
 }

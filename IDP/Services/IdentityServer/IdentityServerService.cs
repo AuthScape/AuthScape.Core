@@ -50,12 +50,12 @@ namespace IDP.Services.IdentityServer
 
         public async Task<List<OpenIddictEntityFrameworkCoreApplication>> GetApplications()
         {
-            return await databaseContext.OpenIddictApplications.ToListAsync();
+            return await databaseContext.Set<OpenIddictEntityFrameworkCoreApplication>().ToListAsync();
         }
 
         public async Task<OpenIddictEntityFrameworkCoreApplication> GetApplication(string applicationId)
         {
-            return await databaseContext.OpenIddictApplications.Where(a => a.Id == applicationId).FirstOrDefaultAsync();
+            return await databaseContext.Set<OpenIddictEntityFrameworkCoreApplication>().Where(a => a.Id == applicationId).FirstOrDefaultAsync();
         }
 
         public async Task SetupDevelopmentEnvironment()
@@ -138,7 +138,7 @@ namespace IDP.Services.IdentityServer
 
         public async Task<List<ApplicationDetailsDto>> GetAllApplicationsAsync()
         {
-            var applications = await databaseContext.OpenIddictApplications.ToListAsync();
+            var applications = await databaseContext.Set<OpenIddictEntityFrameworkCoreApplication>().ToListAsync();
             var result = new List<ApplicationDetailsDto>();
 
             foreach (var app in applications)
@@ -151,7 +151,7 @@ namespace IDP.Services.IdentityServer
 
         public async Task<List<ApplicationDetailsDto>> GetResourceServerApplicationsAsync()
         {
-            var applications = await databaseContext.OpenIddictApplications.ToListAsync();
+            var applications = await databaseContext.Set<OpenIddictEntityFrameworkCoreApplication>().ToListAsync();
             var result = new List<ApplicationDetailsDto>();
 
             foreach (var app in applications)
@@ -310,7 +310,7 @@ namespace IDP.Services.IdentityServer
 
         public async Task<List<ScopeDto>> GetAllScopesAsync()
         {
-            var scopes = await databaseContext.OpenIddictScopes.ToListAsync();
+            var scopes = await databaseContext.Set<OpenIddictEntityFrameworkCoreScope>().ToListAsync();
             var result = new List<ScopeDto>();
 
             foreach (var scope in scopes)

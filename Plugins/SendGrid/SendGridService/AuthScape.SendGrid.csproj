@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.SendGrid</PackageId>
     <Authors>ZuechB</Authors>
@@ -21,10 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
-    <PackageReference Include="SendGrid" Version="9.29.3" />
-    <PackageReference Include="StrongGrid" Version="0.114.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" />
+    <PackageReference Include="SendGrid" />
+    <PackageReference Include="StrongGrid" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,11 @@
 ﻿using AuthScape.Models.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Services.Context;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace AuthScape.Services
 {
@@ -76,7 +80,58 @@ namespace AuthScape.Services
                          }
                      });
                 }
+                else if (thirdPartyAuth.ThirdPartyAuthenticationType == ThirdPartyAuthenticationType.Keycloak)
+                {
+                    var authority = ExtractAdditionalSetting(thirdPartyAuth.AdditionalSettings, "Authority");
+                    if (string.IsNullOrEmpty(authority))
+                    {
+                        // Authority is mandatory for Keycloak federation; skip silently to avoid breaking startup
+                        // when an admin has enabled Keycloak before fully configuring the realm URL.
+                        continue;
+                    }
+
+                    var schemeName = ThirdPartyAuthenticationType.Keycloak.ToString();
+                    authBuilder.AddOpenIdConnect(schemeName, "Keycloak", oidcOptions =>
+                    {
+                        oidcOptions.Authority = authority;
+                        oidcOptions.ClientId = thirdPartyAuth.ClientId;
+                        oidcOptions.ClientSecret = thirdPartyAuth.ClientSecret;
+                        oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
+                        oidcOptions.SaveTokens = true;
+                        oidcOptions.GetClaimsFromUserInfoEndpoint = true;
+                        oidcOptions.SignInScheme = Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme;
+
+                        oidcOptions.Scope.Clear();
+                        var oidcScopes = scopes.Count > 0 ? scopes : new List<string> { "openid", "profile", "email" };
+                        foreach (var scope in oidcScopes)
+                        {
+                            oidcOptions.Scope.Add(scope);
+                        }
+
+                        oidcOptions.CallbackPath = !string.IsNullOrEmpty(thirdPartyAuth.RedirectUri)
+                            ? thirdPartyAuth.RedirectUri
+                            : "/signin-keycloak";
+                    });
+                }
             }
+        }
+
+        private static string ExtractAdditionalSetting(string additionalSettingsJson, string key)
+        {
+            if (string.IsNullOrWhiteSpace(additionalSettingsJson))
+                return null;
+
+            try
+            {
+                var settings = JsonSerializer.Deserialize<Dictionary<string, string>>(additionalSettingsJson);
+                if (settings != null && settings.TryGetValue(key, out var value))
+                    return value;
+            }
+            catch (JsonException)
+            {
+                // Malformed JSON in DB — treat as no setting and let caller handle.
+            }
+            return null;
         }
     }
 }

@@ -6,60 +6,54 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lucene.Net" Version="4.8.0-beta00017" />
-    <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
-    <PackageReference Include="Lucene.Net.Store.Azure" Version="4.8.5-beta019" />
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
-    <PackageReference Include="OpenIddict" Version="7.2.0" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.12.42" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <Compile Remove="wwwroot\**" />
+    <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="wwwroot\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="API.csproj.lscache" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- API is a starter host; everything (EF, OpenIddict, JwtBearer, OpenAPI, Scalar, Identity
+         stores) flows in transitively through the ProjectReferences below. Add a package here only
+         if the API itself uses a type from it directly (it currently doesn't). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Auth core -->
+    <ProjectReference Include="..\AuthScape.AuthManager\AuthScape.AuthManager.csproj" />
+    <ProjectReference Include="..\AuthScape.AuthManager.OpenIddict\AuthScape.AuthManager.OpenIddict.csproj" />
+    <ProjectReference Include="..\AuthScape.AuthManager.Keycloak\AuthScape.AuthManager.Keycloak.csproj" />
     <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
     <ProjectReference Include="..\AuthScape.Controllers\AuthScape.Controllers.csproj" />
-    <ProjectReference Include="..\AuthScape.ReadMail\AuthScape.ReadMail.csproj" />
     <ProjectReference Include="..\AuthScape.Services\AuthScape.Services.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.AI\AuthScape.AI.csproj" />
+
+    <!-- Federation plugins -->
+    <ProjectReference Include="..\Plugins\AuthScape.AccountLinking\AuthScape.AccountLinking\AuthScape.AccountLinking.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Ldap\AuthScape.Ldap\AuthScape.Ldap.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Saml2\AuthScape.Saml2\AuthScape.Saml2.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.Scim\AuthScape.Scim\AuthScape.Scim.csproj" />
+
+    <!-- Always-on platform services -->
     <ProjectReference Include="..\Plugins\AuthScape.Analytics\AuthScape.Analytics\AuthScape.Analytics.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.AzureCloudService\AuthScape.AzureCloudService.csproj" />
-    <!-- ErrorTracking is handled by IDP only - API sends errors to IDP via HTTP -->
-    <ProjectReference Include="..\Plugins\AuthScape.Document.Mapping\AuthScape.Document.Mapping.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.DocumentProcessing\AuthScape.Document.csproj" />
-    <ProjectReference Include="..\Plugins\Authscape.IdentityServer\Authscape.IdentityServer.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Invoice\AuthScape.Invoice.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Kanban\AuthScape.Kanban\AuthScape.Kanban.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.Logging\AuthScape.Logging.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Marketplace\AuthScape.Marketplace.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.NodeService\AuthScape.Flows.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Privatelabel\AuthScape.PrivateLabel.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Sitemap\AuthScape.Sitemap.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.StripePayment.Controller\AuthScape.StripePayment.Controller.csproj" />
-    <ProjectReference Include="..\Plugins\ContentManagement\AuthScape.ContentManagement\AuthScape.ContentManagement.csproj" />
-    <ProjectReference Include="..\Plugins\LuceneSearchService\AuthScape.LuceneSearch.csproj" />
-    <ProjectReference Include="..\Plugins\Reporting\Authscape.Reporting\Authscape.Reporting.csproj" />
-    <ProjectReference Include="..\Plugins\SendGrid\SendGridService\AuthScape.SendGrid.csproj" />
-    <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet.Controller\AuthScape.Spreadsheet.Controller.csproj" />
-    <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet.Models\AuthScape.Spreadsheet.Models.csproj" />
-    <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet\AuthScape.Spreadsheet.csproj" />
-    <ProjectReference Include="..\Plugins\TicketSystem\Ticket\AuthScape.TicketSystem.csproj" />
-    <ProjectReference Include="..\Plugins\UserManagement\UserManageSystem\AuthScape.UserManageSystem.csproj" />
-    <ProjectReference Include="..\Reports\Reports.csproj" />
+    <!-- ErrorTracking is handled by IDP only — API sends errors to IDP via HTTP -->
+
+    <!-- Shared domain -->
     <ProjectReference Include="..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
+
+    <!-- Modules (Tickets, Marketplace, ContentManagement, Document, Reporting,
+         UserManageSystem CRM, PrivateLabel, Sitemap, Azure*, IdentityServer admin) are removed
+         from this composition while the auth core is locked down. Add their ProjectReference
+         entries back here when you bring a module online. -->
   </ItemGroup>
 
   <ItemGroup>
@@ -88,11 +82,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="cache\" />
-    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

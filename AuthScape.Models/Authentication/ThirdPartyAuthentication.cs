@@ -50,5 +50,6 @@ namespace AuthScape.Models.Authentication
         MailChimp = 27,
         Twitch = 28,
         Twitter = 29,
+        Keycloak = 30,
     }
 }

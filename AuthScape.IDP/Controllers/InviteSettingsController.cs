@@ -1,3 +1,4 @@
+using AuthScape.Controllers;
 using AuthScape.Models.Invite;
 using AuthScape.Services;
 using AuthScape.Services.Invite;
@@ -10,7 +11,7 @@ namespace AuthScape.IDP.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [AuthScapeAuthorize(Roles = "Admin")]
     public class InviteSettingsController : ControllerBase
     {
         private readonly IInviteSettingsService _inviteSettingsService;

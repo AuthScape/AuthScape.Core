@@ -7,18 +7,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
+    <None Remove="Models.csproj.lscache" />
   </ItemGroup>
 
+  <!--
+    Dev-view aggregator. Holds no source of its own — every model now lives in AuthScape.Models
+    (the published NuGet) or in a plugin's own *.Models project. Kept around so the long list of
+    existing "..\Models\Models.csproj" ProjectReferences across the monorepo don't have to be
+    rewritten. NuGet consumers never see this; they install AuthScape.Models directly.
+  -->
   <ItemGroup>
     <ProjectReference Include="..\AuthScape.Models\AuthScape.Models.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.ContentManagement.Models\AuthScape.ContentManagement.Models.csproj" />
-    <ProjectReference Include="..\Plugins\AuthScape.Marketplace.Models\AuthScape.Marketplace.Models.csproj" />
+  </ItemGroup>
+
+  <!-- Plugin model project refs (PrivateLabel, UserManageSystem, ContentManagement) were removed
+       when the corresponding tables were dropped from the auth-only DbContext. Add them back here
+       (or directly on the consumer csproj) when a module is brought online. -->
+  <ItemGroup Condition="false">
     <ProjectReference Include="..\Plugins\AuthScape.PrivateLabel.Models\AuthScape.PrivateLabel.Models.csproj" />
     <ProjectReference Include="..\Plugins\AuthScape.UserManagementSystem.Models\AuthScape.UserManageSystem.Models.csproj" />
-    <ProjectReference Include="..\Plugins\Mapping\AuthScape.Document.Mapping.Models\AuthScape.Document.Mapping.Models.csproj" />
-    <ProjectReference Include="..\Plugins\NodeService\AuthScape.NodeService.Models\AuthScape.Flows.Models.csproj" />
-    <ProjectReference Include="..\Plugins\Spreadsheet\AuthScape.Spreadsheet\AuthScape.Spreadsheet.csproj" />
+    <ProjectReference Include="..\Plugins\AuthScape.ContentManagement.Models\AuthScape.ContentManagement.Models.csproj" />
   </ItemGroup>
 
 </Project>

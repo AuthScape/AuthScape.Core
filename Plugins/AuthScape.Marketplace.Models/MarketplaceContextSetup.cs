@@ -5,7 +5,7 @@ namespace AuthScape.Marketplace.Models
 {
     public class MarketplaceContextSetup
     {
-        public static void OnModelCreating(ModelBuilder builder)
+        public static void OnModelCreating(ModelBuilder builder, string newGuidSql)
         {
             //builder.Entity<ProductCard>(entity =>
             //{
@@ -16,7 +16,7 @@ namespace AuthScape.Marketplace.Models
             builder.Entity<ProductCardCategory>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
 
                 // Add composite index for common query pattern (CompanyId, PlatformId, Name)
                 entity.HasIndex(e => new { e.CompanyId, e.PlatformId, e.Name })
@@ -53,7 +53,7 @@ namespace AuthScape.Marketplace.Models
             builder.Entity<AnalyticsMarketplaceImpressionsClicks>(entity =>
             {
                 entity.HasKey(e => new { e.Id });
-                entity.Property(e => e.Id).HasDefaultValueSql("newsequentialid()");
+                entity.Property(e => e.Id).HasDefaultValueSql(newGuidSql);
             });
 
         }

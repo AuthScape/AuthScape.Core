@@ -20,15 +20,13 @@ namespace IDP.Controllers
         readonly UserManager<AppUser> _userManager;
         readonly DatabaseContext _applicationDbContext;
         readonly IHttpContextAccessor _httpContextAccessor;
-        readonly IMailService mailService;
         readonly AppSettings appSettings;
 
-        public ForgotPasswordController(UserManager<AppUser> userManager, DatabaseContext _applicationDbContext, IHttpContextAccessor _httpContextAccessor, IMailService mailService, IOptions<AppSettings> appSettings)
+        public ForgotPasswordController(UserManager<AppUser> userManager, DatabaseContext _applicationDbContext, IHttpContextAccessor _httpContextAccessor, IOptions<AppSettings> appSettings)
         {
             _userManager = userManager;
             this._applicationDbContext = _applicationDbContext;
             this._httpContextAccessor = _httpContextAccessor;
-            this.mailService = mailService;
             this.appSettings = appSettings.Value;
         }
 
@@ -59,20 +57,9 @@ namespace IDP.Controllers
                         baseUrl = $"{uri.Scheme}://{uri.Host}:{uri.Port}";
                     }
 
-                    // pull the private label minified code
-                    var dnsRecord = await _applicationDbContext.DnsRecords.AsNoTracking().Where(d => d.Domain.ToLower() == baseUrl).FirstOrDefaultAsync();
-                    if (dnsRecord != null)
-                    {
-                        var company = await _applicationDbContext.Companies.Where(c => c.Id == dnsRecord.CompanyId).AsNoTracking().FirstOrDefaultAsync();
-
-                        ViewData["MinifiedCSS"] = dnsRecord.MinifiedCSSFile;
-                        ViewData["CompanyName"] = company.Title;
-                    }
-                    else
-                    {
-                        ViewData["MinifiedCSS"] = null;
-                        ViewData["CompanyName"] = null;
-                    }
+                    // Private-label CSS/branding lookup lived in the dropped PrivateLabel module.
+                    ViewData["MinifiedCSS"] = null;
+                    ViewData["CompanyName"] = null;
                 }
             }
 
@@ -103,11 +90,10 @@ namespace IDP.Controllers
                         string host = _httpContextAccessor.HttpContext.Request.Scheme + "://" +
                             _httpContextAccessor.HttpContext.Request.Host.Value;
 
-                        // send the email
-                        await mailService.ForgotPassword(
-                            user,
-                            host + "/ForgotPassword/ResetPassword?email=" + HttpUtility.UrlEncode(user.Email) + "&resetToken=" + resetToken
-                        );
+                        // Email delivery removed with the Email module. The reset URL is logged here;
+                        // re-enable a real send when an email plugin is wired into the IDP.
+                        var resetUrl = host + "/ForgotPassword/ResetPassword?email=" + HttpUtility.UrlEncode(user.Email) + "&resetToken=" + resetToken;
+                        _ = resetUrl;
 
                         return Redirect("/ForgotPassword/PasswordRequestSent");
                     }

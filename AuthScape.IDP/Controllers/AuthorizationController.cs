@@ -117,27 +117,8 @@ namespace IDP.Controllers
 
 
                 // permissions
-                var permissions = await databaseContext.UserClaims
-                    .AsNoTracking()
-                    .Where(s => s.UserId == currentUser.Id && s.ClaimType == "permissions")
-                    .FirstOrDefaultAsync();
-
-                if (permissions != null && !String.IsNullOrWhiteSpace(permissions.ClaimValue))
-                {
-                    var userPermissions = new List<Permission>();
-                    var permissionList = permissions.ClaimValue.Split(",");
-
-                    foreach (var permissionItem in permissionList)
-                    {
-                        var permission = await databaseContext.Permissions.AsNoTracking().Where(p => p.Id == Guid.Parse(permissionItem)).FirstOrDefaultAsync();
-                        if (permission != null)
-                        {
-                            userPermissions.Add(permission);
-                        }
-                    }
-
-                    principal.Identities.First().AddClaim(new Claim("userPermissions", JsonConvert.SerializeObject(userPermissions)));
-                }
+                // Custom-permission lookup lived in the dropped UserManageSystem table. Roles below
+                // are still loaded from ASP.NET Identity's AspNetUserRoles / AspNetRoles tables.
 
 
                 // roles
@@ -188,11 +169,17 @@ namespace IDP.Controllers
             // after a successful authentication flow (e.g Google or Facebook).
             await _signInManager.SignOutAsync();
 
-            // Returning a SignOutResult will ask OpenIddict to redirect the user agent
-            // to the post_logout_redirect_uri specified by the client application.
-            //return SignOut(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            // Only honor ?redirect= if it's a same-site relative URL — otherwise
+            // this endpoint becomes an open-redirect gadget for phishing.
+            // For off-site post-logout redirects, clients must use the standard
+            // 'post_logout_redirect_uri' param, which OpenIddict validates against
+            // each application's registered PostLogoutRedirectUris.
+            if (!string.IsNullOrEmpty(redirect) && Url.IsLocalUrl(redirect))
+            {
+                return LocalRedirect(redirect);
+            }
 
-            return Redirect(redirect);
+            return LocalRedirect("/");
         }
 
 

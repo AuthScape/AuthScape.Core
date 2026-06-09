@@ -1,0 +1,23 @@
+# Local Keycloak for testing the AuthScape "Keycloak" auth provider path.
+#
+#   cd AuthScape.Core/keycloak
+#   docker compose up -d
+#
+# Admin console:  http://localhost:8080  (admin / admin)
+# Realm + client + test user are imported automatically from realm-authscape.json.
+# Stop & wipe:    docker compose down -v
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: authscape-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      # Bootstrap admin account (Keycloak 26+ env var names).
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      # Realms placed here are imported on first start (because of --import-realm).
+      - ./realm-authscape.json:/opt/keycloak/data/import/realm-authscape.json:ro

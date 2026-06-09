@@ -93,6 +93,31 @@ namespace AuthScape.IDP
                         .AllowClientCredentialsFlow()
                         .AllowRefreshTokenFlow();
 
+                    // Disallow PKCE 'plain' code_challenge_method — S256 only.
+                    // 1) Rewrite discovery response so 'code_challenge_methods_supported' contains only 'S256'.
+                    options.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.ApplyConfigurationResponseContext>(builder =>
+                        builder.UseInlineHandler(context =>
+                        {
+                            var element = System.Text.Json.JsonSerializer.SerializeToElement(
+                                new[] { CodeChallengeMethods.Sha256 });
+                            context.Response.SetParameter(
+                                Metadata.CodeChallengeMethodsSupported,
+                                new OpenIddict.Abstractions.OpenIddictParameter(element));
+                            return ValueTask.CompletedTask;
+                        }));
+                    // 2) Reject authorization requests that use code_challenge_method=plain.
+                    options.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.ValidateAuthorizationRequestContext>(builder =>
+                        builder.UseInlineHandler(context =>
+                        {
+                            if (string.Equals(context.Request.CodeChallengeMethod, CodeChallengeMethods.Plain, StringComparison.Ordinal))
+                            {
+                                context.Reject(
+                                    error: Errors.InvalidRequest,
+                                    description: "The 'plain' code_challenge_method is not supported. Use 'S256'.");
+                            }
+                            return default;
+                        }));
+
 
 
                     //options.AllowRefreshTokenFlow();
@@ -111,10 +136,67 @@ namespace AuthScape.IDP
                         options.AddDevelopmentEncryptionCertificate();
                         options.AddDevelopmentSigningCertificate();
                     }
-                    else
+                    else if (OperatingSystem.IsWindows())
                     {
                         options.AddEncryptionCertificate(encyptionCertificateThumbprint);
                         options.AddSigningCertificate(signingCertificateThumbprint);
+                    }
+                    else
+                    {
+                        X509Certificate2? signingCert = null;
+                        X509Certificate2? encryptionCert = null;
+
+                        // 1. Try app setting base64 (Linux App Service)
+                        var certPassword = Environment.GetEnvironmentVariable("CERT_PASSWORD");
+                        var signingBase64 = Environment.GetEnvironmentVariable("SIGNING_CERT_BASE64");
+                        if (!string.IsNullOrEmpty(signingBase64))
+                        {
+                            var certBytes = Convert.FromBase64String(signingBase64);
+                            signingCert = new X509Certificate2(certBytes, certPassword,
+                                X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.EphemeralKeySet);
+                        }
+
+                        var encryptionBase64 = Environment.GetEnvironmentVariable("ENCRYPTION_CERT_BASE64");
+                        if (!string.IsNullOrEmpty(encryptionBase64))
+                        {
+                            var certBytes = Convert.FromBase64String(encryptionBase64);
+                            encryptionCert = new X509Certificate2(certBytes, certPassword,
+                                X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.EphemeralKeySet);
+                        }
+
+                        // 2. Fallback: try X509Store CurrentUser
+                        if (signingCert == null || encryptionCert == null)
+                        {
+                            var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                            store.Open(OpenFlags.ReadOnly);
+
+                            if (signingCert == null)
+                            {
+                                var matches = store.Certificates
+                                    .Find(X509FindType.FindByThumbprint, signingCertificateThumbprint, false);
+                                if (matches.Count > 0) signingCert = matches[0];
+                            }
+
+                            if (encryptionCert == null)
+                            {
+                                var matches = store.Certificates
+                                    .Find(X509FindType.FindByThumbprint, encyptionCertificateThumbprint, false);
+                                if (matches.Count > 0) encryptionCert = matches[0];
+                            }
+
+                            store.Close();
+                        }
+
+                        if (signingCert == null)
+                            throw new InvalidOperationException(
+                                $"Signing certificate not found. Thumbprint: '{signingCertificateThumbprint}'");
+
+                        if (encryptionCert == null)
+                            throw new InvalidOperationException(
+                                $"Encryption certificate not found. Thumbprint: '{encyptionCertificateThumbprint}'");
+
+                        options.AddSigningCertificate(signingCert);
+                        options.AddEncryptionCertificate(encryptionCert);
                     }
 
                     // Register the ASP.NET Core host and configure the ASP.NET Core-specific options.
@@ -167,7 +249,7 @@ namespace AuthScape.IDP
             //services.AddTransient<ISendGridService, SendGridService>();
             //services.AddTransient<ITwilioService, TwilioService>();
 
-            services.AddScoped<IMailService, MailService>();
+            // IMailService registration removed with the Email module.
             services.AddScoped<IUserManagementService, UserManagementService>();
 
 
@@ -208,6 +290,22 @@ namespace AuthScape.IDP
         {
             // ErrorTrackingMiddleware MUST be first to catch all exceptions before other handlers
             app.UseMiddleware(typeof(ErrorTrackingMiddleware));
+
+            // Security response headers (HSTS + CSP + XFO, strips Server/X-Powered-By)
+            app.UseMiddleware<SecurityHeadersMiddleware>();
+
+            // Internally rewrite unprefixed Identity paths (/Account/Login, /Account/Register, etc.)
+            // to the Identity area (/Identity/Account/...). Same-method, same-body, no client redirect —
+            // so POSTs hit the real login handler (and its lockout logic) instead of 307-bouncing.
+            app.Use(async (ctx, next) =>
+            {
+                var path = ctx.Request.Path;
+                if (path.HasValue && path.Value.StartsWith("/Account/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.Request.Path = "/Identity" + path.Value;
+                }
+                await next();
+            });
 
             app.UseCors("default");
 

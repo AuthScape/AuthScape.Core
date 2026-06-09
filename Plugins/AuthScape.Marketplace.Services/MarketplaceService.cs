@@ -339,9 +339,7 @@ namespace AuthScape.Marketplace.Services
                 {
                     try
                     {
-                        using var scope = new DatabaseContext(new DbContextOptionsBuilder<DatabaseContext>()
-                            .UseSqlServer(dbConnectionString)
-                            .Options);
+                        using var scope = new DatabaseContext(dbConnectionString);
                         await scope.AnalyticsMarketplaceImpressionsClicks.AddAsync(impressionTracking);
                         await scope.SaveChangesAsync();
                     }
@@ -939,7 +937,7 @@ namespace AuthScape.Marketplace.Services
             var downloadedFiles = new List<string>();
             try
             {
-                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: string.IsNullOrEmpty(blobPrefix) ? null : blobPrefix))
+                await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.None, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: string.IsNullOrEmpty(blobPrefix) ? null : blobPrefix, cancellationToken: default))
                 {
                     var blobFileName = blobItem.Name;
                     if (!string.IsNullOrEmpty(blobPrefix) && blobFileName.StartsWith(blobPrefix))
@@ -1289,7 +1287,7 @@ namespace AuthScape.Marketplace.Services
             BlobServiceClient blobServiceClient = new BlobServiceClient(appSettings.LuceneSearch.StorageConnectionString);
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
-            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(prefix: folderName))
+            await foreach (BlobItem blobItem in containerClient.GetBlobsAsync(traits: Azure.Storage.Blobs.Models.BlobTraits.None, states: Azure.Storage.Blobs.Models.BlobStates.None, prefix: folderName, cancellationToken: default))
             {
                 BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
                 await blobClient.DeleteIfExistsAsync();

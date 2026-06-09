@@ -16,7 +16,7 @@ internal class MemoryRecord
     [VectorStoreData]
     public string Collection { get; set; } = string.Empty;
 
-    [VectorStoreVector(Dimensions: 1536)]
+    //[VectorStoreVector(Dimensions: 1536)]
     public ReadOnlyMemory<float> Embedding { get; set; }
 
     [VectorStoreData]

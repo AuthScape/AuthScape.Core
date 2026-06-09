@@ -29,6 +29,13 @@
                     <input asp-for="LastName" class="input100" placeholder="Last Name" />
                 </div>
 
+                @if (String.IsNullOrWhiteSpace(Model.CompanyName))
+                {
+                    <div class="wrap-input100 validate-input" data-validate="Enter Company Name">
+                        <input asp-for="CompanyName" class="input100" placeholder="Company Name" />
+                    </div>
+                }
+
                 <div class="wrap-input100 validate-input" data-validate="Enter password">
                     <span class="btn-show-pass">
                         <i class="zmdi zmdi-eye"></i>

@@ -7,16 +7,15 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.StripePayment.Controller</PackageId>
     <Title>AuthScape.StripePayment.Controller</Title>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <Company>ZuechB</Company>
     <Authors>ZuechB</Authors>
     <Product>AuthScape.StripePayment.Controller</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
-    <PackageReference Include="Stripe.net" Version="50.3.0" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" />
+    <PackageReference Include="Stripe.net" />
   </ItemGroup>
 
   <ItemGroup>

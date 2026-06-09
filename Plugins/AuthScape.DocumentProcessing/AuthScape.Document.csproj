@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>AuthScape.Document</PackageId>
-    <Version>1.2.546</Version>
+    <Version>1.2.560</Version>
     <Authors>ZuechB</Authors>
     <Company>ZuechB</Company>
     <Product>AuthScape.Document</Product>
@@ -14,14 +14,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.10.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Models\Models.csproj" />
     <ProjectReference Include="..\..\Services.Database\Services.Database.csproj" />
     <ProjectReference Include="..\..\Services\Services.csproj" />
+    <ProjectReference Include="..\..\AuthScape.Services\AuthScape.Services.csproj" />
     <ProjectReference Include="..\Document\AuthScape.Document.Models\AuthScape.Document.Models.csproj" />
   </ItemGroup>
 
