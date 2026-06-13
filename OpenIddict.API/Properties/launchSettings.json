@@ -8,7 +8,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "API": {
+    "OpenIddict.API": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "scalar",
