@@ -71,29 +71,41 @@ public static class KeycloakRegistrationExtensions
     /// </summary>
     private static void WireLocalJwt(IServiceCollection services)
     {
-        services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, _ => { });
+        // AuthScape controllers authorize against AuthScapeAuthorizeAttribute.SchemeList, which lists
+        // BOTH "Bearer" and "OpenIddict.Validation.AspNetCore" (plus Identity.Application). ASP.NET
+        // throws "No authentication handler is registered for the scheme '<x>'" (HTTP 500) if ANY listed
+        // scheme has no handler. So the local-JWT path registers the Keycloak JwtBearer handler under
+        // BOTH token scheme names; Identity.Application is supplied by ASP.NET Identity.
+        var jwtScheme = JwtBearerDefaults.AuthenticationScheme;                       // "Bearer"
+        var oidcScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme; // "OpenIddict.Validation.AspNetCore"
 
-        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-            .Configure<Microsoft.Extensions.Options.IOptions<KeycloakProviderOptions>>((jwt, kcOpts) =>
-            {
-                var kc = kcOpts.Value;
-                jwt.Authority = kc.Authority;
-                jwt.Audience = kc.ClientId;
-                jwt.RequireHttpsMetadata = kc.RequireHttpsMetadata;
-                jwt.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(jwtScheme)
+            .AddJwtBearer(jwtScheme, _ => { })
+            .AddJwtBearer(oidcScheme, _ => { });
+
+        foreach (var scheme in new[] { jwtScheme, oidcScheme })
+        {
+            services.AddOptions<JwtBearerOptions>(scheme)
+                .Configure<Microsoft.Extensions.Options.IOptions<KeycloakProviderOptions>>((jwt, kcOpts) =>
                 {
-                    ValidateIssuer = true,
-                    ValidIssuer = kc.Authority?.TrimEnd('/'),
-                    ValidateAudience = !string.IsNullOrEmpty(kc.ClientId),
-                    ValidAudience = kc.ClientId,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    NameClaimType = kc.NameClaimName,
-                    RoleClaimType = "roles",
-                };
-            });
+                    var kc = kcOpts.Value;
+                    jwt.Authority = kc.Authority;
+                    jwt.Audience = kc.ClientId;
+                    jwt.RequireHttpsMetadata = kc.RequireHttpsMetadata;
+                    jwt.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = kc.Authority?.TrimEnd('/'),
+                        ValidateAudience = !string.IsNullOrEmpty(kc.ClientId),
+                        ValidAudience = kc.ClientId,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        NameClaimType = kc.NameClaimName,
+                        RoleClaimType = "roles",
+                    };
+                });
+        }
     }
 
     /// <summary>
