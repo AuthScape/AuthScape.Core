@@ -17,6 +17,13 @@ public interface IErrorTrackingService
     Task<bool> MarkErrorGroupResolved(Guid errorGroupId, long resolvedByUserId, string resolutionNotes);
     Task<ErrorTrackingSettings> GetOrCreateSettings();
     Task<bool> UpdateSettings(ErrorTrackingSettings settings);
+
+    /// <summary>
+    /// Broadcasts a single request's timing to the live speed-diagnostics channel (SignalR
+    /// `NewTiming`). Development-only; nothing is persisted. Parameters are primitives so the
+    /// API's ErrorTrackingMiddleware can invoke this by reflection without sharing a DTO type.
+    /// </summary>
+    Task NotifyTiming(string httpMethod, string endpoint, int statusCode, long responseTimeMs, int source, string machineName);
 }
 
 /// <summary>

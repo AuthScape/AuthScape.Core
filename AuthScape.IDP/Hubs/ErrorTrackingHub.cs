@@ -27,6 +27,24 @@ namespace AuthScape.IDP.Hubs
         }
 
         /// <summary>
+        /// Join the speed-diagnostics channel to receive a live `NewTiming` event for every
+        /// request the backend serves. Development-only feature; the server only broadcasts
+        /// when SpeedDiagnostics:Enabled is set and the environment is Development.
+        /// </summary>
+        public async Task JoinSpeedDiagnostics()
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "speed_diagnostics");
+        }
+
+        /// <summary>
+        /// Leave the speed-diagnostics channel.
+        /// </summary>
+        public async Task LeaveSpeedDiagnostics()
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "speed_diagnostics");
+        }
+
+        /// <summary>
         /// Join a specific error group to receive updates for that error.
         /// </summary>
         public async Task JoinErrorGroup(Guid errorGroupId)

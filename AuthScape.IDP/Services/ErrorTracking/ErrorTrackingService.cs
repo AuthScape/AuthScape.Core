@@ -670,6 +670,38 @@ public class ErrorTrackingService : IErrorTrackingService
     }
 
     /// <summary>
+    /// Broadcasts a single request's timing to the live speed-diagnostics channel. Dev-only,
+    /// fire-and-forget from the middleware's perspective; never throws into the request path.
+    /// </summary>
+    public async Task NotifyTiming(string httpMethod, string endpoint, int statusCode, long responseTimeMs, int source, string machineName)
+    {
+        if (_hubContext == null)
+        {
+            return;
+        }
+
+        var notification = new
+        {
+            httpMethod,
+            endpoint,
+            statusCode,
+            responseTimeMs,
+            source,
+            machineName,
+            timestamp = DateTimeOffset.UtcNow
+        };
+
+        try
+        {
+            await _hubContext.Clients.Group("speed_diagnostics").SendAsync("NewTiming", notification);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send SignalR speed-diagnostics notification for {Method} {Endpoint}", httpMethod, endpoint);
+        }
+    }
+
+    /// <summary>
     /// Sends a real-time notification to all connected clients when a new error is logged.
     /// Uses SignalR directly since ErrorTracking is now centralized in IDP.
     /// </summary>

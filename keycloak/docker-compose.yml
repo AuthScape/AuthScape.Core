@@ -21,3 +21,5 @@ services:
     volumes:
       # Realms placed here are imported on first start (because of --import-realm).
       - ./realm-authscape.json:/opt/keycloak/data/import/realm-authscape.json:ro
+      # Custom AuthScape login theme (start-dev disables theme caching, so edits hot-reload).
+      - ./themes:/opt/keycloak/themes

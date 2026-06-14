@@ -21,8 +21,12 @@ namespace Services.Tracking
         private static Type? _errorTrackingServiceType;
         private static Type? _errorSourceType;
         private static MethodInfo? _logErrorMethod;
+        private static MethodInfo? _notifyTimingMethod;
         private static bool _reflectionInitialized;
         private static readonly object _lockObj = new();
+
+        // Dev-only speed diagnostics: resolved once (env + config never change at runtime).
+        private bool? _speedDiagnosticsEnabled;
 
         public ErrorTrackingMiddleware(RequestDelegate next, ILogger<ErrorTrackingMiddleware> logger, IConfiguration configuration)
         {
@@ -38,11 +42,14 @@ namespace Services.Tracking
             try
             {
                 await _next(context);
+                sw.Stop();
+                await TryReportTimingAsync(context, sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
                 sw.Stop();
                 await HandleExceptionAsync(context, ex, sw.ElapsedMilliseconds);
+                await TryReportTimingAsync(context, sw.ElapsedMilliseconds);
             }
         }
 
@@ -272,6 +279,168 @@ namespace Services.Tracking
             }
         }
 
+        /// <summary>
+        /// Dev-only speed diagnostics. Broadcasts this request's timing to the live
+        /// `speed_diagnostics` SignalR group so the VS Code Speed Diagnostics panel can show the
+        /// speed of every API call. No-op unless ASPNETCORE_ENVIRONMENT=Development and
+        /// SpeedDiagnostics:Enabled=true. Never adds latency or throws into the request pipeline.
+        /// </summary>
+        private Task TryReportTimingAsync(HttpContext context, long responseTimeMs)
+        {
+            try
+            {
+                if (!IsSpeedDiagnosticsEnabled() || ShouldSkipTiming(context))
+                {
+                    return Task.CompletedTask;
+                }
+
+                var httpMethod = context.Request.Method;
+                var endpoint = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
+                var statusCode = context.Response.StatusCode;
+                var source = IsIdpRequest(context) ? 2 : 1; // 1 = API, 2 = IDP
+                var machineName = Environment.MachineName ?? string.Empty;
+
+                // Prefer the in-process hub (IDP hosts ErrorTrackingService). The in-process
+                // broadcast is cheap, so we await it.
+                var localService = TryGetLocalErrorTrackingService(context);
+                if (localService != null)
+                {
+                    return InvokeLocalNotifyTiming(localService, httpMethod, endpoint, statusCode, responseTimeMs, source, machineName);
+                }
+
+                // Otherwise (API process) forward to the IDP over HTTP, fire-and-forget so we
+                // never add a network round-trip to the response time of every request.
+                var idpUrl = GetIdpUrl();
+                var httpClientFactory = context.RequestServices.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory;
+                if (!string.IsNullOrEmpty(idpUrl) && httpClientFactory != null)
+                {
+                    _ = ReportTimingToIdpAsync(httpClientFactory, idpUrl!, httpMethod, endpoint, statusCode, responseTimeMs, source, machineName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "SpeedDiagnostics: failed to report timing");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private bool IsSpeedDiagnosticsEnabled()
+        {
+            if (_speedDiagnosticsEnabled.HasValue)
+            {
+                return _speedDiagnosticsEnabled.Value;
+            }
+
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+            var configValue = _configuration["SpeedDiagnostics:Enabled"];
+            var enabled = isDev && string.Equals(configValue, "true", StringComparison.OrdinalIgnoreCase);
+
+            _speedDiagnosticsEnabled = enabled;
+            return enabled;
+        }
+
+        private string? GetIdpUrl()
+        {
+            // The error path reads top-level "IDPUrl"; the seeded appsettings nest it under
+            // "AppSettings". Accept either so the API can actually reach the IDP.
+            return _configuration["IDPUrl"] ?? _configuration["AppSettings:IDPUrl"];
+        }
+
+        private static bool ShouldSkipTiming(HttpContext context)
+        {
+            var path = context.Request.Path.HasValue
+                ? context.Request.Path.Value!.ToLowerInvariant()
+                : string.Empty;
+
+            // Don't time the plumbing that delivers diagnostics (prevents a feedback loop),
+            // SignalR transports, or static asset requests.
+            if (path.StartsWith("/errortracking") ||
+                path.StartsWith("/notifications") ||
+                path.Contains("/api/errortrackinghub") ||
+                path.Contains("/negotiate"))
+            {
+                return true;
+            }
+
+            var lastDot = path.LastIndexOf('.');
+            if (lastDot > path.LastIndexOf('/'))
+            {
+                switch (path.Substring(lastDot))
+                {
+                    case ".js":
+                    case ".css":
+                    case ".map":
+                    case ".png":
+                    case ".jpg":
+                    case ".jpeg":
+                    case ".gif":
+                    case ".svg":
+                    case ".ico":
+                    case ".woff":
+                    case ".woff2":
+                    case ".ttf":
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private object? TryGetLocalErrorTrackingService(HttpContext context)
+        {
+            InitializeReflection();
+
+            if (_errorTrackingServiceType == null || _notifyTimingMethod == null)
+            {
+                return null;
+            }
+
+            return context.RequestServices.GetService(_errorTrackingServiceType);
+        }
+
+        private async Task InvokeLocalNotifyTiming(object service, string httpMethod, string endpoint, int statusCode, long responseTimeMs, int source, string machineName)
+        {
+            try
+            {
+                // Task NotifyTiming(string httpMethod, string endpoint, int statusCode, long responseTimeMs, int source, string machineName)
+                var result = _notifyTimingMethod!.Invoke(service, new object?[] { httpMethod, endpoint, statusCode, responseTimeMs, source, machineName });
+                if (result is Task task)
+                {
+                    await task;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "SpeedDiagnostics: local NotifyTiming failed");
+            }
+        }
+
+        private async Task ReportTimingToIdpAsync(IHttpClientFactory httpClientFactory, string idpUrl, string httpMethod, string endpoint, int statusCode, long responseTimeMs, int source, string machineName)
+        {
+            try
+            {
+                var client = httpClientFactory.CreateClient();
+                var payload = new
+                {
+                    httpMethod,
+                    endpoint,
+                    statusCode,
+                    responseTimeMs,
+                    source,
+                    machineName
+                };
+                var json = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                await client.PostAsync($"{idpUrl.TrimEnd('/')}/api/ErrorTrackingHub/LogTimingFromApi", content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "SpeedDiagnostics: failed to forward timing to IDP");
+            }
+        }
+
         private static void InitializeReflection()
         {
             if (_reflectionInitialized)
@@ -296,6 +465,7 @@ namespace Services.Tracking
                     {
                         _errorTrackingServiceType = idpAssembly.GetType("AuthScape.IDP.Services.ErrorTracking.IErrorTrackingService");
                         _logErrorMethod = _errorTrackingServiceType?.GetMethod("LogError");
+                        _notifyTimingMethod = _errorTrackingServiceType?.GetMethod("NotifyTiming");
                     }
 
                     // Find ErrorSource enum in AuthScape.Models
