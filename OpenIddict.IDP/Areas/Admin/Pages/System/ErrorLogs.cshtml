@@ -744,12 +744,10 @@
 
             let errorMessage = 'Failed to load errors';
             if (error.response && error.response.status === 500) {
-                errorMessage = `Database tables not found. Please run the migration:<br><br>
-                    <code style="display: block; text-align: left; padding: 1rem; background: #f5f5f5; border-radius: 4px;">
-                    cd "d:\\Development\\AuthScape\\AuthScape.Core\\API"<br>
-                    dotnet ef migrations add AddErrorTrackingTables --project "../Services.Database"<br>
-                    dotnet ef database update --project "../Services.Database"
-                    </code>`;
+                errorMessage = `Database tables not found. The schema is created automatically on
+                    startup (EnsureDatabase, all providers) — restart the IDP/API to create the
+                    missing tables, and confirm AppSettings.DatabaseContext points at a reachable
+                    database.`;
             }
 
             tbody.innerHTML = `
