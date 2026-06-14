@@ -1,8 +1,13 @@
 {
   "realm": "authscape",
+  "displayName": "AuthScape",
   "enabled": true,
   "sslRequired": "none",
-  "registrationAllowed": false,
+  "loginTheme": "authscape",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "clients": [

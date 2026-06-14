@@ -1,0 +1,55 @@
+# AuthScape local dev stack — backing services in one shot.
+#
+#   cd C:\Development\AuthScape\AuthScape.Core
+#   docker compose up -d
+#
+# Brings up:
+#   - SQL Server 2022   -> localhost,1433   (sa / Your_password123)
+#   - Keycloak 26.0     -> http://localhost:8080  (admin / admin, realm "authscape")
+#
+# Then point the app at the DB (appsettings.Development.json -> AppSettings.DatabaseContext):
+#   Server=localhost,1433;Database=AuthScape;User Id=sa;Password=Your_password123;TrustServerCertificate=true;
+#
+# Create the schema (migrations already exist under Services.Database/Migrations):
+#   dotnet ef database update --project Services.Database --startup-project OpenIddict.IDP
+#
+# Run the IDP from Visual Studio (F5) and you're up.
+# Stop & keep data:  docker compose stop
+# Stop & wipe all:   docker compose down -v
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: authscape-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_password123"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - authscape-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: authscape-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      # Realm (clients + test user) is auto-imported on first start.
+      - ./keycloak/realm-authscape.json:/opt/keycloak/data/import/realm-authscape.json:ro
+      # Custom AuthScape login theme (start-dev disables theme caching, so edits hot-reload).
+      - ./keycloak/themes:/opt/keycloak/themes
+
+volumes:
+  authscape-sql-data:

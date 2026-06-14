@@ -99,6 +99,37 @@ namespace IDP.Controllers
                 return StatusCode(500, new { success = false, error = "Failed to log error" });
             }
         }
+
+        /// <summary>
+        /// Receives request timings forwarded from the API (dev-only speed diagnostics) and
+        /// broadcasts them to the live `speed_diagnostics` SignalR group. Nothing is persisted.
+        /// </summary>
+        [HttpPost("LogTimingFromApi")]
+        [AllowAnonymous] // API doesn't have auth tokens for IDP
+        public async Task<IActionResult> LogTimingFromApi([FromBody] ApiTimingDto timing)
+        {
+            try
+            {
+                var notification = new
+                {
+                    httpMethod = timing.HttpMethod,
+                    endpoint = timing.Endpoint,
+                    statusCode = timing.StatusCode,
+                    responseTimeMs = timing.ResponseTimeMs,
+                    source = timing.Source,
+                    machineName = timing.MachineName,
+                    timestamp = DateTimeOffset.UtcNow
+                };
+
+                await _hubContext.Clients.Group("speed_diagnostics").SendAsync("NewTiming", notification);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "ErrorTrackingHubController: Failed to broadcast timing from API");
+                return StatusCode(500);
+            }
+        }
     }
 
     public class ErrorNotification
@@ -134,5 +165,18 @@ namespace IDP.Controllers
         public string? IpAddress { get; set; }
         public string? Endpoint { get; set; }
         public string? Method { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for request timings forwarded from the API to the IDP (dev-only speed diagnostics).
+    /// </summary>
+    public class ApiTimingDto
+    {
+        public string HttpMethod { get; set; } = string.Empty;
+        public string Endpoint { get; set; } = string.Empty;
+        public int StatusCode { get; set; }
+        public long ResponseTimeMs { get; set; }
+        public int Source { get; set; } // 1 = API, 2 = IDP
+        public string MachineName { get; set; } = string.Empty;
     }
 }
