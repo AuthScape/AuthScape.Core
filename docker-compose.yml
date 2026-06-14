@@ -7,13 +7,20 @@
 #   - SQL Server 2022   -> localhost,1433   (sa / Your_password123)
 #   - Keycloak 26.0     -> http://localhost:8080  (admin / admin, realm "authscape")
 #
-# Then point the app at the DB (appsettings.Development.json -> AppSettings.DatabaseContext):
-#   Server=localhost,1433;Database=AuthScape;User Id=sa;Password=Your_password123;TrustServerCertificate=true;
+# Then point the app at the DB (appsettings.Development.json -> AppSettings.DatabaseContext).
+# The connection string also selects the provider automatically (SQL Server / PostgreSQL / SQLite):
+#   SQL Server: Server=localhost,1433;Database=AuthScape;User Id=sa;Password=Your_password123;TrustServerCertificate=true;
+#   PostgreSQL: Host=localhost;Database=AuthScape;Username=postgres;Password=postgres
+#   SQLite:     Data Source=authscape.db
 #
-# Create the schema (migrations already exist under Services.Database/Migrations):
-#   dotnet ef database update --project Services.Database --startup-project OpenIddict.IDP
+# The schema is created automatically on startup from the live EF model (EnsureDatabase) for whichever
+# provider the connection string targets — no migrations to run.
 #
-# Run the IDP from Visual Studio (F5) and you're up.
+# Pick the token issuer with Authentication:Provider in the API's appsettings.json:
+#   OpenIddict -> also run the OpenIddict.IDP project (issuer on https://localhost:44303).
+#   Keycloak   -> the keycloak service below is the issuer; the IDP project is not needed.
+#
+# Run the IDP and/or API from Visual Studio (F5) and you're up.
 # Stop & keep data:  docker compose stop
 # Stop & wipe all:   docker compose down -v
 services:

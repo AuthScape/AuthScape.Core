@@ -218,7 +218,7 @@ namespace AuthScape.Controllers
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Action<IEndpointRouteBuilder>? useEndpoints = null)
         {
-            ApplyMigration(app);
+            EnsureDatabaseSchema(app);
 
             // ErrorTrackingMiddleware MUST be first to catch all exceptions before other handlers
             app.UseMiddleware(typeof(ErrorTrackingMiddleware));
@@ -269,7 +269,9 @@ namespace AuthScape.Controllers
             });
         }
 
-        private void ApplyMigration(IApplicationBuilder app)
+        // Creates the database and schema from the live EF model if missing — provider-agnostic
+        // (SQL Server / PostgreSQL / SQLite). This replaces EF migrations, which were SQL-Server-only.
+        private void EnsureDatabaseSchema(IApplicationBuilder app)
         {
             using var scope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();

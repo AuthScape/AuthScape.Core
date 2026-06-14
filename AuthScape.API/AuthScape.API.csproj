@@ -13,14 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Keycloak.API.csproj.lscache" />
+    <None Remove="OpenIddict.API.csproj.lscache" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Keycloak example host: validates tokens issued by a Dockerized Keycloak (../keycloak).
-         Everything (EF, JwtBearer, OpenAPI, Scalar, Identity stores) flows in transitively through
-         the ProjectReferences below. Add a package here only if the host uses a type from it
-         directly (it currently doesn't). -->
+    <!-- Single AuthScape API host. Validates tokens from either OpenIddict.IDP or a Keycloak realm,
+         selected at runtime via Authentication:Provider. Everything (EF, OpenIddict, Keycloak/JwtBearer,
+         OpenAPI, Scalar, Identity stores) flows in transitively through the ProjectReferences below.
+         Add a package here only if the host uses a type from it directly (it currently doesn't). -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -28,8 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Auth core — Keycloak adapter only (this host does not issue its own tokens). -->
+    <!-- Auth core — both adapters referenced so the provider can be chosen at runtime via
+         Authentication:Provider (OpenIddict or Keycloak). -->
     <ProjectReference Include="..\AuthScape.AuthManager\AuthScape.AuthManager.csproj" />
+    <ProjectReference Include="..\AuthScape.AuthManager.OpenIddict\AuthScape.AuthManager.OpenIddict.csproj" />
     <ProjectReference Include="..\AuthScape.AuthManager.Keycloak\AuthScape.AuthManager.Keycloak.csproj" />
     <ProjectReference Include="..\AuthScape.Configuration\AuthScape.Configuration.csproj" />
     <ProjectReference Include="..\AuthScape.Controllers\AuthScape.Controllers.csproj" />
