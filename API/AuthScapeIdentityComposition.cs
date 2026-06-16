@@ -11,7 +11,7 @@ namespace API
     /// Composition-root helper for the single AuthScape API host. The token issuer is selected at
     /// runtime from <c>Authentication:Provider</c> ("OpenIddict" or "Keycloak") — flip that one key to
     /// switch providers, no code change or rebuild required:
-    ///   - <b>OpenIddict</b>: validates tokens issued by the bundled <c>OpenIddict.IDP</c> server.
+    ///   - <b>OpenIddict</b>: validates tokens issued by the bundled <c>IDP</c> server.
     ///   - <b>Keycloak</b>: validates tokens against a Keycloak realm (see <c>../keycloak/</c>).
     /// Both <c>Authentication:OpenIddict</c> and <c>Authentication:Keycloak</c> sections live in
     /// appsettings.json so either provider works without editing config layout.

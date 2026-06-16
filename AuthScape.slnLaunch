@@ -3,14 +3,14 @@
     "Name": "OpenIddict",
     "Projects": [
       {
-        "Path": "OpenIddict.API\\OpenIddict.API.csproj",
+        "Path": "API\\API.csproj",
         "Action": "Start",
-        "DebugTarget": "OpenIddict.API"
+        "DebugTarget": "API"
       },
       {
-        "Path": "OpenIddict.IDP\\OpenIddict.IDP.csproj",
+        "Path": "IDP\\IDP.csproj",
         "Action": "Start",
-        "DebugTarget": "OpenIddict.IDP"
+        "DebugTarget": "IDP"
       }
     ]
   },
@@ -18,9 +18,9 @@
     "Name": "Keycloak",
     "Projects": [
       {
-        "Path": "Keycloak.API\\Keycloak.API.csproj",
+        "Path": "API\\API.csproj",
         "Action": "Start",
-        "DebugTarget": "Keycloak.API"
+        "DebugTarget": "API"
       }
     ]
   }

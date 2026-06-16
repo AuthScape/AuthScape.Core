@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "OpenIddict.IDP": {
+    "IDP": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
