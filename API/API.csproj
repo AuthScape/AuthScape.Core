@@ -13,11 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="OpenIddict.API.csproj.lscache" />
+    <None Remove="API.csproj.lscache" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Single AuthScape API host. Validates tokens from either OpenIddict.IDP or a Keycloak realm,
+    <!-- Single AuthScape API host. Validates tokens from either the IDP or a Keycloak realm,
          selected at runtime via Authentication:Provider. Everything (EF, OpenIddict, Keycloak/JwtBearer,
          OpenAPI, Scalar, Identity stores) flows in transitively through the ProjectReferences below.
          Add a package here only if the host uses a type from it directly (it currently doesn't). -->

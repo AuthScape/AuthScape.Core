@@ -17,7 +17,7 @@
 # provider the connection string targets — no migrations to run.
 #
 # Pick the token issuer with Authentication:Provider in the API's appsettings.json:
-#   OpenIddict -> also run the OpenIddict.IDP project (issuer on https://localhost:44303).
+#   OpenIddict -> also run the IDP project (issuer on https://localhost:44303).
 #   Keycloak   -> the keycloak service below is the issuer; the IDP project is not needed.
 #
 # Run the IDP and/or API from Visual Studio (F5) and you're up.
